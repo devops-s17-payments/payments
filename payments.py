@@ -33,9 +33,9 @@ paypal = {'name' : 'Joe Jetson',
 		  'e-mail' : 'joe@aol.com',
 		  'linked' : True}
 
-payments = [{'id' : 1, 'nickname' : 'my-credit', 'type' : 'credit', 'detail' : '10'},
-			{'id' : 2, 'nickname' : 'my-debit', 'type' : 'debit', 'detail' : '20'},
-			{'id' : 3, 'nickname' : 'my-paypal', 'type' : 'paypal', 'detail' : '30'}]
+payments = [{'id' : 1, 'nickname' : 'my-credit', 'type' : 'credit', 'detail' : credit},
+			{'id' : 2, 'nickname' : 'my-debit', 'type' : 'debit', 'detail' : debit},
+			{'id' : 3, 'nickname' : 'my-paypal', 'type' : 'paypal', 'detail' : paypal}]
 
 ######################################################################
 # GET INDEX
