@@ -20,6 +20,24 @@ def index():
 				   version='1.0',
 				   url=payments_url), HTTP_200_OK
 
+####################
+# RETRIEVE PAYMENT #
+####################
+@app.route('/payments/<int:id>', methods=['GET'])
+def get_payments(id):
+	if payments.has_key(id):
+		message = payments[id]
+		code = HTTP_200_OK
+	else:
+		message = 'Error: Payment id %s does not exist' % str(id)
+		code = HTTP_404_NOT_FOUND
+	
+	#DOB: this should be refactored eventually... need some utility functions
+	return jsonify(data=message), code
+
+##########################
+########## MAIN ##########
+##########################
 if __name__ == '__main__':
 	#starter payment models for mvp
 	current_payment_id = 3;
