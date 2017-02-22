@@ -33,9 +33,12 @@ paypal = {'name' : 'Joe Jetson',
 		  'e-mail' : 'joe@aol.com',
 		  'linked' : True}
 
-payments = [{'id' : 1, 'nickname' : 'my-credit', 'type' : 'credit', 'detail' : credit},
-			{'id' : 2, 'nickname' : 'my-debit', 'type' : 'debit', 'detail' : debit},
-			{'id' : 3, 'nickname' : 'my-paypal', 'type' : 'paypal', 'detail' : paypal}]
+payments = [{'id' : 1, 'default' : True, 'nickname' : 'my-credit',
+			 'type' : 'credit', 'detail' : credit},
+			{'id' : 2, 'default' : False, 'nickname' : 'my-debit',
+			 'type' : 'debit', 'detail' : debit},
+			{'id' : 3, 'default' : False, 'nickname' : 'my-paypal',
+			 'type' : 'paypal', 'detail' : paypal}]
 
 ######################################################################
 # GET INDEX
@@ -60,6 +63,25 @@ def list_payments():
         results = payments
 
     return make_response(jsonify(results), HTTP_200_OK)
+
+######################################################################
+# SET DEFAULT PAYMENT
+######################################################################
+@app.route('/payments/<int:id>/set-default', methods=['PUT'])
+def set_default(id):
+	if id > current_payment_id or id < 1:
+		message = { 'error' : 'Payment with id: %s was not found' % str(id) }
+		rc = HTTP_404_NOT_FOUND
+	else:
+		for payment in payments:
+			if payment['id'] == id:
+				payment['default'] = True
+			else:
+				payment['default'] = False
+		message = { 'success' : 'Payment with id: %s set as default.' % str(id) }
+		rc = HTTP_200_OK
+
+	return make_response(jsonify(message), rc)
 
 ######################################################################
 # RETRIEVE A PAYMENT
