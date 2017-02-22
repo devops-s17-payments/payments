@@ -70,7 +70,12 @@ def list_payments():
 @app.route('/payments', methods=['POST'])
 def add_payment():
 	#data = request.get_json()
-	data = {'nickname' : 'my nickname', 'type' : 'pay-type', 'detail' : {'name' : 'my name', 'number' : 'my number', 'expires' : 'my date', 'type' : 'card-type'}}
+	#haven't figure out why this doesn't work yet
+	data = {'nickname' : 'new-payment', 'type' : 'credit',
+			'detail' : {'name' : 'Jimmy Jones', 'number' : '1111222233334444',
+						'expires' : '01/2019', 'type' : 'Mastercard'}}
+	
+	#will refactor to put this logic in is_valid utility function
 	try:
 		nickname = data['nickname']
 		type = data['type']
