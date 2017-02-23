@@ -1,10 +1,14 @@
 import os
 import logging
+from threading import Lock
 from flask import Flask, jsonify, request, make_response, Response, json, url_for
 
 # Create Flask application
 app = Flask(__name__)
 app.config['LOGGING_LEVEL'] = logging.INFO
+
+# Lock for thread-safe counter increment
+lock = Lock()
 
 # Status Codes
 # will be replaced eventually
@@ -16,7 +20,6 @@ HTTP_404_NOT_FOUND = 404
 HTTP_409_CONFLICT = 409
 
 #starter payment models for mvp
-
 #dummy data
 current_payment_id = 3;
 credit = {'name' : 'John Johnson',
@@ -62,6 +65,37 @@ def list_payments():
     return make_response(jsonify(results), HTTP_200_OK)
 
 ######################################################################
+# ADD A NEW PAYMENT
+######################################################################
+@app.route('/payments', methods=['POST'])
+def add_payment():
+	#data = request.get_json()
+	#haven't figure out why this doesn't work yet
+	data = {'nickname' : 'new-payment', 'type' : 'credit',
+			'detail' : {'name' : 'Jimmy Jones', 'number' : '1111222233334444',
+						'expires' : '01/2019', 'type' : 'Mastercard'}}
+	
+	#will refactor to put this logic in is_valid utility function
+	try:
+		nickname = data['nickname']
+		type = data['type']
+		detail = data['detail']
+		name = detail['name']
+		number = detail['number']
+		expires = detail['expires']
+		cardType = detail['type']
+		id = index_inc()
+		new = {'id' : id, 'name' : name, 'type' : type, 'detail' : detail}
+		payments.append(new)
+		message = {'successfully created' : payments[id-1]}
+		rc = HTTP_201_CREATED
+	except KeyError as err:
+		message = {'error' : ('Missing parameter error: %s', err) }
+		rc = HTTP_400_BAD_REQUEST
+
+	return make_response(jsonify(message), rc)
+
+######################################################################
 # RETRIEVE A PAYMENT
 ######################################################################
 @app.route('/payments/<int:id>', methods=['GET'])
@@ -75,6 +109,18 @@ def get_payments(id):
         rc = HTTP_404_NOT_FOUND
 
     return make_response(jsonify(message), rc)
+
+######################################################################
+#   U T I L I T I E S
+######################################################################
+def index_inc():
+    global current_payment_id
+    with lock:
+        current_payment_id += 1
+    return current_payment_id
+
+def is_valid(data):
+	pass
 
 ######################################################################
 #   M A I N
