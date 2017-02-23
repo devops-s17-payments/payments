@@ -133,6 +133,22 @@ def get_payments(id):
     return make_response(jsonify(message), rc)
 
 ######################################################################
+# RETRIEVE A PAYMENT ON QUERY
+######################################################################
+@app.route('/payments/<string:type>', methods=['GET'])
+def query_payments(type):
+    index = [i for i, payment in enumerate(payments) if payment['type'] == type]
+    if len(index) > 0:
+        message = payments[index[0]]
+        rc = HTTP_200_OK
+    else:
+        message = { 'error' : 'Payment with type: %s was not found' % type }
+        rc = HTTP_404_NOT_FOUND
+
+    return make_response(jsonify(message), rc)
+
+
+######################################################################
 # DELETE A PAYMENT
 ######################################################################
 @app.route('/payments/<int:id>', methods=['DELETE'])
