@@ -95,6 +95,7 @@ def add_payment():
 	except KeyError as err:
 		message = {'error' : ('Missing parameter error: %s', err) }
 		rc = HTTP_400_BAD_REQUEST
+	
 	return make_response(jsonify(message), rc)
 
 ######################################################################
