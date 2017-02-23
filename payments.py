@@ -111,6 +111,16 @@ def get_payments(id):
     return make_response(jsonify(message), rc)
 
 ######################################################################
+# DELETE A PAYMENT
+######################################################################
+@app.route('/payments/<int:id>', methods=['DELETE'])
+def delete_payments(id):
+    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
+    if len(index) > 0:
+        del payments[index[0]]
+    return '', HTTP_204_NO_CONTENT
+
+######################################################################
 #   U T I L I T I E S
 ######################################################################
 def index_inc():
