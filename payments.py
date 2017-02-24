@@ -137,9 +137,12 @@ def get_payments(id):
 ######################################################################
 @app.route('/payments/<string:type>', methods=['GET'])
 def query_payments(type):
-    index = [i for i, payment in enumerate(payments) if payment['type'] == type]
-    if len(index) > 0:
-        message = payments[index[0]]
+    list=[]
+    for p in payments:
+        if p['type']==type:
+            list.append(p)
+    if len(list) > 0:
+        message = list
         rc = HTTP_200_OK
     else:
         message = { 'error' : 'Payment with type: %s was not found' % type }
