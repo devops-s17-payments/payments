@@ -19,6 +19,9 @@ HTTP_400_BAD_REQUEST = 400
 HTTP_404_NOT_FOUND = 404
 HTTP_409_CONFLICT = 409
 
+# Error Messages
+CONTENT_ERR_MSG = "Content type of the request is not json. Doesn't support other formats now."
+
 #starter payment models for mvp
 #dummy data
 current_payment_id = 3;
@@ -72,24 +75,19 @@ def list_payments():
 ######################################################################
 @app.route('/payments', methods=['POST'])
 def add_payment():
-	#data = request.get_json()
+	if not request.is_json:
+		make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+	data = request.get_json()
 	#haven't figure out why this doesn't work yet
-	data = {'nickname' : 'new-payment', 'type' : 'credit',
-			'detail' : {'name' : 'Jimmy Jones', 'number' : '1111222233334444',
-						'expires' : '01/2019', 'type' : 'Mastercard'}}
+	#data = {'nickname' : 'new-payment', 'type' : 'credit',
+	#		'detail' : {'name' : 'Jimmy Jones', 'number' : '1111222233334444',
+	#					'expires' : '01/2019', 'type' : 'Mastercard'}}
 	
-	#will refactor to put this logic in is_valid utility function
+	#to-do: will refactor to put this logic in is_valid utility function
 	try:
-		nickname = data['nickname']
-		type = data['type']
-		detail = data['detail']
-		name = detail['name']
-		number = detail['number']
-		expires = detail['expires']
-		cardType = detail['type']
 		id = index_inc()
-		new = {'id' : id, 'name' : name, 'type' : type, 'detail' : detail}
-		payments.append(new)
+		newData = {'id' : id, 'name' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
+		payments.append(newData)
 		message = {'successfully created' : payments[id-1]}
 		rc = HTTP_201_CREATED
 	except KeyError as err:
