@@ -19,6 +19,8 @@ HTTP_400_BAD_REQUEST = 400
 HTTP_404_NOT_FOUND = 404
 HTTP_409_CONFLICT = 409
 
+CONTENT_ERR_MSG = "content-type is not json."
+
 #starter payment models for mvp
 #dummy data
 current_payment_id = 3;
@@ -139,8 +141,9 @@ def get_payments(id):
 def update_payments(id):
     index = [i for i, payment in enumerate(payments) if payment['id'] == id]
     if len(index) > 0:
-        #payload = request.get_json()
-        payload = {'nickname' : 'new-payment', 'type' : 'credit','detail' : {'name' : 'Jimmy Jones', 'number' : '1111222233334444','expires' : '01/2019', 'type' : 'Mastercard'}}
+    	if not request.is_json:
+    		return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+        payload = request.get_json()
         if is_valid(payload):
             payments[index[0]] = {'id' : id, 'nickname' : payload['nickname'], 'type' : payload['type'], 'detail' : payload['detail']}
             message = payments[index[0]]
