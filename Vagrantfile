@@ -28,6 +28,12 @@ Vagrant.configure(2) do |config|
     vb.cpus = 1
   end
 
+  # Build Docker environment and Redis
+  config.vm.provision "docker" do |d|
+    d.run "redis",
+      image: "redis:3.2"
+  end
+
   # Copy your .gitconfig file so that your git credentials are correct
   if File.exists?(File.expand_path("~/.gitconfig"))
     config.vm.provision "file", source: "~/.gitconfig", destination: "~/.gitconfig"
