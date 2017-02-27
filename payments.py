@@ -19,6 +19,9 @@ HTTP_400_BAD_REQUEST = 400
 HTTP_404_NOT_FOUND = 404
 HTTP_409_CONFLICT = 409
 
+# Error Messages
+CONTENT_ERR_MSG = "Content type of the request is not json. Doesn't support other formats now."
+
 #starter payment models for mvp
 #dummy data
 current_payment_id = 3;
@@ -72,24 +75,19 @@ def list_payments():
 ######################################################################
 @app.route('/payments', methods=['POST'])
 def add_payment():
-	#data = request.get_json()
+	if not request.is_json:
+		make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+	data = request.get_json()
 	#haven't figure out why this doesn't work yet
-	data = {'nickname' : 'new-payment', 'type' : 'credit',
-			'detail' : {'name' : 'Jimmy Jones', 'number' : '1111222233334444',
-						'expires' : '01/2019', 'type' : 'Mastercard'}}
+	#data = {'nickname' : 'new-payment', 'type' : 'credit',
+	#		'detail' : {'name' : 'Jimmy Jones', 'number' : '1111222233334444',
+	#					'expires' : '01/2019', 'type' : 'Mastercard'}}
 	
-	#will refactor to put this logic in is_valid utility function
+	#to-do: will refactor to put this logic in is_valid utility function
 	try:
-		nickname = data['nickname']
-		type = data['type']
-		detail = data['detail']
-		name = detail['name']
-		number = detail['number']
-		expires = detail['expires']
-		cardType = detail['type']
 		id = index_inc()
-		new = {'id' : id, 'name' : name, 'type' : type, 'detail' : detail}
-		payments.append(new)
+		newData = {'id' : id, 'name' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
+		payments.append(newData)
 		message = {'successfully created' : payments[id-1]}
 		rc = HTTP_201_CREATED
 	except KeyError as err:
@@ -107,14 +105,16 @@ def set_default(id):
 		message = { 'error' : 'Payment with id: %s was not found' % str(id) }
 		rc = HTTP_404_NOT_FOUND
 	else:
-		for payment in payments:
-			if payment['id'] == id:
-				payment['default'] = True
-			else:
+		index = [i for i, payment in enumerate(payments) if payment['id'] == id]
+		if len(index) <= 0:
+			message = { 'error' : 'Payment with id: %s was not found' % str(id) }
+			rc = HTTP_404_NOT_FOUND
+		else:
+			for payment in payments:
 				payment['default'] = False
-		message = { 'success' : 'Payment with id: %s set as default.' % str(id) }
-		rc = HTTP_200_OK
-
+			payments[index[0]]['default'] = True
+			message = { 'success' : 'Payment with id: %s set as default.' % str(id) }
+			rc = HTTP_200_OK
 	return make_response(jsonify(message), rc)
 
 ######################################################################
@@ -128,6 +128,46 @@ def get_payments(id):
         rc = HTTP_200_OK
     else:
         message = { 'error' : 'Payment with id: %s was not found' % str(id) }
+        rc = HTTP_404_NOT_FOUND
+
+    return make_response(jsonify(message), rc)
+
+######################################################################
+# RETRIEVE A PAYMENT ON QUERY
+######################################################################
+@app.route('/payments/<string:type>', methods=['GET'])
+def query_payments(type):
+    list=[]
+    for p in payments:
+        if p['type']==type:
+            list.append(p)
+    if len(list) > 0:
+        message = list
+        rc = HTTP_200_OK
+    else:
+        message = { 'error' : 'Payment with type: %s was not found' % type }
+        rc = HTTP_404_NOT_FOUND
+    return make_response(jsonify(message), rc)
+
+######################################################################
+# UPDATE AN EXISTING PAYMENT
+######################################################################
+@app.route('/payments/<int:id>', methods=['PUT'])
+def update_payments(id):
+    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
+    if len(index) > 0:
+        if not request.is_json:
+    		    return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+        payload = request.get_json()
+        if is_valid(payload):
+            payments[index[0]] = {'id' : id, 'nickname' : payload['nickname'], 'type' : payload['type'], 'detail' : payload['detail']}
+            message = payments[index[0]]
+            rc = HTTP_200_OK
+        else:
+            message = { 'error' : 'Payments data was not valid' }
+            rc = HTTP_400_BAD_REQUEST
+    else:
+        message = { 'error' : 'Payments %s was not found' % id }
         rc = HTTP_404_NOT_FOUND
 
     return make_response(jsonify(message), rc)
@@ -152,7 +192,18 @@ def index_inc():
     return current_payment_id
 
 def is_valid(data):
-	pass
+    valid = False
+    try:
+        nickname = data['nickname']
+        type = data['type']
+        detail = data['detail']
+        valid = True
+    except KeyError as err:
+        app.logger.warn('Missing parameter error: %s', err)
+    except TypeError:
+        app.logger.warn('Invalid Content Type error')
+
+    return valid
 
 ######################################################################
 #   M A I N
