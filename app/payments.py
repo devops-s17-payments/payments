@@ -52,9 +52,9 @@ payments = [{'id' : 1, 'default' : True, 'nickname' : 'my-credit',
 @app.route('/')
 def index():
 	payments_url = request.base_url + "payments"
-	return jsonify(name='Welcome to the Payments API',
-				   version='1.0',
-				   url=payments_url), HTTP_200_OK
+	#to do: change this to work with remplates
+	#need to reorganize directory
+	return app.send_static_file('index.html')
 
 ######################################################################
 # LIST ALL PAYMENTS
