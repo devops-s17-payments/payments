@@ -77,7 +77,7 @@ def list_payments():
 def add_payment():
 	if not request.is_json:
 		make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
-	data = request.get_json()
+	data = request.get_json(force=True)
 	#haven't figure out why this doesn't work yet
 	#data = {'nickname' : 'new-payment', 'type' : 'credit',
 	#		'detail' : {'name' : 'Jimmy Jones', 'number' : '1111222233334444',
@@ -86,12 +86,12 @@ def add_payment():
 	#to-do: will refactor to put this logic in is_valid utility function
 	try:
 		id = index_inc()
-		newData = {'id' : id, 'name' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
+		newData = {'id' : id, 'default' : False, 'nickname' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
 		payments.append(newData)
 		message = {'successfully created' : payments[id-1]}
 		rc = HTTP_201_CREATED
 	except KeyError as err:
-		message = {'error' : ('Missing parameter error: %s', err) }
+		message = {'error' : 'Missing parameter error: %s' % err }
 		rc = HTTP_400_BAD_REQUEST
 	
 	return make_response(jsonify(message), rc)
