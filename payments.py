@@ -105,14 +105,16 @@ def set_default(id):
 		message = { 'error' : 'Payment with id: %s was not found' % str(id) }
 		rc = HTTP_404_NOT_FOUND
 	else:
-		for payment in payments:
-			if payment['id'] == id:
-				payment['default'] = True
-			else:
+		index = [i for i, payment in enumerate(payments) if payment['id'] == id]
+		if len(index) <= 0:
+			message = { 'error' : 'Payment with id: %s was not found' % str(id) }
+			rc = HTTP_404_NOT_FOUND
+		else:
+			for payment in payments:
 				payment['default'] = False
-		message = { 'success' : 'Payment with id: %s set as default.' % str(id) }
-		rc = HTTP_200_OK
-
+			payments[index[0]]['default'] = True
+			message = { 'success' : 'Payment with id: %s set as default.' % str(id) }
+			rc = HTTP_200_OK
 	return make_response(jsonify(message), rc)
 
 ######################################################################
