@@ -156,8 +156,8 @@ def query_payments(type):
 def update_payments(id):
     index = [i for i, payment in enumerate(payments) if payment['id'] == id]
     if len(index) > 0:
-    	if not request.is_json:
-    		return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+        if not request.is_json:
+    		    return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
         payload = request.get_json()
         if is_valid(payload):
             payments[index[0]] = {'id' : id, 'nickname' : payload['nickname'], 'type' : payload['type'], 'detail' : payload['detail']}
