@@ -131,6 +131,46 @@ def get_payments(id):
     return make_response(jsonify(message), rc)
 
 ######################################################################
+# RETRIEVE A PAYMENT ON QUERY
+######################################################################
+@app.route('/payments/<string:type>', methods=['GET'])
+def query_payments(type):
+    list=[]
+    for p in payments:
+        if p['type']==type:
+            list.append(p)
+    if len(list) > 0:
+        message = list
+        rc = HTTP_200_OK
+    else:
+        message = { 'error' : 'Payment with type: %s was not found' % type }
+        rc = HTTP_404_NOT_FOUND
+    return make_response(jsonify(message), rc)
+
+######################################################################
+# UPDATE AN EXISTING PAYMENT
+######################################################################
+@app.route('/payments/<int:id>', methods=['PUT'])
+def update_payments(id):
+    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
+    if len(index) > 0:
+    	if not request.is_json:
+    		return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+        payload = request.get_json()
+        if is_valid(payload):
+            payments[index[0]] = {'id' : id, 'nickname' : payload['nickname'], 'type' : payload['type'], 'detail' : payload['detail']}
+            message = payments[index[0]]
+            rc = HTTP_200_OK
+        else:
+            message = { 'error' : 'Payments data was not valid' }
+            rc = HTTP_400_BAD_REQUEST
+    else:
+        message = { 'error' : 'Payments %s was not found' % id }
+        rc = HTTP_404_NOT_FOUND
+
+    return make_response(jsonify(message), rc)
+
+######################################################################
 # DELETE A PAYMENT
 ######################################################################
 @app.route('/payments/<int:id>', methods=['DELETE'])
@@ -150,7 +190,18 @@ def index_inc():
     return current_payment_id
 
 def is_valid(data):
-	pass
+    valid = False
+    try:
+        nickname = data['nickname']
+        type = data['type']
+        detail = data['detail']
+        valid = True
+    except KeyError as err:
+        app.logger.warn('Missing parameter error: %s', err)
+    except TypeError:
+        app.logger.warn('Invalid Content Type error')
+
+    return valid
 
 ######################################################################
 #   M A I N
