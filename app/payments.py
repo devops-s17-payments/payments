@@ -61,14 +61,14 @@ def index():
 ######################################################################
 @app.route('/payments', methods=['GET'])
 def list_payments():
-    results = []
-    type = request.args.get('type')
-    if type:
-        results = [payment for payment in payments if payment['type'] == type]
-    else:
-        results = payments
+	results = []
+	type = request.args.get('type')
+	if type:
+		results = [payment for payment in payments if payment['type'] == type]
+	else:
+		results = payments
 
-    return make_response(jsonify(results), HTTP_200_OK)
+	return make_response(jsonify(results), HTTP_200_OK)
 
 ######################################################################
 # ADD A NEW PAYMENT
@@ -122,15 +122,15 @@ def set_default(id):
 ######################################################################
 @app.route('/payments/<int:id>', methods=['GET'])
 def get_payments(id):
-    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
-    if len(index) > 0:
-        message = payments[index[0]]
-        rc = HTTP_200_OK
-    else:
-        message = { 'error' : 'Payment with id: %s was not found' % str(id) }
-        rc = HTTP_404_NOT_FOUND
+	index = [i for i, payment in enumerate(payments) if payment['id'] == id]
+	if len(index) > 0:
+		message = payments[index[0]]
+		rc = HTTP_200_OK
+	else:
+		message = { 'error' : 'Payment with id: %s was not found' % str(id) }
+		rc = HTTP_404_NOT_FOUND
 
-    return make_response(jsonify(message), rc)
+	return make_response(jsonify(message), rc)
 
 ######################################################################
 # RETRIEVE A PAYMENT ON QUERY
