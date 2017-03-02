@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import datetime, timedelta
 from threading import Lock
 from flask import Flask, jsonify, request, make_response, Response, json, url_for
 
@@ -40,11 +41,11 @@ paypal = {'name' : 'Joe Jetson',
 		  'linked' : True}
 
 payments = [{'id' : 1, 'default' : True, 'nickname' : 'my-credit',
-			 'type' : 'credit', 'detail' : credit},
+			 'type' : 'credit', 'charge-history': 0.00, 'detail' : credit},
 			{'id' : 2, 'default' : False, 'nickname' : 'my-debit',
-			 'type' : 'debit', 'detail' : debit},
+			 'type' : 'debit', 'charge-history': 0.00,'detail' : debit},
 			{'id' : 3, 'default' : False, 'nickname' : 'my-paypal',
-			 'type' : 'paypal', 'detail' : paypal}]
+			 'type' : 'paypal', 'charge-history': 0.00,'detail' : paypal}]
 
 ######################################################################
 # GET INDEX
@@ -97,7 +98,7 @@ def add_payment():
 	return make_response(jsonify(message), rc)
 
 ######################################################################
-# SET DEFAULT PAYMENT
+# SET DEFAULT PAYMENT (ACTION)
 ######################################################################
 @app.route('/payments/<int:id>/set-default', methods=['PUT'])
 def set_default(id):
@@ -183,6 +184,39 @@ def delete_payments(id):
     return '', HTTP_204_NO_CONTENT
 
 ######################################################################
+# CHARGE PAYMENT (ACTION)
+######################################################################
+
+@app.route('/payments/charge', methods=['PUT'])
+def charge_payment():
+	rc = HTTP_400_BAD_REQUEST
+
+	if not request.is_json:
+		return make_response(CONTENT_ERR_MSG, rc)
+	amount = request.get_json(force=True)
+
+	if not is_positive(amount):
+		message = {'error' : ('Invalid order amount. Transaction cancelled. ', 
+							  'Please check your order and try again.')}
+	else:
+		for payment in payments:
+			if(payment['default']):
+				my_payment = payment
+			else:
+				message = {'error' : 'No default payment method selected.'}
+
+		if((my_payment['type'] == 'paypal' and my_payment['linked']) or  not isExpired(my_card)):
+			my_payment['charge-history'] = my_payment['charge-history'] + amount
+			message = {'success' : 'Your payment method %s has been charged $%f' % (my_payment['nickname'], amount)}
+			rc = HTTP_200_OK
+		else:
+			message = {'error' : ('Default payment method is not valid. Transaction cancelled. ', 
+								  'Please update and try your order again.')}
+	
+	return make_response(jsonify(message), rc)
+
+
+######################################################################
 #   U T I L I T I E S
 ######################################################################
 def index_inc():
@@ -204,6 +238,28 @@ def is_valid(data):
         app.logger.warn('Invalid Content Type error')
 
     return valid
+
+def is_expired(card):
+	#get datetime object for last day of expiring month
+	month = int(exp_date[:2]) + 1
+	exp_date = '%s%s' % (month, exp_date[2:])
+	exp_date = datetime.strptime(exp_date, '%m/%Y')
+	exp_date = exp_date - timedelta(1)
+	exp_date = datetime.date(exp_date)
+
+	now = datetime.now()
+	now = datetime.date(now)
+
+	if(now < exp_date):
+		return False
+	else:
+		return True
+
+def is_positive(amount):
+	if(amount > 0):
+		return True
+	else:
+		return False
 
 ######################################################################
 #   M A I N
