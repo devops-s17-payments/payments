@@ -75,18 +75,14 @@ def list_payments():
 ######################################################################
 @app.route('/payments', methods=['POST'])
 def add_payment():
-	if not request.is_json:
-		make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
-	data = request.get_json(force=True)
-	#haven't figure out why this doesn't work yet
-	#data = {'nickname' : 'new-payment', 'type' : 'credit',
-	#		'detail' : {'name' : 'Jimmy Jones', 'number' : '1111222233334444',
-	#					'expires' : '01/2019', 'type' : 'Mastercard'}}
-	
-	#to-do: will refactor to put this logic in is_valid utility function
+	data = request.get_json(silent=True)
+	if data is None:
+		return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+
 	try:
 		id = index_inc()
-		newData = {'id' : id, 'default' : False, 'nickname' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
+		newData = {'id' : id, 'default' : False, 'nickname' : data['nickname'],
+				   'type' : data['type'], 'detail' : data['detail']}
 		payments.append(newData)
 		message = {'successfully created' : payments[id-1]}
 		rc = HTTP_201_CREATED
