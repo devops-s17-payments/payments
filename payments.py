@@ -190,28 +190,30 @@ def delete_payments(id):
 @app.route('/payments/charge', methods=['PUT'])
 def charge_payment():
 	rc = HTTP_400_BAD_REQUEST
-
-	if not request.is_json:
+	charge = request.get_json(silent=True)
+	if charge is None:
 		return make_response(CONTENT_ERR_MSG, rc)
-	amount = request.get_json(force=True)
-
-	if not is_positive(amount):
+	if not is_positive(charge['amount']):
 		message = {'error' : ('Invalid order amount. Transaction cancelled. ', 
 							  'Please check your order and try again.')}
 	else:
 		for payment in payments:
 			if(payment['default']):
-				my_payment = payment
+				p = payment
 			else:
-				message = {'error' : 'No default payment method selected.'}
+				message = {'error' : 'No default payment method selected. Transaction cancelled'}
+				return make_response(jsonify(message), rc)
 
-		if((my_payment['type'] == 'paypal' and my_payment['linked']) or  not isExpired(my_card)):
-			my_payment['charge-history'] = my_payment['charge-history'] + amount
-			message = {'success' : 'Your payment method %s has been charged $%f' % (my_payment['nickname'], amount)}
-			rc = HTTP_200_OK
+		if p['type'] == 'paypal' and not p['detail']['linked']:
+			message = {'error' : ('Your paypal account has not been linked. Transaction cancelled. ', 
+								  'Please update your account and try your order again.')}
+		elif is_expired(p):
+			message = {'error' : ('Your credit/debit card has expired. Transaction cancelled. ', 
+								  'Please update your account and try your order again.')}
 		else:
-			message = {'error' : ('Default payment method is not valid. Transaction cancelled. ', 
-								  'Please update and try your order again.')}
+			p['charge-history'] = p['charge-history'] + charge['amount']
+			message = {'success' : 'Your payment method %s has been charged $%.2f' % (p['nickname'], charge['amount'])}
+			rc = HTTP_200_OK
 	
 	return make_response(jsonify(message), rc)
 
@@ -239,8 +241,9 @@ def is_valid(data):
 
     return valid
 
-def is_expired(card):
+def is_expired(payment):
 	#get datetime object for last day of expiring month
+	exp_date = payment['detail']['expires']
 	month = int(exp_date[:2]) + 1
 	exp_date = '%s%s' % (month, exp_date[2:])
 	exp_date = datetime.strptime(exp_date, '%m/%Y')
