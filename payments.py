@@ -1,6 +1,8 @@
 import os
 import logging
 from threading import Lock
+import re
+import time
 from flask import Flask, jsonify, request, make_response, Response, json, url_for
 
 # Create Flask application
@@ -84,17 +86,20 @@ def add_payment():
 	#					'expires' : '01/2019', 'type' : 'Mastercard'}}
 	
 	#to-do: will refactor to put this logic in is_valid utility function
-	try:
+	if is_valid(data):
 		id = index_inc()
 		newData = {'id' : id, 'name' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
 		payments.append(newData)
 		message = {'successfully created' : payments[id-1]}
 		rc = HTTP_201_CREATED
-	except KeyError as err:
-		message = {'error' : ('Missing parameter error: %s', err) }
+	else:
+		message = {'error' : 'Data is not valid.' }
 		rc = HTTP_400_BAD_REQUEST
 	
-	return make_response(jsonify(message), rc)
+	response = make_response(jsonify(message), rc)
+	if rc == HTTP_201_CREATED:
+		response.headers['Location'] = url_for('get_payments', id = id)
+	return response
 
 ######################################################################
 # SET DEFAULT PAYMENT
@@ -193,17 +198,31 @@ def index_inc():
 
 def is_valid(data):
     valid = False
+    valid_detail = False
     try:
         nickname = data['nickname']
         type = data['type']
         detail = data['detail']
-        valid = True
+	
+	if bool(re.search(r'\d', detail['name'])) == False:
+		valid = True
+
+	if type == 'credit' or type == 'debit':
+		name = detail['name']
+		card_number = detail['number']
+		expires_date = detail['expires']
+		subtype = detail['type']
+		if bool(re.match('^[0-9]+$', card_number)) == True and len(card_number) == 16 and time.strptime(expires_date, "%m/%Y") != ():
+			valid_detail = True
+	else:
+		valid_detail = True
+		
     except KeyError as err:
         app.logger.warn('Missing parameter error: %s', err)
     except TypeError:
         app.logger.warn('Invalid Content Type error')
 
-    return valid
+    return valid & valid_detail
 
 ######################################################################
 #   M A I N
