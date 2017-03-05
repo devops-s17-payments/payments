@@ -2,6 +2,8 @@ import os
 import logging
 from datetime import datetime, timedelta
 from threading import Lock
+import re
+import time
 from flask import Flask, jsonify, request, make_response, Response, json, url_for
 
 # Create Flask application
@@ -80,18 +82,21 @@ def add_payment():
 	if data is None:
 		return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
 
-	try:
+	if is_valid(data):
 		id = index_inc()
 		newData = {'id' : id, 'default' : False, 'nickname' : data['nickname'],
-				   'type' : data['type'], 'detail' : data['detail']}
+			   'charge-history' : 0.0, 'type' : data['type'], 'detail' : data['detail']}
 		payments.append(newData)
 		message = {'successfully created' : payments[id-1]}
 		rc = HTTP_201_CREATED
-	except KeyError as err:
-		message = {'error' : 'Missing parameter error: %s' % err }
+	else:
+		message = {'error' : 'Data is not valid.' }
 		rc = HTTP_400_BAD_REQUEST
 	
-	return make_response(jsonify(message), rc)
+	response = make_response(jsonify(message), rc)
+	if rc == HTTP_201_CREATED:
+		response.headers['Location'] = url_for('get_payments', id = id)
+	return response
 
 ######################################################################
 # SET DEFAULT PAYMENT (ACTION)
@@ -217,24 +222,40 @@ def charge_payment():
 #   U T I L I T I E S
 ######################################################################
 def index_inc():
-    global current_payment_id
-    with lock:
-        current_payment_id += 1
-    return current_payment_id
+	global current_payment_id
+	with lock:
+		current_payment_id += 1
+	return current_payment_id
 
 def is_valid(data):
-    valid = False
-    try:
-        nickname = data['nickname']
-        type = data['type']
-        detail = data['detail']
-        valid = True
-    except KeyError as err:
-        app.logger.warn('Missing parameter error: %s', err)
-    except TypeError:
-        app.logger.warn('Invalid Content Type error')
+	valid = False
+	valid_detail = False
+	try:
+		nickname = data['nickname']
+		type = data['type']
+		detail = data['detail']
 
-    return valid
+		if bool(re.search(r'\d', detail['name'])) == False:
+			valid = True
+
+		if type == 'credit' or type == 'debit':
+			name = detail['name']
+			card_number = detail['number']
+			expires_date = detail['expires']
+			subtype = detail['type']
+
+		if bool(re.match('^[0-9]+$', card_number)) and (len(card_number) == 16):
+			datetime.strptime(expires_date, '%m/%Y')
+			valid_detail = True
+
+	except KeyError as err:
+		app.logger.warn('Missing parameter error: %s', err)
+	except TypeError:
+		app.logger.warn('Invalid Content Type error')
+	except ValueError:
+		app.logger.warn('Invalid Content Type error')
+
+	return valid & valid_detail
 
 def is_expired(payment):
 	#get datetime object for last day of expiring month
