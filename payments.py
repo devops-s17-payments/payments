@@ -197,13 +197,12 @@ def charge_payment():
 		message = {'error' : ('Invalid order amount. Transaction cancelled. ', 
 							  'Please check your order and try again.')}
 	else:
-		for payment in payments:
-			if(payment['default']):
-				p = payment
-			else:
-				message = {'error' : 'No default payment method selected. Transaction cancelled'}
-				return make_response(jsonify(message), rc)
-
+		index = [i for i, payment in enumerate(payments) if payment['default']]
+		if len(index) < 1:
+			message = {'error' : 'No default payment method selected. Transaction cancelled'}
+			return make_response(jsonify(message), rc)
+		p = payments[index[0]]
+		
 		if p['type'] == 'paypal' and not p['detail']['linked']:
 			message = {'error' : ('Your paypal account has not been linked. Transaction cancelled. ', 
 								  'Please update your account and try your order again.')}
