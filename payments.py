@@ -169,6 +169,34 @@ def update_payments(id):
     return make_response(jsonify(message), rc)
 
 ######################################################################
+# UPDATE AN EXISTING PAYMENT PARTIALLY
+######################################################################
+@app.route('/payments/<int:id>', methods=['PATCH'])
+def update_partial_payments(id):
+    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
+    if len(index) > 0:
+        if not request.is_json:
+    		    return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+        payload = request.get_json()
+        if is_valid_patch(payload):
+            target_payment = payments[index[0]]
+            # for now, can only update partially with nickname, type and detail
+            payload_nickname = target_payment['nickname'] if 'nickname' not in payload else payload['nickname']
+            payload_type = target_payment['type'] if 'type' not in payload else payload['type']
+            payload_detail = target_payment['detail'] if 'detail' not in payload else payload['detail']
+            payments[index[0]] = {'id' : id, 'nickname' : payload_nickname, 'type' : payload_type, 'detail' : payload_detail}
+            message = target_payment
+            rc = HTTP_200_OK
+        else:
+            message = { 'error' : 'Payments data was not valid' }
+            rc = HTTP_400_BAD_REQUEST
+    else:
+        message = { 'error' : 'Payments %s was not found' % id }
+        rc = HTTP_404_NOT_FOUND
+
+    return make_response(jsonify(message), rc)
+
+######################################################################
 # DELETE A PAYMENT
 ######################################################################
 @app.route('/payments/<int:id>', methods=['DELETE'])
@@ -200,6 +228,10 @@ def is_valid(data):
         app.logger.warn('Invalid Content Type error')
 
     return valid
+
+def is_valid_patch(data):
+	#update later for validating data for PATCH method
+	return True
 
 ######################################################################
 #   M A I N
