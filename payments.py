@@ -137,17 +137,19 @@ def get_payments(id):
 ######################################################################
 # RETRIEVE A PAYMENT ON QUERY
 ######################################################################
-@app.route('/payments/<string:type>', methods=['GET'])
-def query_payments(type):
+@app.route('/payments/query/', methods=['GET'])
+def querypayments():
     list=[]
+    type=request.args.get('query-param')
+    value=request.args.get('value')
     for p in payments:
-        if p['type']==type:
+        if p[type]==value:
             list.append(p)
     if len(list) > 0:
         message = list
         rc = HTTP_200_OK
     else:
-        message = { 'error' : 'Payment with type: %s was not found' % type }
+        message = { 'error' : 'Payment with %s: %s was not found' % (type,value) }
         rc = HTTP_404_NOT_FOUND
     return make_response(jsonify(message), rc)
 
