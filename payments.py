@@ -89,7 +89,7 @@ def add_payment():
                'nickname' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
   
 		payments.append(newData)
-		message = {'successfully created' : payments[id-1]}
+		message = {'successfully created' : payments[len(payments)-1]}
 		rc = HTTP_201_CREATED
 	else:
 		message = {'error' : 'Data is not valid.' }
