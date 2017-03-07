@@ -1,1 +1,1 @@
-{"nickname" : "new-payment", "type" : "credit","detail" : {"name" : "Jimmy Jones", "number" : "1111222233334444","expires" : "01/2019", "type" : "Mastercard"}}
+{"nickname" : "new-payment", "type" : "credit", "detail" : {"name" : "Jimmy Jones", "number" : "1111222233334444","expires" : "01/2019", "type" : "Mastercard"}}
