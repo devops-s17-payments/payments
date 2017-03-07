@@ -14,15 +14,75 @@
       <tr>
         <td style= "width:30%;">
           <img class = "newappIcon" src="static/images/newapp-icon.png">
-        <td>
-            <h1>Welcome to payments!</h1>
-          <p>CREATE a payment:    /payments             [POST]</p>
-          <p>RETRIEVE a payment:  /payments/{id}        [GET]</p>
-          <p>UPDATE a payment:    /payments/{id}        [POST]</p>
-          <p>DELETE a payment:    /payments/{id}        [DELETE]</p>
-          <p>LIST all payments:   /payments             [GET]</p>
-          <p>QUERY payments:      /payments/{attribute} [GET]</p>
-          <p>SET default payment: /payments/{id}        [PUT]</p>
+        </td>
+		<td>
+          <h1>Welcome to payments!</h1>
+          <table cellspacing="10">
+		  <tr>
+			  <td>LIST all payment:</td>
+			  <td><a href="/payments">/payments</td>
+			  <td>[GET]</td>
+		  </tr>
+		  <tr>
+			  <td>CREATE a payment:</td>
+			  <td>/payments</td>
+			  <td>[POST]</td>
+		  </tr>
+		  <tr>
+			  <td>RETRIEVE a payment:</td>
+			  <td>/payments/{id}</td>
+			  <td>[GET]</td>
+		  </tr>
+		  <tr>
+			  <td>UPDATE a payment:</td>
+			  <td>/payments/{id}</td>
+			  <td>[PUT]</td>
+		  </tr>
+		  <tr>
+			  <td>DELETE a payment:</td>
+			  <td>/payments/{id}</td>
+			  <td>[DELETE]</td>
+		  </tr>
+		  <tr>
+			  <td>QUERY payments:</td>
+			  <td>/payments?{key}={value}</td>
+			  <td>[GET]</td>
+		  </tr>
+		  <tr>
+			  <td>SET default payment:</td>
+			  <td>/payments/{id}/set-default</td>
+			  <td>[PUT]</td>
+		  </tr>
+		  <tr>
+			  <td>CHARGE default payment:</td>
+			  <td>/payments/charge</td>
+			  <td>[PUT]</td>
+		  </tr>
+		  <tr>
+			  <td>UPDATE a payment:</td>
+			  <td>/payments/{id}</td>
+			  <td>[PATCH]</td>
+		  </tr>
+		  </table>
+		  <p>Example Data:</p>
+          <pre>
+		  {
+			"charge-history": 0,
+			"default": false,
+			"detail": {
+				"expires": "01/2020",
+				"name": "John Johnson",
+				"number": "1234567898765432",
+				"type": "American Express"
+			},
+			"id": 1,
+			"nickname": "my-credit",
+			"type": "credit"
+		  }
+          </pre>
+        </td>
+		  
+	  </tr>
     </table>
   </body>
 
