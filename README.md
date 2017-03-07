@@ -47,12 +47,30 @@
  * GET /payments/{id}
 
 **UPDATE** a payment method:
+ * PUT /payments/{id}
+ * Accepts JSON in request body. Need to provide entire object as with CREATE
+
+```
+ {
+    "detail":
+    {
+        "expires": "08/2018",
+        "name": "Jane Jenkins",
+        "number": "9876543212345678",
+        "type": "Visa"
+    },
+    "nickname": "my-new-debit",
+    "type": "debit"
+}
+```
+
+**UPDATE** a payment method:
  * PATCH /payments/{id}
  * Accepts JSON in request body. Only need to provide those attributes being changed:
 
 ```
 {
-    "nickname": "my-new-card",
+    "nickname": "my-new-debit",
 }
 ```
 
@@ -67,7 +85,7 @@
 * Example: To return all credit card payment methods: /payments?type=credit
 
 **SET** default payment:
-* PUT /payments/{id}  (this should be a PATCH, will be updated)
+* PUT /payments/{id}/set-default  (this should be a PATCH, will be updated)
 
 **CHARGE** default payment:
 * PUT /payments/charge (this should be a PATCH, will be updated)
@@ -75,6 +93,6 @@
 
 ```
 {
-    'amount' : 19.99
+    "amount" : 19.99
 }
 ```
