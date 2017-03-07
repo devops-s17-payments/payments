@@ -81,8 +81,8 @@ def add_payment():
 
 	try:
 		id = index_inc()
-		newData = {'id' : id, 'default' : False, 'nickname' : data['nickname'],
-				   'type' : data['type'], 'detail' : data['detail']}
+		newData = {'id' : id, 'default' : False, 'charge-history' : 0.0, 
+				   'nickname' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
 		payments.append(newData)
 		message = {'successfully created' : payments[id-1]}
 		rc = HTTP_201_CREATED
@@ -153,11 +153,13 @@ def update_payments(id):
     index = [i for i, payment in enumerate(payments) if payment['id'] == id]
     if len(index) > 0:
         if not request.is_json:
-    		    return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+    		return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
         payload = request.get_json()
         if is_valid(payload):
             payments[index[0]] = {'id' : id, 'nickname' : payload['nickname'], 'type' : payload['type'],
-               'default' : payload['default'], 'charge-history' : payload['charge-history'], 'detail' : payload['detail']}
+            					  'default' : payments[index[0]]['default'],
+            					  'charge-history' : payments[index[0]]['charge-history'],
+            					  'detail' : payload['detail']}
             message = payments[index[0]]
             rc = HTTP_200_OK
         else:
