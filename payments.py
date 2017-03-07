@@ -40,11 +40,11 @@ paypal = {'name' : 'Joe Jetson',
 		  'linked' : True}
 
 payments = [{'id' : 1, 'default' : True, 'nickname' : 'my-credit',
-			 'type' : 'credit', 'detail' : credit},
+			 'type' : 'credit', 'charge-history': 0.00, 'detail' : credit},
 			{'id' : 2, 'default' : False, 'nickname' : 'my-debit',
-			 'type' : 'debit', 'detail' : debit},
+			 'type' : 'debit', 'charge-history': 0.00,'detail' : debit},
 			{'id' : 3, 'default' : False, 'nickname' : 'my-paypal',
-			 'type' : 'paypal', 'detail' : paypal}]
+			 'type' : 'paypal', 'charge-history': 0.00,'detail' : paypal}]
 
 ######################################################################
 # GET INDEX
@@ -156,7 +156,8 @@ def update_payments(id):
     		    return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
         payload = request.get_json()
         if is_valid(payload):
-            payments[index[0]] = {'id' : id, 'nickname' : payload['nickname'], 'type' : payload['type'], 'detail' : payload['detail']}
+            payments[index[0]] = {'id' : id, 'nickname' : payload['nickname'], 'type' : payload['type'],
+               'default' : payload['default'], 'charge-history' : payload['charge-history'], 'detail' : payload['detail']}
             message = payments[index[0]]
             rc = HTTP_200_OK
         else:
@@ -184,8 +185,9 @@ def update_partial_payments(id):
             payload_nickname = target_payment['nickname'] if 'nickname' not in payload else payload['nickname']
             payload_type = target_payment['type'] if 'type' not in payload else payload['type']
             payload_detail = target_payment['detail'] if 'detail' not in payload else payload['detail']
-            payments[index[0]] = {'id' : id, 'nickname' : payload_nickname, 'type' : payload_type, 'detail' : payload_detail}
-            message = target_payment
+            payments[index[0]] = {'id' : id, 'nickname' : payload_nickname, 'default' : target_payment['default'], 
+                'charge-history' : target_payment['charge-history'], 'type' : payload_type, 'detail' : payload_detail}
+            message = payments[index[0]]
             rc = HTTP_200_OK
         else:
             message = { 'error' : 'Payments data was not valid' }
