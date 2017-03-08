@@ -91,8 +91,8 @@ def add_payment():
                'nickname' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
 
         #assumes successful authentication w/ paypal
-        if newData['type'] == 'paypal':
-        	newData['detail']['linked'] = True
+		if newData['type'] == 'paypal':
+			newData['detail']['linked'] = True
   
 		payments.append(newData)
 		message = {'successfully created' : payments[len(payments)-1]}
