@@ -255,7 +255,7 @@ def charge_payment():
 		if p['type'] == 'paypal' and not p['detail']['linked']:
 			message = {'error' : ('Your paypal account has not been linked. Transaction cancelled. ', 
 								  'Please update your account and try your order again.')}
-		elif is_expired(p):
+		elif p['type'] != 'paypal' and is_expired(p):
 			message = {'error' : ('Your credit/debit card has expired. Transaction cancelled. ', 
 								  'Please update your account and try your order again.')}
 		else:
