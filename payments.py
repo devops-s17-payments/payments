@@ -301,7 +301,6 @@ def is_valid(data):
 		else:
 			#TO DO: perform validation of e-mail
 			email = detail['e-mail']
-			linked = True
 			valid_detail = True
     #except KeyError as err:
     #app.logger.warn('Missing parameter error: %s', err)
