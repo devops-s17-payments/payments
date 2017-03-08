@@ -291,10 +291,14 @@ def is_valid(data):
 			card_number = detail['number']
 			expires_date = detail['expires']
 			subtype = detail['type']
-
-		if bool(re.match('^[0-9]+$', card_number)) and (len(card_number) == 16):
-			datetime.strptime(expires_date, '%m/%Y')
-			valid_detail = True
+			if bool(re.match('^[0-9]+$', card_number)) and (len(card_number) == 16):
+				datetime.strptime(expires_date, '%m/%Y')
+				valid_detail = True
+		else:
+			name = detail['name']
+			email = detail['e-mail']
+			linked = detail['linked']
+			valid_detail = True;
     #except KeyError as err:
     #app.logger.warn('Missing parameter error: %s', err)
     #    pass
