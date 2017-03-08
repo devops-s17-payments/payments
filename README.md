@@ -3,7 +3,7 @@
 **Current payment options include:**
 * Credit Card
 * Debit Card
-* Paypal (support for adding new paypal methods coming soon!)
+* Paypal
 
 **Payment Method**
 ```
