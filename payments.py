@@ -89,6 +89,10 @@ def add_payment():
     
 		newData = {'id' : id, 'default' : False, 'charge-history' : 0.0, 
                'nickname' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
+
+        #assumes successful authentication w/ paypal
+		if newData['type'] == 'paypal':
+			newData['detail']['linked'] = True
   
 		payments.append(newData)
 		message = {'successfully created' : payments[len(payments)-1]}
@@ -291,9 +295,12 @@ def is_valid(data):
 			card_number = detail['number']
 			expires_date = detail['expires']
 			subtype = detail['type']
-
-		if bool(re.match('^[0-9]+$', card_number)) and (len(card_number) == 16):
-			datetime.strptime(expires_date, '%m/%Y')
+			if bool(re.match('^[0-9]+$', card_number)) and (len(card_number) == 16):
+				datetime.strptime(expires_date, '%m/%Y')
+				valid_detail = True
+		else:
+			#TO DO: perform validation of e-mail
+			email = detail['e-mail']
 			valid_detail = True
     #except KeyError as err:
     #app.logger.warn('Missing parameter error: %s', err)
