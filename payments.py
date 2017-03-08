@@ -1,5 +1,5 @@
 import os
-import logging
+#import logging
 from datetime import datetime, timedelta
 from threading import Lock
 import re
@@ -8,7 +8,7 @@ from flask import Flask, jsonify, request, make_response, Response, json, url_fo
 
 # Create Flask application
 app = Flask(__name__)
-app.config['LOGGING_LEVEL'] = logging.INFO
+#app.config['LOGGING_LEVEL'] = logging.INFO
 
 # Lock for thread-safe counter increment
 lock = Lock()
@@ -283,14 +283,17 @@ def is_valid(data):
 		if bool(re.match('^[0-9]+$', card_number)) and (len(card_number) == 16):
 			datetime.strptime(expires_date, '%m/%Y')
 			valid_detail = True
-
-	except KeyError as err:
-		app.logger.warn('Missing parameter error: %s', err)
-	except TypeError:
-		app.logger.warn('Invalid Content Type error')
-	except ValueError:
-		app.logger.warn('Invalid Content Type error')
-
+    #except KeyError as err:
+    #app.logger.warn('Missing parameter error: %s', err)
+    #    pass
+    #except TypeError:
+    #app.logger.warn('Invalid Content Type error')
+    #    pass
+    #except ValueError:
+    #app.logger.warn('Invalid Content Type error')
+    #   pass
+	except:
+		pass
 	return valid & valid_detail
 
 def is_expired(payment):
