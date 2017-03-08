@@ -1,9 +1,9 @@
 #Welcome to Payments!
 
-**Current payment options supported:**
+**Current payment options include:**
 * Credit Card
 * Debit Card
-* Paypal
+* Paypal (support for adding new paypal methods coming soon!)
 
 **Payment Method**
 ```
@@ -48,7 +48,7 @@
 
 **UPDATE** a payment method:
  * PUT /payments/{id}
- * Accepts JSON in request body. Need to provide entire object as with CREATE
+ * Accepts JSON in request body. Need to provide entire object as with CREATE.
 
 ```
  {
@@ -70,7 +70,7 @@
 
 ```
 {
-    "nickname": "my-new-debit",
+    "nickname": "updated-debit",
 }
 ```
 
