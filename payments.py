@@ -300,7 +300,6 @@ def is_valid(data):
 				valid_detail = True
 		else:
 			#TO DO: perform validation of e-mail
-			print 'got here'
 			email = detail['e-mail']
 			linked = True
 			valid_detail = True
