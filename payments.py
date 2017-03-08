@@ -89,6 +89,10 @@ def add_payment():
     
 		newData = {'id' : id, 'default' : False, 'charge-history' : 0.0, 
                'nickname' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
+
+        #assumes successful authentication w/ paypal
+        if newData['type'] == 'paypal':
+        	newData['detail']['linked'] = True
   
 		payments.append(newData)
 		message = {'successfully created' : payments[len(payments)-1]}
@@ -295,8 +299,8 @@ def is_valid(data):
 				datetime.strptime(expires_date, '%m/%Y')
 				valid_detail = True
 		else:
-			#TO DO: perform validation of name/e-mail
-			name = detail['name']
+			#TO DO: perform validation of e-mail
+			print 'got here'
 			email = detail['e-mail']
 			linked = True
 			valid_detail = True
