@@ -295,10 +295,11 @@ def is_valid(data):
 				datetime.strptime(expires_date, '%m/%Y')
 				valid_detail = True
 		else:
+			#TO DO: perform validation of name/e-mail
 			name = detail['name']
 			email = detail['e-mail']
-			linked = detail['linked']
-			valid_detail = True;
+			linked = True
+			valid_detail = True
     #except KeyError as err:
     #app.logger.warn('Missing parameter error: %s', err)
     #    pass
