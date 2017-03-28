@@ -52,3 +52,9 @@ class PaypalPayment(BasePayemnt):
     user_name = db.Column(db.String(50))
     user_email = db.Column(db.String(50))
     is_linked = db.Column(db.Boolean)
+
+    def serialize(self):
+        pass
+        
+    def deserialize(self, data):
+        pass
