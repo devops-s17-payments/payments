@@ -12,7 +12,12 @@ Vagrant.configure(2) do |config|
 
   # accessing "localhost:8080" will access port 80 on the guest machine.
   # config.vm.network "forwarded_port", guest: 80, host: 8080
+
+  # Python Flask
   config.vm.network "forwarded_port", guest: 5000, host: 5000
+
+  # PostgreSQL
+  config.vm.network "forwarded_port", guest: 5432, host: 5432
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -44,7 +49,7 @@ Vagrant.configure(2) do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
-    sudo apt-get install -y git python-pip python-dev build-essential
+    sudo apt-get install -y git python-pip python-dev build-essential postgresql-9.4 
     sudo apt-get -y autoremove
     # Install the Cloud Foundry CLI
     wget -O cf-cli-installer_6.24.0_x86-64.deb 'https://cli.run.pivotal.io/stable?release=debian64&version=6.24.0&source=github-rel'
