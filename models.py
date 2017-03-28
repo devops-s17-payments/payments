@@ -1,4 +1,5 @@
 from payments import db
+# db will be our connect to SQLAlchemy ORM
 
 class BasePayment(db.Model):
     __metaclass__ = ABCMeta
@@ -10,7 +11,7 @@ class BasePayment(db.Model):
     charge_history = db.Column(db.Float)
 
     def self_url(self):
-        return url_for('get_pets', id=self.id, _external=True)
+        return url_for('get_payments', id=self.id, _external=True)
 
     @abstractmethod
     def serialize(self):
