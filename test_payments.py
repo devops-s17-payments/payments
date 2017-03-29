@@ -1,3 +1,7 @@
+# Test cases can be run with either of the following:
+# python -m unittest discover
+# nosetests -v --rednose --nologcapture
+
 import unittest, json
 import payments, models
 from flask_api import status    # HTTP Status Codes
@@ -26,7 +30,7 @@ class TestModels(unittest.TestCase):
 
     def test_credit_has_no_paypal_fields(self):
         payment = payments.db.session.query(models.Payment).get(1)
-        detail = payment.details
-        print payment
-        print detail
         self.assertEqual(payment.nickname, 'my credit')
+        detail = payment.details
+        self.assertEqual(detail.is_linked, None)
+        self.assertEqual(detail.user_email, None)

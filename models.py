@@ -25,11 +25,6 @@ class Payment(db.Model):
     details = db.relationship('Detail',
         backref=db.backref('payment', lazy='joined'))
 
-    def __init__(self):
-        self.is_default = False;
-        self.is_removed = False;
-        self.charge_history = 0.0
-
     def self_url(self):
         return url_for('get_payments', id=self.id, _external=True)
 
