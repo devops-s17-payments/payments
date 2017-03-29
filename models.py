@@ -22,7 +22,7 @@ class Payment(db.Model):
     charge_history = db.Column(db.Float)
 
     detail_id = db.Column(db.Integer, db.ForeignKey('detail.id'))
-    detail = db.relationship('Detail',
+    details = db.relationship('Detail',
         backref=db.backref('payment', lazy='joined'))
 
     def __init__(self):

@@ -5,10 +5,16 @@ from threading import Lock
 import re
 import time
 from flask import Flask, jsonify, request, make_response, Response, json, url_for
+from flask_sqlalchemy import SQLAlchemy
 
 # Create Flask application
 app = Flask(__name__)
 #app.config['LOGGING_LEVEL'] = logging.INFO
+
+# DB Config
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/dev.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
 # Lock for thread-safe counter increment
 lock = Lock()
@@ -341,6 +347,7 @@ def is_positive(amount):
 def is_valid_patch(data):
     #update later for validating data for PATCH method
     return True
+
 
 ######################################################################
 #   M A I N
