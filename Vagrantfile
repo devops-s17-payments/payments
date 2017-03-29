@@ -39,10 +39,10 @@ Vagrant.configure(2) do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
-    sudo apt-get install -y git zip tree python-pip python-dev build-essential postgresql postgresql-contrib
+    sudo apt-get install -y git zip tree python-pip python-dev build-essential postgresql postgresql-contrib libpq-dev
     sudo apt-get -y autoremove
     # Install the Cloud Foundry CLI
-    wget -O cf-cli-installer_6.24.0_x86-64.deb 'https://cli.run.pivotal.io/stable?release=debian64&version=6.24.0&source=github-rel'
+    wget -O cf-cli-installer_6.24.0_x86-64.deb 'https://cli.run.pivotal.io/stable?release=debian64&source=github'
     sudo dpkg -i cf-cli-installer_6.24.0_x86-64.deb
     rm cf-cli-installer_6.24.0_x86-64.deb
     # Install app dependencies
@@ -50,6 +50,18 @@ Vagrant.configure(2) do |config|
     sudo pip install -r requirements.txt
     # Make vi look nice
     echo "colorscheme desert" > ~/.vimrc
+
+    cat <<-EOF | su - postgres -c psql
+    -- Create the database user:
+    CREATE USER payments WITH PASSWORD 'payments';
+
+    -- Create the database:
+    CREATE DATABASE payments_db WITH OWNER=payments
+                                      LC_COLLATE='en_US.utf8'
+                                      LC_CTYPE='en_US.utf8'
+                                      ENCODING='UTF8'
+                                      TEMPLATE=template0;
+	EOF
   SHELL
 
   ######################################################################
