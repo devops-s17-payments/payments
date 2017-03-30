@@ -12,7 +12,8 @@ Vagrant.configure(2) do |config|
 
   # accessing "localhost:8080" will access port 80 on the guest machine.
   # config.vm.network "forwarded_port", guest: 80, host: 8080
-  config.vm.network "forwarded_port", guest: 5000, host: 5000
+  config.vm.network "forwarded_port", guest: 5000, host: 5000 #flask
+  config.vm.network "forwarded_port", guest: 5432, host: 5432 #postgres
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -28,12 +29,6 @@ Vagrant.configure(2) do |config|
     vb.cpus = 1
   end
 
-  # Build Docker environment and Redis
-  config.vm.provision "docker" do |d|
-    d.run "redis",
-      image: "redis:3.2"
-  end
-
   # Copy your .gitconfig file so that your git credentials are correct
   if File.exists?(File.expand_path("~/.gitconfig"))
     config.vm.provision "file", source: "~/.gitconfig", destination: "~/.gitconfig"
@@ -44,10 +39,10 @@ Vagrant.configure(2) do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
-    sudo apt-get install -y git python-pip python-dev build-essential
+    sudo apt-get install -y git zip tree python-pip python-dev build-essential postgresql postgresql-contrib libpq-dev
     sudo apt-get -y autoremove
     # Install the Cloud Foundry CLI
-    wget -O cf-cli-installer_6.24.0_x86-64.deb 'https://cli.run.pivotal.io/stable?release=debian64&version=6.24.0&source=github-rel'
+    wget -O cf-cli-installer_6.24.0_x86-64.deb 'https://cli.run.pivotal.io/stable?release=debian64&source=github'
     sudo dpkg -i cf-cli-installer_6.24.0_x86-64.deb
     rm cf-cli-installer_6.24.0_x86-64.deb
     # Install app dependencies
@@ -55,6 +50,33 @@ Vagrant.configure(2) do |config|
     sudo pip install -r requirements.txt
     # Make vi look nice
     echo "colorscheme desert" > ~/.vimrc
+
+    cat <<-EOF | su - postgres -c psql
+    -- Create the database user:
+    CREATE USER payments WITH PASSWORD 'payments';
+
+    -- Create the database:
+    CREATE DATABASE payments_db WITH OWNER=payments
+                                      LC_COLLATE='en_US.utf8'
+                                      LC_CTYPE='en_US.utf8'
+                                      ENCODING='UTF8'
+                                      TEMPLATE=template0;
+	EOF
   SHELL
+
+  ######################################################################
+  # Add PostgreSQL docker container
+  ######################################################################
+  #config.vm.provision "shell", inline: <<-SHELL
+  #  # Prepare PostgreSQL data share
+  #  sudo mkdir -p /var/lib/postgresql/data
+  #  sudo chown vagrant:vagrant /var/lib/postgresql/data
+  #vagrantSHELL
+  # Add PostgreSQL docker container
+  #config.vm.provision "docker" do |d|
+  #  d.pull_images "postgres"
+  #  d.run "postgres",
+  #    args: "-d --name postgres -p 5432:5432 -v /var/lib/postgresql/data:/var/lib/postgresql/data"
+  #end
 
 end
