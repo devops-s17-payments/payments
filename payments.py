@@ -6,6 +6,11 @@ import re
 import time
 from flask import Flask, jsonify, request, make_response, Response, json, url_for
 
+from db.interface import PaymentService
+
+# Instantiate persistence service to be used in CRUD methods
+payments_db = PaymentService()
+
 # Create Flask application
 app = Flask(__name__)
 #app.config['LOGGING_LEVEL'] = logging.INFO
