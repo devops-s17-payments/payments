@@ -99,4 +99,5 @@ ENV/
 .ropeproject
 
 # database
+data/
 .db
