@@ -71,10 +71,19 @@ class Detail(db.Model):
     is_linked = db.Column(db.Boolean)
 
     def serialize(self):
-        result = {}
-        for key in self.__dict__:
-            if not self.__dict__[key] is None:
-                result[key] = self.__dict__[key]
+        if self.is_linked is None:  #is_linked is paypal attribute
+            result = {
+                        'user_name' : self.user_name,
+                        'card_type' : self.card_type,
+                        'card_number' : self.card_number,
+                        'expires' : self.expires
+                     }
+        else:
+            result = {
+                        'user_name' : self.user_name,
+                        'user_email' : self.user_email,
+                        'is_linked' : self.is_linked
+                     }
         return result
 
 
