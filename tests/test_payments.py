@@ -11,7 +11,7 @@ class TestModels(unittest.TestCase):
 
     def setUp(self):
         payments.app.debug = True
-        payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/test.db'
+        payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
         db.drop_all()    # clean up the last tests
         db.create_all()  # make our sqlalchemy tables
         
