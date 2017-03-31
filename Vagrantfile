@@ -55,12 +55,19 @@ Vagrant.configure(2) do |config|
     -- Create the database user:
     CREATE USER payments WITH PASSWORD 'payments';
 
-    -- Create the database:
-    CREATE DATABASE payments_db WITH OWNER=payments
-                                      LC_COLLATE='en_US.utf8'
-                                      LC_CTYPE='en_US.utf8'
-                                      ENCODING='UTF8'
-                                      TEMPLATE=template0;
+    -- Create dev db:
+    CREATE DATABASE dev WITH OWNER=payments
+      LC_COLLATE='en_US.utf8'
+      LC_CTYPE='en_US.utf8'
+      ENCODING='UTF8'
+      TEMPLATE=template0;
+
+    -- Create test db:
+    CREATE DATABASE test WITH OWNER=payments
+      LC_COLLATE='en_US.utf8'
+      LC_CTYPE='en_US.utf8'
+      ENCODING='UTF8'
+      TEMPLATE=template0;
 	EOF
   SHELL
 
