@@ -24,27 +24,27 @@ class PaymentService(object):
 
         raise NotImplementedError()
 
-    def remove_payment(self, payment_id=None, **kwargs):
+    def remove_payment(self, payment_id=None):
         """
-        Accepts an id or a variable number of keyword arguments
-        that could be used to identify a payment if the id is
-        not known.
+        Remove the payment item corresponding to the payment_id, if
+        such a payment item exists.
 
         :param payment_id: <int> the unique identifier of a payment to be removed
         """
 
         raise NotImplementedError()
 
-    def update_payment(self, payment_id, payment_replacement=None, **kwargs):
+    def update_payment(self, payment_id, payment_replacement=None, payment_attributes=None):
         """
         Uses the payment_id to find a specific payment item to update.
         If the update is via a PUT request, wherein the new object overwrites
         the old one completely, then new_payment should be supplied.
-        Else, for updates via PATCH requests, the fields found in **kwargs
+        Else, for updates via PATCH requests, the fields found in payment_attributes
         will be used to overwrite the ones currently associated with the payment.
 
         :param payment_id: <int> the unique identifier of a payment to be updated
         :param payment_replacement: <dict> a complete payload that describes a new payload which replaces the old one
+        :param payment_attributes: <dict> a collection of new payment attribute values that will overwrite old ones
         """
 
         raise NotImplementedError()
