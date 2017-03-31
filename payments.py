@@ -6,10 +6,10 @@ import re
 import time
 from flask import Flask, jsonify, request, make_response, Response, json, url_for
 
-from db.interface import PaymentService
+from db.service import PaymentService
 
 # Instantiate persistence service to be used in CRUD methods
-payments_db = PaymentService()
+payments_service = PaymentService()
 
 # Create Flask application
 app = Flask(__name__)
