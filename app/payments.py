@@ -1,25 +1,13 @@
-import os
-#import logging
+import os, re, time
 from datetime import datetime, timedelta
 from threading import Lock
-import re
-import time
 from flask import Flask, jsonify, request, make_response, Response, json, url_for
-#from flask_sqlalchemy import SQLAlchemy
 
-from db.services import PaymentService
+from db.interface import PaymentService
+from . import app
 
 # Instantiate persistence service to be used in CRUD methods
 payments_service = PaymentService()
-
-# Create Flask application
-app = Flask(__name__)
-app.config.from_object('config')
-
-# DB Config
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/dev.db'
-#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-#db = SQLAlchemy(app)
 
 # Lock for thread-safe counter increment
 lock = Lock()
@@ -352,12 +340,3 @@ def is_positive(amount):
 def is_valid_patch(data):
     #update later for validating data for PATCH method
     return True
-
-
-######################################################################
-#   M A I N
-######################################################################
-if __name__ == '__main__':
-    debug = (os.getenv('DEBUG', 'False') == 'True')
-    port = os.getenv('PORT', '5000')
-    app.run(host='0.0.0.0', port=int(port), debug=debug)

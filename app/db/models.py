@@ -1,5 +1,4 @@
-from db import db
-# db will be our connect to SQLAlchemy ORM
+from . import db
 
 ######################################################################
 # Custom Exceptions

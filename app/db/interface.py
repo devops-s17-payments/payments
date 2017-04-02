@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
-from db.models import Payment, Detail
+from . import db
+from models import Payment, Detail
 
 
 class PaymentService(object):
