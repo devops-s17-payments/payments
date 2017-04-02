@@ -1,7 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from db.models import Payment, Detail
-
 
 class PaymentService(object):
     """
@@ -24,12 +22,14 @@ class PaymentService(object):
 
         raise NotImplementedError()
 
-    def remove_payment(self, payment_id=None):
+    def remove_payment(self, payment_id=None, payment_attributes=None):
         """
-        Remove the payment item corresponding to the payment_id, if
-        such a payment item exists.
+        Accepts an id or a variable number of keyword arguments (in payment_attributes)
+        that could be used to identify a payment if the id is
+        not known.
 
         :param payment_id: <int> the unique identifier of a payment to be removed
+        :param payment_attributes: <dict> a collection of new payment attribute values that will overwrite old ones
         """
 
         raise NotImplementedError()

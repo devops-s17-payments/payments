@@ -1,26 +1,18 @@
-import os
 #import logging
+import re
 from datetime import datetime, timedelta
 from threading import Lock
-import re
-import time
-from flask import Flask, jsonify, request, make_response, Response, json, url_for
-#from flask_sqlalchemy import SQLAlchemy
 
-from db.services import PaymentService
+from flask import jsonify, request, make_response, url_for
+
+from app import app
+from app.db.interface import PaymentService
 
 # Instantiate persistence service to be used in CRUD methods
-payments_service = PaymentService()
+payment_service = PaymentService()
 
-# Create Flask application
-app = Flask(__name__)
-app.config.from_object('config')
-
-# DB Config
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/dev.db'
-#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-#db = SQLAlchemy(app)
-
+# placeholder to be removed during refactoring of CRUD methods
+payments = []
 # Lock for thread-safe counter increment
 lock = Lock()
 
@@ -35,30 +27,6 @@ HTTP_409_CONFLICT = 409
 
 # Error Messages
 CONTENT_ERR_MSG = "Content type of the request is not json. Doesn't support other formats now."
-
-#starter payment models for mvp
-#dummy data
-current_payment_id = 3;
-credit = {'name' : 'John Johnson',
-          'number' : '1234567898765432',
-          'expires' : '01/2020',
-          'type' : 'American Express'}
-    
-debit = {'name' : 'Jane Jenkins',
-         'number' : '9876543212345678',
-         'expires' : '08/2018',
-         'type' : "Visa"}
-    
-paypal = {'name' : 'Joe Jetson',
-          'e-mail' : 'joe@aol.com',
-          'linked' : True}
-
-payments = [{'id' : 1, 'default' : True, 'nickname' : 'my-credit',
-             'type' : 'credit', 'charge-history': 0.00, 'detail' : credit},
-            {'id' : 2, 'default' : False, 'nickname' : 'my-debit',
-             'type' : 'debit', 'charge-history': 0.00,'detail' : debit},
-            {'id' : 3, 'default' : False, 'nickname' : 'my-paypal',
-             'type' : 'paypal', 'charge-history': 0.00,'detail' : paypal}]
 
 ######################################################################
 # GET INDEX
@@ -75,6 +43,7 @@ def index():
 ######################################################################
 @app.route('/payments', methods=['GET'])
 def list_payments():
+    print 'TEST'
     if request.query_string != "":
         return query_payments()
     results = []
@@ -352,12 +321,3 @@ def is_positive(amount):
 def is_valid_patch(data):
     #update later for validating data for PATCH method
     return True
-
-
-######################################################################
-#   M A I N
-######################################################################
-if __name__ == '__main__':
-    debug = (os.getenv('DEBUG', 'False') == 'True')
-    port = os.getenv('PORT', '5000')
-    app.run(host='0.0.0.0', port=int(port), debug=debug)
