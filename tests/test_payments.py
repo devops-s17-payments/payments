@@ -2,16 +2,18 @@
 # python -m unittest discover
 # nosetests -v --rednose --nologcapture
 
-import unittest, json
-import payments, db
-from db import db, models
+import unittest, json, mock
+from app import app
+from app.db import db
+from app.db.interface import PaymentService
+from app.db.models import Payment, Detail
 from flask_api import status    # HTTP Status Codes
 
 class TestModels(unittest.TestCase):
 
     def setUp(self):
-        payments.app.debug = True
-        payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
+        app.debug = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
         db.drop_all()    # clean up the last tests
         db.create_all()  # make our sqlalchemy tables
         
@@ -23,7 +25,7 @@ class TestModels(unittest.TestCase):
         payment.deserialize(data)
         db.session.add(payment)
         db.session.commit()
-        self.app = payments.app.test_client()
+        self.app = app.test_client()
 
     def tearDown(self):
         db.session.remove()
