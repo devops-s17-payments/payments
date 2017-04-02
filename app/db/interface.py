@@ -1,8 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from db import app_db
-from db.models import Payment, Detail
-
 
 class PaymentService(object):
     """

@@ -1,4 +1,4 @@
-from db import db
+from app.db import db
 # db will be our connect to SQLAlchemy ORM
 
 ######################################################################

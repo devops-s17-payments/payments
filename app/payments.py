@@ -5,8 +5,8 @@ from threading import Lock
 
 from flask import jsonify, request, make_response, url_for
 
-from app.app_start import app
-from db.interface import PaymentService
+from app import app
+from app.db.interface import PaymentService
 
 # Instantiate persistence service to be used in CRUD methods
 payment_service = PaymentService()
@@ -43,6 +43,7 @@ def index():
 ######################################################################
 @app.route('/payments', methods=['GET'])
 def list_payments():
+    print 'TEST'
     if request.query_string != "":
         return query_payments()
     results = []

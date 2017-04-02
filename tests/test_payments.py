@@ -5,7 +5,8 @@
 import unittest
 
 from app import payments
-from db import app_db, models
+from app.db import app_db
+from app.db import models
 
 
 class TestModels(unittest.TestCase):
