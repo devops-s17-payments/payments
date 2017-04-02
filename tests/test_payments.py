@@ -37,7 +37,7 @@ class TestModels(unittest.TestCase):
         self.assertEqual(p2, None)
 
     def test_credit_has_no_paypal_fields(self):
-        payment = db.session.query(models.Payment).get(1)
+        payment = app_db.session.query(models.Payment).get(1)
         self.assertEqual(payment.nickname, 'my credit')
         detail = payment.details
         self.assertEqual(detail.is_linked, None)
