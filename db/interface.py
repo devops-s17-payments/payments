@@ -27,7 +27,7 @@ class PaymentService(object):
 
     def remove_payment(self, payment_id=None, payment_attributes=None):
         """
-        Accepts an id or a variable number of keyword arguments
+        Accepts an id or a variable number of keyword arguments (in payment_attributes)
         that could be used to identify a payment if the id is
         not known.
 
@@ -42,7 +42,7 @@ class PaymentService(object):
         Uses the payment_id to find a specific payment item to update.
         If the update is via a PUT request, wherein the new object overwrites
         the old one completely, then new_payment should be supplied.
-        Else, for updates via PATCH requests, the fields found in **kwargs
+        Else, for updates via PATCH requests, the fields found in payment_attributes
         will be used to overwrite the ones currently associated with the payment.
 
         :param payment_id: <int> the unique identifier of a payment to be updated
