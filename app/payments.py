@@ -1,12 +1,11 @@
-import os
 #import logging
+import re
 from datetime import datetime, timedelta
 from threading import Lock
-import re
-import time
-from flask import Flask, jsonify, request, make_response, Response, json, url_for
 
-from app_start import app
+from flask import jsonify, request, make_response, url_for
+
+from app.app_start import app
 from db.interface import PaymentService
 
 # Instantiate persistence service to be used in CRUD methods

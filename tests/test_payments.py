@@ -2,10 +2,12 @@
 # python -m unittest discover
 # nosetests -v --rednose --nologcapture
 
-import unittest, json
-import payments, db
+import unittest
+
+import db
+from app import payments
 from db import db, models
-from flask_api import status    # HTTP Status Codes
+
 
 class TestModels(unittest.TestCase):
 

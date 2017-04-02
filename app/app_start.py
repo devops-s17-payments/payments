@@ -2,7 +2,7 @@ import os
 from flask import Flask
 
 # Create Flask application
-app = Flask(__name__)
+app = Flask('payments')
 app.config.from_object('config')
 
 if __name__ == '__main__':
