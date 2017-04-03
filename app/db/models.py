@@ -1,12 +1,7 @@
 
 from flask import url_for
 from app.db import app_db
-
-######################################################################
-# THIS NEEDS TO BE DELETED BEFORE MERGING
-######################################################################
-class DataValidationError(ValueError):
-    pass
+from app.error_handlers import DataValidationError
 
 ######################################################################
 # Models
