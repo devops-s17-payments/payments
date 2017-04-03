@@ -2,8 +2,7 @@
 # python -m unittest discover
 # nosetests -v --rednose --nologcapture
 
-import unittest, json
-import mock
+import unittest, json, mock
 from app import payments
 from app.db import app_db
 from app.db.models import Payment, Detail
@@ -81,7 +80,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         mock_ps_add.assert_called_with(mock.ANY, CREDIT)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(json.loads(resp.data), {'created' : CC_RETURN})
-
+        
         data = json.dumps(DEBIT)
         mock_ps_add.return_value = DC_RETURN
         resp = self.app.post('/payments', data=data, content_type='application/json')
