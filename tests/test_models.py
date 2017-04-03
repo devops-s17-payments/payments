@@ -14,14 +14,14 @@ CREDIT_DETAIL = {'user_name' : 'John Jameson', 'card_number' : '4444333322221111
 
 PAYPAL_DETAIL = {'user_name' : 'John Jameson', 'user_email' : 'jj@aol.com'}
 
+BAD_DETAIL = {'whatever' : 'John Jameson', 'card_number' : '4444333322221111',
+              'expires' : '02/2020', 'card_type' : 'Visa'}
+
 CREDIT = {'nickname' : 'my credit', 'user_id' : 1,
           'payment_type' : 'credit', 'details' : CREDIT_DETAIL}
 
 PAYPAL = {'nickname' : 'my paypal', 'user_id' : 2,
           'payment_type' : 'paypal', 'details' : PAYPAL_DETAIL}
-
-BAD_DETAIL = {'whatever' : 'John Jameson', 'card_number' : '4444333322221111',
-              'expires' : '02/2020', 'card_type' : 'Visa'}
 
 BAD_CARD = {'whatever' : 'bad', 'user_id' : 2,
             'payment_type' : 'debit', 'details' : BAD_DETAIL}
@@ -52,10 +52,11 @@ class TestModels(unittest.TestCase):
         self.assertEqual(type(p), type({}))
         self.assertEqual(type(p['details']), type({}))
 
-        CREDIT['is_default'] = False
-        CREDIT['charge_history'] = 0.0
-        CREDIT['payment_id'] = 1
-        self.assertEqual(CREDIT, payment.serialize())
+        temp = CREDIT
+        temp['is_default'] = False
+        temp['charge_history'] = 0.0
+        temp['payment_id'] = 1
+        self.assertEqual(temp, payment.serialize())
     
     def test_detail_serialize_credit(self):
         detail = Detail.query.get(1)
@@ -72,8 +73,9 @@ class TestModels(unittest.TestCase):
         d = detail.serialize()
         self.assertEqual(type(d), type({}))
 
-        PAYPAL_DETAIL['is_linked'] = True
-        self.assertEqual(PAYPAL_DETAIL, detail.serialize())
+        temp = PAYPAL_DETAIL
+        temp['is_linked'] = True
+        self.assertEqual(temp, detail.serialize())
         
     def test_payment_deserialize(self):
         p = Payment()
