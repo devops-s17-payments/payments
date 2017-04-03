@@ -107,14 +107,16 @@ class TestPaymentsCRUD(unittest.TestCase):
 
     def test_list_payments_by_ids(self):
         # return payments that have specific ids
-        ids = '1,2'
-        ids_as_list = ids.split(',')
+        ids = [1,2]
+        # the final query string will look like: ?ids=1&ids=2
+        # flask will know how to deal with a query param appearing multiple times
+        ids_query_string = 'ids={}&ids={}'.format(ids[0], ids[1])
         payments_to_return = SAMPLE_PAYMENTS[1:3]
 
         with patch.object(PaymentService, 'get_payments', return_value=payments_to_return) as mocked_service:
-            response = self.app.get('/payments?ids={}'.format(ids))
+            response = self.app.get('/payments?{}'.format(ids_query_string))
 
-            mocked_service.assert_called_once_with(payment_ids=ids_as_list)
+            mocked_service.assert_called_once_with(payment_ids=ids)
             self.assertEqual(response.status_code, payments.HTTP_200_OK)
             self.assertEqual(json.loads(response.data), payments_to_return)
 
@@ -142,17 +144,17 @@ class TestPaymentsCRUD(unittest.TestCase):
 
     def test_list_payments_with_ids_and_other_params(self):
         # test to make sure that the ids parameter takes priority over other parameters
-        ids = '1,2'
-        ids_as_list = ids.split(',')
+        ids = [1,2]
+        ids_query_string = 'ids={}&ids={}'.format(ids[0], ids[1])
         payments_to_return = SAMPLE_PAYMENTS[1:3]
         other_param = 'nickname'
         other_param_value = 'amex'
 
         with patch.object(PaymentService, 'get_payments', return_value=payments_to_return) as mocked_service:
-            query_string = 'ids={}&{}={}'.format(ids, other_param, other_param_value)
+            query_string = '{}&{}={}'.format(ids_query_string, other_param, other_param_value)
             response = self.app.get('/payments?{}'.format(query_string))
 
             # important - we should call the get_payments method with payment_ids, *not*
-            mocked_service.assert_called_once_with(payment_ids=ids_as_list)
+            mocked_service.assert_called_once_with(payment_ids=ids)
             self.assertEqual(response.status_code, payments.HTTP_200_OK)
             self.assertEqual(json.loads(response.data), payments_to_return)

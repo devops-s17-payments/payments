@@ -52,7 +52,7 @@ def list_payments():
     try:
         if 'ids' in request_args:
             # just retrieve a list of payments where each payment corresponds to one of the ids
-            ids = request_args.get('ids').split(',')
+            ids = request_args.getlist('ids', type=int)
             results = payment_service.get_payments(payment_ids=ids)
 
         elif request_args:
