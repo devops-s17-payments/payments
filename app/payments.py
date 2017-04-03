@@ -26,7 +26,8 @@ HTTP_404_NOT_FOUND = 404
 HTTP_409_CONFLICT = 409
 
 # Error Messages
-CONTENT_ERR_MSG = "Content type of the request is not json. Doesn't support other formats now."
+# this will move to error_handlers during refactor
+CONTENT_ERR_MSG = "If you see this, something needs to be refactored in payments.py"
 
 # Error bodies
 NOT_FOUND_ERROR_BODY = {'error': 'Payment with id {} could not be found'}
@@ -38,8 +39,6 @@ GENERAL_NOT_FOUND_ERROR = {'error': 'Requested resource(s) could not be found'}
 @app.route('/')
 def index():
     payments_url = request.base_url + "payments"
-    #to do: change this to work with remplates
-    #need to reorganize directory
     return app.send_static_file('index.html')
 
 ######################################################################

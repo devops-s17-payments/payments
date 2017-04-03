@@ -1,13 +1,7 @@
 
 from flask import url_for
 from app.db import app_db
-# db will be our connect to SQLAlchemy ORM
-
-######################################################################
-# Custom Exceptions
-######################################################################
-class DataValidationError(ValueError):
-    pass
+from app.error_handlers import DataValidationError
 
 ######################################################################
 # Models
@@ -32,7 +26,7 @@ class Payment(app_db.Model):
 
     def serialize(self):
         return {
-                    'payment_id' : self.payment_id,
+                    'payment_id' : self.id,
                     'user_id' : self.user_id,
                     'nickname' : self.nickname,
                     'payment_type' : self.payment_type,

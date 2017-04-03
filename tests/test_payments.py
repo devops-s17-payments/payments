@@ -2,6 +2,7 @@
 # python -m unittest discover
 # nosetests -v --rednose --nologcapture
 
+
 import unittest
 from mock import patch
 import json
@@ -119,7 +120,7 @@ class TestPaymentsCRUD(unittest.TestCase):
             mocked_service.assert_called_once_with(payment_ids=ids)
             self.assertEqual(response.status_code, payments.HTTP_200_OK)
             self.assertEqual(json.loads(response.data), payments_to_return)
-
+            
     def test_list_payments_by_attribute(self):
         # return payments that have a specific attribute
         specific_attribute = 'payment_type'
@@ -154,7 +155,7 @@ class TestPaymentsCRUD(unittest.TestCase):
             query_string = '{}&{}={}'.format(ids_query_string, other_param, other_param_value)
             response = self.app.get('/payments?{}'.format(query_string))
 
-            # important - we should call the get_payments method with payment_ids, *not*
+            # important - we should call the get_payments method with payment_ids, *not* payment_attributes
             mocked_service.assert_called_once_with(payment_ids=ids)
             self.assertEqual(response.status_code, payments.HTTP_200_OK)
             self.assertEqual(json.loads(response.data), payments_to_return)
