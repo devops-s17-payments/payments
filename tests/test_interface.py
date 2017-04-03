@@ -3,7 +3,7 @@
 # nosetests -v --rednose --nologcapture
 
 import unittest
-
+#from mock import patch
 from app import payments
 from app.db import app_db
 from app.db.models import Payment, Detail
