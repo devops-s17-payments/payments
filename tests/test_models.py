@@ -6,7 +6,7 @@ import unittest
 #from mock import patch
 from app import payments
 from app.db import app_db
-from app.db.models import Payment, Detail
+from app.db.models import Payment, Detail, DataValidationError
 
 CREDIT_DETAIL = {'user_name' : 'John Jameson', 'card_number' : '4444333322221111',
                  'expires' : '02/2020', 'card_type' : 'Visa'}
@@ -19,9 +19,11 @@ CREDIT = {'nickname' : 'my credit', 'user_id' : 1,
 PAYPAL = {'nickname' : 'my paypal', 'user_id' : 2,
           'payment_type' : 'paypal', 'details' : PAYPAL_DETAIL}
 
-#note 'nickname' is spelled wrong
-BAD_DATA = {'nicknam3' : 'bad', 'user_id' : 2,
-            'payment_type' : 'paypal', 'details' : PAYPAL_DETAIL}
+BAD_DETAIL = {'whatever' : 'John Jameson', 'card_number' : '4444333322221111',
+              'expires' : '02/2020', 'card_type' : 'Visa'}
+
+BAD_CARD = {'whatever' : 'bad', 'user_id' : 2,
+            'payment_type' : 'debit', 'details' : BAD_DETAIL}
 
 class TestModels(unittest.TestCase):
 
@@ -47,20 +49,18 @@ class TestModels(unittest.TestCase):
         payment = Payment.query.get(1)
         p = payment.serialize()
         self.assertEqual(type(p), type({}))
-        self.assertEqual(p['nickname'], 'my credit')
-        self.assertEqual(p['user_id'], 1)
-        self.assertEqual(p['payment_type'], 'credit')
         self.assertEqual(type(p['details']), type({}))
+
+        CREDIT['is_default'] = False
+        CREDIT['charge_history'] = 0.0
+        CREDIT['payment_id'] = 1
+        self.assertEqual(CREDIT, payment.serialize())
     
     def test_detail_serialize_credit(self):
         detail = Detail.query.get(1)
         d = detail.serialize()
-        self.assertEqual(d['user_name'], 'John Jameson')
-        self.assertEqual(d['card_number'], '4444333322221111')
-        self.assertEqual(d['card_type'], 'Visa')
-        self.assertEqual(d['expires'], '02/2020')
-        self.assertTrue('is_linked' not in d)
-        self.assertTrue('user_email' not in d)
+        self.assertEqual(type(d), type({}))
+        self.assertEqual(CREDIT_DETAIL, detail.serialize())
 
     def test_detail_serialize_paypal(self):
         d = Detail()
@@ -69,24 +69,78 @@ class TestModels(unittest.TestCase):
         app_db.session.commit()
         detail = Detail.query.get(2)
         d = detail.serialize()
-        self.assertEqual(d['user_name'], 'John Jameson')
-        self.assertEqual(d['user_email'], 'jj@aol.com')
-        self.assertEqual(d['is_linked'], True)
-        self.assertTrue('card_number' not in d)
-        self.assertTrue('card_type' not in d)
+        self.assertEqual(type(d), type({}))
+        
+        PAYPAL_DETAIL['is_linked'] = True
+        self.assertEqual(PAYPAL_DETAIL, detail.serialize())
         
     def test_payment_deserialize(self):
-        pass
+        p = Payment()
+        self.assertEqual(p.nickname, None)
+        self.assertEqual(p.user_id, None)
+        self.assertEqual(p.payment_type, None)
+        self.assertEqual(p.details, None)
+        self.assertEqual(p.is_default, None)
+        self.assertEqual(p.is_removed, None)
+        self.assertEqual(p.charge_history, None)
+        p.deserialize(CREDIT)
+        self.assertEqual(p.nickname, 'my credit')
+        self.assertEqual(p.user_id, 1)
+        self.assertEqual(p.payment_type, 'credit')
+        self.assertNotEqual(p.details, None)
+        self.assertEqual(p.is_default, False)
+        self.assertEqual(p.is_removed, False)
+        self.assertEqual(p.charge_history, 0.0)
 
     def test_detail_deserialize_credit(self):
-        pass
+        d = Detail()
+        self.assertEqual(d.user_name, None)
+        self.assertEqual(d.card_type, None)
+        self.assertEqual(d.card_number, None)
+        self.assertEqual(d.expires, None)
+        self.assertEqual(d.is_linked, None)
+        self.assertEqual(d.user_email, None)
+        d.deserialize_card(CREDIT_DETAIL)
+        self.assertEqual(d.user_name, 'John Jameson')
+        self.assertEqual(d.card_type, 'Visa')
+        self.assertEqual(d.card_number, '4444333322221111')
+        self.assertEqual(d.expires, '02/2020')
+        self.assertEqual(d.is_linked, None)
+        self.assertEqual(d.user_email, None)
 
     def test_detail_deserialize_paypal(self):
-        pass
+        d = Detail()
+        self.assertEqual(d.user_name, None)
+        self.assertEqual(d.card_type, None)
+        self.assertEqual(d.card_number, None)
+        self.assertEqual(d.expires, None)
+        self.assertEqual(d.is_linked, None)
+        self.assertEqual(d.user_email, None)
+        d.deserialize_paypal(PAYPAL_DETAIL)
+        self.assertEqual(d.user_name, 'John Jameson')
+        self.assertEqual(d.card_type, None)
+        self.assertEqual(d.card_number, None)
+        self.assertEqual(d.expires, None)
+        self.assertEqual(d.is_linked, True)
+        self.assertEqual(d.user_email, 'jj@aol.com')
 
     def test_payment_self_url(self):
         payment = Payment.query.get(1)
         with payments.app.test_request_context():
             addr = payment.self_url()
             self.assertTrue('/payments/1' in addr)
-        
+
+    def test_payment_deserialize_bad_data(self):
+        p = Payment();
+        self.assertRaises(DataValidationError, p.deserialize, BAD_CARD)
+        self.assertRaises(DataValidationError, p.deserialize, 'as@Q#$*)&2r923rz3ru3892')
+
+    def test_detail_deserialize_bad_card(self):
+        d = Detail()
+        self.assertRaises(DataValidationError, d.deserialize_card, BAD_DETAIL)
+        self.assertRaises(DataValidationError, d.deserialize_card, 'dfkjh@#(*#@R(*HFG$E')
+
+    def test_payment_deserialize_bad_paypal(self):
+        d = Detail()
+        self.assertRaises(DataValidationError, d.deserialize_paypal, BAD_DETAIL)
+        self.assertRaises(DataValidationError, d.deserialize_paypal, 'dfkh(!*@$*f394f4')
