@@ -26,7 +26,7 @@ class Payment(app_db.Model):
 
     def serialize(self):
         return {
-                    'payment_id' : self.payment_id,
+                    'payment_id' : self.id,
                     'user_id' : self.user_id,
                     'nickname' : self.nickname,
                     'payment_type' : self.payment_type,
