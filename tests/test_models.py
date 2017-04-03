@@ -52,7 +52,7 @@ class TestModels(unittest.TestCase):
         self.assertEqual(type(p), type({}))
         self.assertEqual(type(p['details']), type({}))
 
-        temp = CREDIT
+        temp = dict(CREDIT)
         temp['is_default'] = False
         temp['charge_history'] = 0.0
         temp['payment_id'] = 1
@@ -73,7 +73,7 @@ class TestModels(unittest.TestCase):
         d = detail.serialize()
         self.assertEqual(type(d), type({}))
 
-        temp = PAYPAL_DETAIL
+        temp = dict(PAYPAL_DETAIL)
         temp['is_linked'] = True
         self.assertEqual(temp, detail.serialize())
         
