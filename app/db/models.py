@@ -1,6 +1,7 @@
 
 from flask import url_for
 from app.db import app_db
+from app.error_handlers import DataValidationError
 # db will be our connect to SQLAlchemy ORM
 
 ######################################################################
@@ -32,7 +33,7 @@ class Payment(app_db.Model):
 
     def serialize(self):
         return {
-                    'payment_id' : self.payment_id,
+                    'payment_id' : self.id,
                     'user_id' : self.user_id,
                     'nickname' : self.nickname,
                     'payment_type' : self.payment_type,
@@ -60,7 +61,6 @@ class Payment(app_db.Model):
             raise DataValidationError('Invalid payment: missing ' + e.args[0])
         except TypeError as e:
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
-        #return self
 
 class Detail(app_db.Model):
     __tablename__ = 'detail'

@@ -1,5 +1,8 @@
 # -*- coding:utf-8 -*-
 
+from app.db import app_db
+from models import Payment, Detail
+from app.error_handlers import DataValidationError
 
 class PaymentService(object):
     """
@@ -11,6 +14,7 @@ class PaymentService(object):
         """
         Initialize connection to database here.
         """
+        self.db = app_db
 
     def add_payment(self, payment_data):
         """
@@ -19,8 +23,13 @@ class PaymentService(object):
 
         :param payment_data: <dict> a validated JSON payload that describes a new Payment object
         """
-
-        raise NotImplementedError()
+        #raise DataValidationError('Invalid payment: body of request contained bad or no data')
+        p = Payment()
+        p.deserialize(payment_data)
+        self.db.session.add(p)
+        self.db.session.commit()
+        result = p.serialize()
+        return result
 
     def remove_payment(self, payment_id=None, payment_attributes=None):
         """
