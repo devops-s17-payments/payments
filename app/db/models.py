@@ -2,6 +2,8 @@
 from flask import url_for
 from app.db import app_db
 from app.error_handlers import DataValidationError
+
+
 ######################################################################
 # Models
 ######################################################################
