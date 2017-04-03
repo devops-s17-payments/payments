@@ -2,13 +2,7 @@
 from flask import url_for
 from app.db import app_db
 from app.error_handlers import DataValidationError
-# db will be our connect to SQLAlchemy ORM
 
-######################################################################
-# Custom Exceptions
-######################################################################
-class DataValidationError(ValueError):
-    pass
 
 ######################################################################
 # Models
