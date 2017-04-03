@@ -102,9 +102,9 @@ class TestPaymentsCRUD(unittest.TestCase):
 
     @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError, autospec=True)
     def test_crud_create_garbage(self, mock_ps_add):
+        garbage = 'a@$*&@#sdassdc3r 3284723X43&^@!#@*#'
+        data = json.dumps(garbage)
         try:
-            garbage = 'a@$*&@#sdassdc3r 3284723X43&^@!#@*#'
-            data = json.dumps(garbage)
             resp = self.app.post('/payments', data=data, content_type='application/json')
         except DataValidationError as e:
             self.assertTrue('bad or no data' in e.message)

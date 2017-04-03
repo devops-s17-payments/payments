@@ -60,6 +60,7 @@ def list_payments():
 ######################################################################
 @app.route('/payments', methods=['POST'])
 def create_payment():
+    """ if get_json fails, no exception raised. returns None """
     data = request.get_json(silent=True)
     payment = payment_service.add_payment(data)
     message = {"created" : payment}
