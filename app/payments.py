@@ -28,6 +28,9 @@ HTTP_409_CONFLICT = 409
 # Error Messages
 CONTENT_ERR_MSG = "Content type of the request is not json. Doesn't support other formats now."
 
+# Error bodies
+NOT_FOUND_ERROR_BODY = {'error': 'Payment with id {} could not be found'}
+
 ######################################################################
 # GET INDEX
 ######################################################################
@@ -120,7 +123,9 @@ def get_payments(id):
         result = payment_service.get_payments(payment_ids=[id])
         rc = HTTP_200_OK
     except Exception:
-        result = {'error': 'Payment with id {} could not be found'.format(id)}
+        result = NOT_FOUND_ERROR_BODY
+        # place the id into the {} in the error message string
+        result['error'].format(id)
         rc = HTTP_404_NOT_FOUND
 
     return make_response(jsonify(result), rc)
