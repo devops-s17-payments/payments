@@ -9,8 +9,7 @@ from app.db import app_db
 from app.db.models import Payment, Detail
 from app.db.interface import PaymentService
 from flask_api import status    # HTTP Status Codes
-from app.db.models import DataValidationError #will remove this after pending merge
-#from app.error_handlers import DataValidationError
+from app.error_handlers import DataValidationError
 
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
              'expires' : '01/2019', 'card_type' : 'Mastercard'}
@@ -90,13 +89,24 @@ class TestPaymentsCRUD(unittest.TestCase):
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(json.loads(resp.data), {'created' : DC_RETURN})
 
-    '''
     @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError, autospec=True)
     def test_crud_create_bad_data(self, mock_ps_add):
         data = json.dumps(BAD_DATA)
+        try:
+            resp = self.app.post('/payments', data=data, content_type='application/json')
+        except DataValidationError as e:
+            self.assertTrue('missing nickname' in e.message)
+            mock_ps_add.assert_called_with(mock.ANY, BAD_DATA)
+            self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertTrue('missing nickname' in json.loads(resp.data))
 
-        resp = self.app.post('/payments', data=data, content_type='application/json')
-        mock_ps_add.assert_called_with(mock.ANY, BAD_DATA)
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue('missing nickname' in json.loads(resp.data))
-    '''
+    @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError, autospec=True)
+    def test_crud_create_garbage(self, mock_ps_add):
+        try:
+            garbage = 'a@$*&@#sdassdc3r 3284723X43&^@!#@*#'
+            data = json.dumps(garbage)
+            resp = self.app.post('/payments', data=data, content_type='application/json')
+        except DataValidationError as e:
+            self.assertTrue('bad or no data' in e.message)
+            mock_ps_add.assert_called_with(mock.ANY, None)
+            self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
