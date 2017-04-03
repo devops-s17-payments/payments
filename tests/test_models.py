@@ -6,7 +6,8 @@ import unittest
 #from mock import patch
 from app import payments
 from app.db import app_db
-from app.db.models import Payment, Detail, DataValidationError
+from app.db.models import Payment, Detail, DataValidationError #remove DVE before merging
+#from app.error_handlers import DataValidationError
 
 CREDIT_DETAIL = {'user_name' : 'John Jameson', 'card_number' : '4444333322221111',
                  'expires' : '02/2020', 'card_type' : 'Visa'}
@@ -70,7 +71,7 @@ class TestModels(unittest.TestCase):
         detail = Detail.query.get(2)
         d = detail.serialize()
         self.assertEqual(type(d), type({}))
-        
+
         PAYPAL_DETAIL['is_linked'] = True
         self.assertEqual(PAYPAL_DETAIL, detail.serialize())
         

@@ -3,7 +3,7 @@ from flask import url_for
 from app.db import app_db
 
 ######################################################################
-# Custom Exceptions
+# THIS NEEDS TO BE DELETED BEFORE MERGING
 ######################################################################
 class DataValidationError(ValueError):
     pass
