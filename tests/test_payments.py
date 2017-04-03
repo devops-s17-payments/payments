@@ -2,7 +2,7 @@
 # python -m unittest discover
 # nosetests -v --rednose --nologcapture
 
-import unittest, json, mock
+import unittest, json
 
 from app import payments
 from app.db import app_db
@@ -24,7 +24,7 @@ class TestModels(unittest.TestCase):
         'details' : {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
         'expires' : '01/2019', 'card_type' : 'Mastercard'}}
 
-        payment = models.Payment()
+        payment = Payment()
         payment.deserialize(data)
         app_db.session.add(payment)
         app_db.session.commit()
@@ -35,19 +35,19 @@ class TestModels(unittest.TestCase):
         app_db.drop_all()
 
     def test_db_has_one_item(self):
-        p1 = app_db.session.query(models.Payment).get(1)
+        p1 = app_db.session.query(Payment).get(1)
         self.assertNotEqual(p1, None)
-        p2 = app_db.session.query(models.Payment).get(2)
+        p2 = app_db.session.query(Payment).get(2)
         self.assertEqual(p2, None)
 
     def test_credit_has_no_paypal_fields(self):
-        payment = app_db.session.query(models.Payment).get(1)
+        payment = app_db.session.query(Payment).get(1)
         self.assertEqual(payment.nickname, 'my credit')
         detail = payment.details
         self.assertEqual(detail.is_linked, None)
         self.assertEqual(detail.user_email, None)
-        
-   def test_crud_put_not_allowed_for_create(self):
+
+    def test_crud_put_not_allowed_for_create(self):
         p = {'nickname' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal', 
         'details' : {'user_name' : 'John Jameson', 'user_email' : 'jj@aol.com'}}
         data = json.dumps(p)
