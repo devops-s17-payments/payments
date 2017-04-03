@@ -1,10 +1,9 @@
 
 from flask import url_for
 from app.db import app_db
-# db will be our connect to SQLAlchemy ORM
 
 ######################################################################
-# Custom Exceptions
+# THIS WILL BE REMOVED
 ######################################################################
 class DataValidationError(ValueError):
     pass
