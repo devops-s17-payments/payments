@@ -2,7 +2,6 @@
 from flask import url_for
 from app.db import app_db
 from app.error_handlers import DataValidationError
-
 ######################################################################
 # Models
 ######################################################################
@@ -54,7 +53,6 @@ class Payment(app_db.Model):
             raise DataValidationError('Invalid payment: missing ' + e.args[0])
         except TypeError as e:
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
-        #return self
 
 class Detail(app_db.Model):
     __tablename__ = 'detail'
