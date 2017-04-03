@@ -2,11 +2,12 @@
 # python -m unittest discover
 # nosetests -v --rednose --nologcapture
 
-import unittest
-
+import unittest, json
+from mock import patch
 from app import payments
 from app.db import app_db
-from app.db import models
+from app.db.interface import PaymentService
+from flask_api import status    # HTTP Status Codes
 #from app.error_handlers import DataValidationError
 
 
@@ -34,16 +35,27 @@ class TestPaymentsCRUD(unittest.TestCase):
         self.app = payments.app.test_client()
 
     def test_crud_create_card(self):
-        with patch.object(PaymentService, 'add_payment', return_value=CREDIT) as mocked_service:
+        temp = CREDIT
+        temp['is_default'] = False
+        temp['charge_history'] = 0.0
+        temp['payment_id'] = 1
+
+        with patch.object(PaymentService, 'add_payment', return_value=temp) as mocked_service:
             data = json.dumps(CREDIT)
             resp = self.app.post('/payments', data=data, content_type='application/json')
             self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-            self.assertEqual(json.loads(resp.data), {'created' : CREDIT})
+            self.assertEqual(json.loads(resp.data), {'created' : temp})
 
     def test_crud_create_paypal(self):
-        with patch.object(PaymentService, 'add_payment', return_value=DEBIT) as mocked_service:
+        temp = DEBIT
+        temp['is_default'] = False
+        temp['charge_history'] = 0.0
+        temp['payment_id'] = 1
+        temp['details']['is_linked'] = True
+
+        with patch.object(PaymentService, 'add_payment', return_value=temp) as mocked_service:
             data = json.dumps(DEBIT)
             resp = self.app.post('/payments', data=data, content_type='application/json')
             self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-            self.assertEqual(json.loads(resp.data), {'created' : DEBIT})
+            self.assertEqual(json.loads(resp.data), {'created' : temp})
 
