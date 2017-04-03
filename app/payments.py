@@ -30,6 +30,7 @@ CONTENT_ERR_MSG = "Content type of the request is not json. Doesn't support othe
 
 # Error bodies
 NOT_FOUND_ERROR_BODY = {'error': 'Payment with id {} could not be found'}
+GENERAL_NOT_FOUND_ERROR = {'error': 'Requested resource(s) could not be found'}
 
 ######################################################################
 # GET INDEX
@@ -46,21 +47,33 @@ def index():
 ######################################################################
 @app.route('/payments', methods=['GET'])
 def list_payments():
-    if request.query_string != "":
-        results = payment_service.get_payments(payment_attributes=request.args)
+    request_args = request.args
 
-    else:
-        type = request.args.get('type', None)
-        ids = request.args.get('ids', None)
-
-        if type:
-            results = payment_service.get_payments(payment_attributes={'type': type})
-        elif ids:
+    try:
+        if 'ids' in request_args:
+            # just retrieve a list of payments where each payment corresponds to one of the ids
+            ids = request_args.get('ids').split(',')
             results = payment_service.get_payments(payment_ids=ids)
+
+        elif request_args:
+            # if there is anything else in the request args, query by those parameters;
+            # flask puts the request_args into a proprietary data structure called ImmutableMultiDict
+            # this cast allows us to make a simple dictionary where each query param is a key and the
+            # value is a list that contains the value(s) of that query parameter
+            request_args = dict(request_args)
+            results = payment_service.get_payments(payment_attributes=request_args)
+
         else:
+            # if no request args are present, simply return all payments
             results = payment_service.get_payments()
 
-    return make_response(jsonify(results), HTTP_200_OK)
+        return make_response(jsonify(results), HTTP_200_OK)
+
+    except Exception:
+        # we will want to make more specific exception handling later in order to differentiate
+        # the case in which it's a 404 and the case where it's a 400 - we'll assume for now that
+        # the client makes good requests for resources that may or may not exist
+        return make_response(jsonify(GENERAL_NOT_FOUND_ERROR), HTTP_404_NOT_FOUND)
 
 ######################################################################
 # ADD A NEW PAYMENT
