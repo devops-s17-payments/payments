@@ -61,7 +61,7 @@ def list_payments():
 @app.route('/payments', methods=['POST'])
 def create_payment():
     data = request.get_json(silent=True)
-    payment = ps.add_payment(data)
+    payment = payment_service.add_payment(data)
     message = {"created" : payment}
     return make_response(jsonify(message), status.HTTP_201_CREATED)
 
