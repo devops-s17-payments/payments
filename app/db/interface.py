@@ -23,9 +23,12 @@ class PaymentService(object):
 
         :param payment_data: <dict> a validated JSON payload that describes a new Payment object
         """
-        #raise DataValidationError('Invalid payment: body of request contained bad or no data')
         p = Payment()
-        p.deserialize(payment_data)
+        try:
+            p.deserialize(payment_data)
+        # this is not ideal, but can't get it working otherwise
+        except Exception as e:
+            raise DataValidationError(e.message)
         self.db.session.add(p)
         self.db.session.commit()
         result = p.serialize()
