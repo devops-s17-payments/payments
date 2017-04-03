@@ -1,4 +1,6 @@
-from app.db import db
+
+from flask import url_for
+from app.db import app_db
 # db will be our connect to SQLAlchemy ORM
 
 ######################################################################
@@ -11,19 +13,19 @@ class DataValidationError(ValueError):
 # Models
 ######################################################################
 
-class Payment(db.Model):
+class Payment(app_db.Model):
     __tablename__ = 'payment'
-    id = db.Column(db.Integer, primary_key=True)
-    nickname = db.Column(db.String(20))
-    user_id = db.Column(db.Integer)
-    payment_type = db.Column(db.String(10))
-    is_default = db.Column(db.Boolean)
-    is_removed = db.Column(db.Boolean)
-    charge_history = db.Column(db.Float)
+    id = app_db.Column(app_db.Integer, primary_key=True)
+    nickname = app_db.Column(app_db.String(20))
+    user_id = app_db.Column(app_db.Integer)
+    payment_type = app_db.Column(app_db.String(10))
+    is_default = app_db.Column(app_db.Boolean)
+    is_removed = app_db.Column(app_db.Boolean)
+    charge_history = app_db.Column(app_db.Float)
 
-    detail_id = db.Column(db.Integer, db.ForeignKey('detail.id'))
-    details = db.relationship('Detail',
-        backref=db.backref('payment', lazy='joined'))
+    detail_id = app_db.Column(app_db.Integer, app_db.ForeignKey('detail.id'))
+    details = app_db.relationship('Detail',
+        backref=app_db.backref('payment', lazy='joined'))
 
     def self_url(self):
         return url_for('get_payments', id=self.id, _external=True)
@@ -60,15 +62,15 @@ class Payment(db.Model):
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
         #return self
 
-class Detail(db.Model):
+class Detail(app_db.Model):
     __tablename__ = 'detail'
-    id = db.Column(db.Integer, primary_key=True)
-    user_name = db.Column(db.String(50))
-    expires = db.Column(db.String(7))
-    card_type = db.Column(db.String(10))
-    card_number = db.Column(db.String(16))
-    user_email = db.Column(db.String(50))
-    is_linked = db.Column(db.Boolean)
+    id = app_db.Column(app_db.Integer, primary_key=True)
+    user_name = app_db.Column(app_db.String(50))
+    expires = app_db.Column(app_db.String(7))
+    card_type = app_db.Column(app_db.String(10))
+    card_number = app_db.Column(app_db.String(16))
+    user_email = app_db.Column(app_db.String(50))
+    is_linked = app_db.Column(app_db.Boolean)
 
     def serialize(self):
         if self.is_linked is None:  #is_linked is paypal attribute
