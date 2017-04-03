@@ -1,1 +1,1 @@
-web: python payments.py
+web: python run.py
