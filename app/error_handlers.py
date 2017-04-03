@@ -20,9 +20,9 @@ def request_validation_error(e):
 def not_found(e):
     return make_response(jsonify(status=404, error='Not Found', message=e.description), status.HTTP_404_NOT_FOUND)
 
-@app.errorhandler(400)
-def bad_request(e):
-    return make_response(jsonify(status=400, error='Bad Request', message=e.message), status.HTTP_400_BAD_REQUEST)
+#@app.errorhandler(400)
+#def bad_request(e):
+#    return make_response(jsonify(status=400, error='Bad Request', message=e.message), status.HTTP_400_BAD_REQUEST)
 
 @app.errorhandler(405)
 def method_not_allowed(e):
