@@ -2,8 +2,8 @@
 import re
 from datetime import datetime, timedelta
 from threading import Lock
-
 from flask import jsonify, request, make_response, url_for
+from flask_api import status    # HTTP Status Codes
 
 from app import app
 from app.db.interface import PaymentService
@@ -75,35 +75,15 @@ def list_payments():
         return make_response(jsonify(GENERAL_NOT_FOUND_ERROR), HTTP_404_NOT_FOUND)
 
 ######################################################################
-# ADD A NEW PAYMENT
+# CREATE PAYMENT
 ######################################################################
 @app.route('/payments', methods=['POST'])
-def add_payment():
+def create_payment():
+    """ if get_json fails, no exception raised. returns None """
     data = request.get_json(silent=True)
-    if data is None:
-        return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
-
-    if is_valid(data):
-        id = index_inc()
-    
-        newData = {'id' : id, 'default' : False, 'charge-history' : 0.0, 
-               'nickname' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
-
-        #assumes successful authentication w/ paypal
-        if newData['type'] == 'paypal':
-            newData['detail']['linked'] = True
-  
-        payments.append(newData)
-        message = {'successfully created' : payments[len(payments)-1]}
-        rc = HTTP_201_CREATED
-    else:
-        message = {'error' : 'Data is not valid.' }
-        rc = HTTP_400_BAD_REQUEST
-    
-    response = make_response(jsonify(message), rc)
-    if rc == HTTP_201_CREATED:
-        response.headers['Location'] = url_for('get_payments', id = id)
-    return response
+    payment = payment_service.add_payment(data)
+    message = {"created" : payment}
+    return make_response(jsonify(message), status.HTTP_201_CREATED)
 
 ######################################################################
 # SET DEFAULT PAYMENT (ACTION)
