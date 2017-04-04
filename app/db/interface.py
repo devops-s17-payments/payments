@@ -1,5 +1,10 @@
 # -*- coding:utf-8 -*-
 
+from app.db.models import Payment, Detail
+from app.error_handlers import DataValidationError
+from app.db import app_db
+from app.db.models import Payment
+
 
 class PaymentService(object):
     """
@@ -11,6 +16,7 @@ class PaymentService(object):
         """
         Initialize connection to database here.
         """
+        self.db = app_db
 
     def add_payment(self, payment_data):
         """
@@ -65,22 +71,27 @@ class PaymentService(object):
         :param payment_attributes: <dict> a collection of payment attributes to be used in
                                    filtering for specific payments
         """
-        result = []
         if payment_ids != None:
-            for i in range(0, len(payment_ids)):
-                ''' need to check if id exists here'''
-                result.append(Payment.query.get(payment_ids[i]))
-        elif payment_attributes != None:
-            ''' 
-            ### this doesn't work yet ###
+            payments = self.db.session.query(Payment).filter(Payment.id.in_(payment_ids)).all()
 
-            for key, value in payment_attributes.items():
-                if key not in Payment.__dict__:
-                    raise KeyError('Payment does not contain the field: %s' % key)
-                temp = Payment.query.filter(getattr(Payment, key).like('%%%s%%' % value))
-                result.extend(temp)
-            '''
-            raise NotImplementedError()
+        elif payment_attributes != None:
+            try:
+                payments = self._query_payments(payment_attributes)
+            except PaymentServiceQueryError as e:
+                raise DataValidationError(e.message)
+
         else:
-            result = Payment.query.all()
-        return result
+            payments = self.db.session.query(Payment).all()
+
+        return [payment.serialize() for payment in payments]
+
+
+    def _query_payments(self, payment_attributes):
+        raise NotImplementedError
+
+
+class PaymentServiceException(Exception):
+    """ Generic exception class for PaymentService. """
+
+class PaymentServiceQueryError(Exception):
+    """ Raised when an internal query fails. """
