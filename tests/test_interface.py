@@ -7,7 +7,7 @@ import unittest, mock
 from app import payments
 from app.db import app_db
 from app.db.models import Payment, Detail
-from app.db.interface import PaymentService
+from app.db.interface import PaymentService, PaymentServiceQueryError
 from app.error_handlers import DataValidationError
 
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
@@ -152,3 +152,12 @@ class TestInterface(unittest.TestCase):
 
         mock_db.query(Payment).filter_by.assert_called_once_with(**QUERY_ATTRIBUTES)
         self.assertEqual(result, [DEBIT])
+
+    @mock.patch.object(app_db, 'session')
+    def test_interface_query_payments_error(self, mock_db):
+        mock_db.query(Payment).filter_by.side_effect = PaymentServiceQueryError
+
+        with self.assertRaises(PaymentServiceQueryError):
+            result = self.ps._query_payments(QUERY_ATTRIBUTES)
+        # also check that the mocked app_db was called appropriately
+        mock_db.query(Payment).filter_by.assert_called_once_with(**QUERY_ATTRIBUTES)
