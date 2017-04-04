@@ -3,7 +3,7 @@
 from sqlalchemy import exc
 
 from app.db.models import Payment, Detail
-#from app.error_handlers import DataValidationError
+from app.error_handlers import DataValidationError
 from app.db import app_db
 from app.db.models import Payment
 
@@ -57,8 +57,27 @@ class PaymentService(object):
         :param payment_replacement: <dict> a complete payload that describes a new payload which replaces the old one
         :param payment_attributes: <dict> a collection of new payment attribute values that will overwrite old ones
         """
-
-        raise NotImplementedError()
+        payment = Payment.query.get_or_404(payment_id)
+        if payment_replacement:
+            #need to handle is valid and throw 400 bad request for payment_replacement
+            payment.deserialize(payment_replacement)
+            self.db.session.commit()
+            return_object = payment.serialize()
+            return return_object
+        elif payment_attributes: #patch
+            # implement isvalid on payment_attributes and throw 400 bad request otherwise
+            existing_payment = payment.serialize()
+            payload_nickname = existing_payment['nickname'] if 'nickname' not in payment_attributes else payment_attributes['nickname']
+            payload_type = existing_payment['type'] if 'type' not in payment_attributes else payment_attributes['type']
+            payload_detail = existing_payment['detail'] if 'detail' not in payment_attributes else payment_attributes['detail']
+            payload_default = existing_payment['default'] if 'default' not in payment_attributes else payment_attributes['default'] # set only one default
+            payload_charge = existing_payment['charge-history'] if 'charge-history' not in payment_attributes else payment_attributes['charge-history']
+            target_payment = {'id' : payment_id, 'nickname' : payload_nickname, 'default' : payload_default,
+                'charge-history' :  payload_charge, 'type' : payload_type, 'detail' : payload_detail}
+            payment.deserialize(target_payment)
+            self.db.session.commit()
+            return_object = payment.serialize()
+            return return_object
 
     def get_payments(self, payment_ids=None, payment_attributes=None):
         """

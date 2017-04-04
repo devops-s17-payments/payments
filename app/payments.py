@@ -7,7 +7,6 @@ from flask_api import status    # HTTP Status Codes
 
 from app import app
 from app.db.interface import PaymentService
-
 # Instantiate persistence service to be used in CRUD methods
 payment_service = PaymentService()
 
@@ -60,6 +59,7 @@ def list_payments():
 @app.route('/payments', methods=['POST'])
 def create_payment():
     """ if get_json fails, no exception raised. returns None """
+    print("here:")
     data = request.get_json(silent=True)
     payment = payment_service.add_payment(data)
     message = {"created" : payment}
@@ -106,25 +106,10 @@ def get_payments(id):
 ######################################################################
 @app.route('/payments/<int:id>', methods=['PUT'])
 def update_payments(id):
-    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
-    if len(index) > 0:
-        if not request.is_json:
-            return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
-        payload = request.get_json()
-        if is_valid(payload):
-            payments[index[0]] = {'id' : id, 'nickname' : payload['nickname'], 'type' : payload['type'],
-                                  'default' : payments[index[0]]['default'],
-                                  'charge-history' : payments[index[0]]['charge-history'],
-                                  'detail' : payload['detail']}
-            message = payments[index[0]]
-            rc = HTTP_200_OK
-        else:
-            message = { 'error' : 'Payments data was not valid' }
-            rc = HTTP_400_BAD_REQUEST
-    else:
-        message = { 'error' : 'Payments %s was not found' % id }
-        rc = HTTP_404_NOT_FOUND
-
+    if not request.is_json:
+        return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+    data = request.get_json()
+    message = payment_service.update_payment(id,payment_replacement=data)
     return make_response(jsonify(message), rc)
 
 ######################################################################
@@ -132,29 +117,11 @@ def update_payments(id):
 ######################################################################
 @app.route('/payments/<int:id>', methods=['PATCH'])
 def update_partial_payments(id):
-    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
-    if len(index) > 0:
-        if not request.is_json:
-                return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
-        payload = request.get_json()
-        if is_valid_patch(payload):
-            target_payment = payments[index[0]]
-            # for now, can only update partially with nickname, type and detail
-            payload_nickname = target_payment['nickname'] if 'nickname' not in payload else payload['nickname']
-            payload_type = target_payment['type'] if 'type' not in payload else payload['type']
-            payload_detail = target_payment['detail'] if 'detail' not in payload else payload['detail']
-            payments[index[0]] = {'id' : id, 'nickname' : payload_nickname, 'default' : target_payment['default'], 
-                'charge-history' : target_payment['charge-history'], 'type' : payload_type, 'detail' : payload_detail}
-            message = payments[index[0]]
-            rc = HTTP_200_OK
-        else:
-            message = { 'error' : 'Payments data was not valid' }
-            rc = HTTP_400_BAD_REQUEST
-    else:
-        message = { 'error' : 'Payments %s was not found' % id }
-        rc = HTTP_404_NOT_FOUND
-
-    return make_response(jsonify(message), rc)
+    if not request.is_json:
+        return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+    data = request.get_json()
+    message = payment_service.update_payment(id,payment_attributes=data)
+    return make_response(jsonify(message), HTTP_200_OK)
 
 ######################################################################
 # DELETE A PAYMENT

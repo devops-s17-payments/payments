@@ -9,7 +9,7 @@ from app.error_handlers import DataValidationError
 ######################################################################
 
 class Payment(app_db.Model):
-    __tablename__ = 'payment'
+    __tablename__ = 'Payment'
     id = app_db.Column(app_db.Integer, primary_key=True)
     nickname = app_db.Column(app_db.String(20))
     user_id = app_db.Column(app_db.Integer)
@@ -18,7 +18,7 @@ class Payment(app_db.Model):
     is_removed = app_db.Column(app_db.Boolean)
     charge_history = app_db.Column(app_db.Float)
 
-    detail_id = app_db.Column(app_db.Integer, app_db.ForeignKey('detail.id'))
+    detail_id = app_db.Column(app_db.Integer, app_db.ForeignKey('Detail.id'))
     details = app_db.relationship('Detail',
         backref=app_db.backref('payment', lazy='joined'))
 
@@ -45,6 +45,7 @@ class Payment(app_db.Model):
             self.is_removed = False
             self.charge_history = 0.0
             details = data['details']
+            
             d = Detail()
             if (self.payment_type == 'credit' or self.payment_type == 'debit'):
                 d.deserialize_card(details)
@@ -57,7 +58,7 @@ class Payment(app_db.Model):
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
 
 class Detail(app_db.Model):
-    __tablename__ = 'detail'
+    __tablename__ = 'Detail'
     id = app_db.Column(app_db.Integer, primary_key=True)
     user_name = app_db.Column(app_db.String(50))
     expires = app_db.Column(app_db.String(7))
