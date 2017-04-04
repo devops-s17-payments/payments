@@ -1,8 +1,10 @@
 # -*- coding:utf-8 -*-
 
-from app.db import app_db
-from models import Payment, Detail
+from sqlalchemy import exc
+
+from app.db.models import Payment, Detail
 #from app.error_handlers import DataValidationError
+from app.db import app_db
 
 class PaymentService(object):
     """
@@ -75,3 +77,28 @@ class PaymentService(object):
         """
 
         raise NotImplementedError()
+
+    def _query_payments(self, payment_attributes):
+        """
+        Returns all payment items that fulfill the attributes used to
+        filter from all payment items.
+
+        Note: this method assumes that the attributes are safe and have been validated.
+
+        :param parameter_attributes: <dict> a collection of Payment attributes to filter by
+        :return: <list[Payment]> a list of the Payment items returned by the query
+        """
+        try:
+            payments = self.db.session.query.filter_by(**payment_attributes)
+            return payments
+
+        except exc.SQLAlchemyError:
+            raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
+
+
+
+class PaymentServiceException(Exception):
+    """ Generic exception class for PaymentService. """
+
+class PaymentServiceQueryError(Exception):
+    """ Raised when an internal query fails. """
