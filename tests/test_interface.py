@@ -12,40 +12,22 @@ from app.error_handlers import DataValidationError
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
              'expires' : '01/2019', 'card_type' : 'Mastercard'}
 
-DC_DETAIL = {'user_name' : 'John Jameson', 'card_number' : '4444333322221111',
-             'expires' : '02/2020', 'card_type' : 'Visa'}
-
 PP_DETAIL = {'user_name' : 'John Jameson', 'user_email' : 'jj@aol.com'}
 
 CREDIT = {'nickname' : 'my credit', 'user_id' : 1, 'payment_type' : 'credit', 
           'details' : CC_DETAIL}
 
-DEBIT = {'nickname' : 'my debit', 'user_id' : 2, 'payment_type' : 'debit', 
-         'details' : DC_DETAIL}
-
-PAYPAL = {'nickname' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal', 
+PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal', 
           'details' : PP_DETAIL}
 
-#note 'nickname' is spelled wrong
-BAD_DATA = {'nicknam3' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal', 
+BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal', 
             'details' : PP_DETAIL}
 
-PP_RETURN = dict(PAYPAL)
-PP_RETURN ['is_default'] = False
-PP_RETURN ['charge_history'] = 0.0
-PP_RETURN ['payment_id'] = 1
-PP_RETURN ['details']['is_linked'] = True
+PP_RETURN = dict(PAYPAL, is_default=False, charge_history=0.0, payment_id=1)
+PP_RETURN['details']['is_linked'] = True
 
-CC_RETURN = dict(CREDIT)
-CC_RETURN['is_default'] = False
-CC_RETURN['charge_history'] = 0.0
-CC_RETURN['payment_id'] = 1
+CC_RETURN = dict(CREDIT,is_default=False, charge_history=0.0, payment_id=1)
 
-#this should always be added second
-DC_RETURN = dict(DEBIT)
-DC_RETURN['is_default'] = False
-DC_RETURN['charge_history'] = 0.0
-DC_RETURN['payment_id'] = 2
 
 class TestInterface(unittest.TestCase):
 
@@ -53,13 +35,7 @@ class TestInterface(unittest.TestCase):
         payments.app.debug = True
         payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
         app_db.create_all()  # make our sqlalchemy tables
-        
-        data = CREDIT
 
-        payment = Payment()
-        payment.deserialize(data)
-        app_db.session.add(payment)
-        app_db.session.commit()
         self.ps = PaymentService()
         self.app = payments.app.test_client()
 
@@ -68,34 +44,37 @@ class TestInterface(unittest.TestCase):
         app_db.drop_all()
 
     def test_interface_add_card_returns_json(self):
-        data = DEBIT
+        data = CREDIT
         payment = self.ps.add_payment(data)
         self.assertTrue(type(payment), type({}))
-        self.assertTrue(payment['nickname'] == 'my debit')
-        self.assertTrue(payment['details']['user_name'] == 'John Jameson')
+        self.assertTrue(payment['nickname'] == 'my credit')
+        self.assertTrue(payment['details']['user_name'] == 'Jimmy Jones')
 
     def test_interface_add_card_to_db(self):
-        data = DEBIT
+        data = CREDIT
+        p1 = app_db.session.query(Payment).get(1)
+        self.assertEqual(p1, None)
+        self.ps.add_payment(data)
+        p1 = app_db.session.query(Payment).get(1)
+        d1 = p1.details
+        self.assertEqual(p1.nickname, 'my credit')
+        self.assertEqual(d1.user_name, 'Jimmy Jones')
         p2 = app_db.session.query(Payment).get(2)
         self.assertEqual(p2, None)
-        self.ps.add_payment(data)
-        p2 = app_db.session.query(Payment).get(2)
-        d2 = p2.details
-        self.assertNotEqual(p2, None)
-        self.assertEqual(p2.nickname, 'my debit')
-        self.assertEqual(d2.user_name, 'John Jameson')
 
     def test_interface_add_paypal_to_db(self):
         data = PAYPAL
+        p1 = app_db.session.query(Payment).get(1)
+        self.assertEqual(p1, None)
+        self.ps.add_payment(data)
+        p1 = app_db.session.query(Payment).get(1)
+        d1 = p1.details
+        self.assertEqual(p1.nickname, 'my paypal')
+        self.assertEqual(p1.user_id, 1)
+        self.assertEqual(d1.user_name, 'John Jameson')
+        self.assertEqual(d1.is_linked, True)
         p2 = app_db.session.query(Payment).get(2)
         self.assertEqual(p2, None)
-        self.ps.add_payment(data)
-        p2 = app_db.session.query(Payment).get(2)
-        d2 = p2.details
-        self.assertNotEqual(p2, None)
-        self.assertEqual(p2.nickname, 'my paypal')
-        self.assertEqual(d2.user_name, 'John Jameson')
-        self.assertEqual(d2.is_linked, True)
 
     def test_interface_add_missing_details(self):
         data = {'nickname' : 'my debit', 'user_id' : 2, 'payment_type' : 'debit'}
@@ -108,30 +87,35 @@ class TestInterface(unittest.TestCase):
     def test_interface_add_garbage(self):
         garbage = 'afv@#(&@(#Z@#>X@C8rq rq34tr0q934r 9qr@(#*(@!$))'
         self.assertRaises(DataValidationError, self.ps.add_payment, garbage)
+    
 
-    """ 
-    adding some mock tests in addition to the above since add_payment
-    relies on functions in Payment / Detail
-
-    these also rely on Deserialize methods, but since those reuturn model objects,
-    I'm not sure how to mock those quite yet... will revisit
-    """
-    @mock.patch.object(Detail, 'serialize', return_valie=CC_DETAIL, autospec=True)
-    @mock.patch.object(Payment, 'serialize', return_value=CC_RETURN, autospec=True)
-    def test_interface_add_card_mock(self, mock_serial, mock_det_serial):
+    @mock.patch.object(Payment, 'deserialize')
+    @mock.patch.object(Payment, 'serialize', return_value=CC_RETURN)
+    @mock.patch.object(app_db, 'session', autospec=True)
+    def test_interface_add_card_mock(self, mock_db, mock_serial, mock_deserial):
         payment = self.ps.add_payment(CREDIT)
+        mock_serial.assert_called_once_with()
+        mock_deserial.assert_called_once_with(CREDIT)
+
+        mock_db.add.assert_called_once()
+        mock_db.commit.assert_called_once()
+
         self.assertTrue(type(payment), type({}))
         self.assertEqual(CC_RETURN, payment)
         self.assertEqual(CC_DETAIL, payment['details'])
 
-    @mock.patch.object(Detail, 'serialize', autospec=True)
-    @mock.patch.object(Payment, 'serialize', return_value=PP_RETURN, autospec=True)
-    def test_interface_add_paypal_mock(self, mock_pay_serial, mock_det_serial):
-        temp = dict(PP_DETAIL)
-        temp['is_linked'] = True
-        mock_det_serial.return_value = temp
+    @mock.patch.object(Payment, 'deserialize')
+    @mock.patch.object(Payment, 'serialize', return_value=PP_RETURN)
+    @mock.patch.object(app_db, 'session')
+    def test_interface_add_paypal_mock(self, mock_db, mock_serial, mock_deserial):
+        temp = dict(PP_DETAIL, is_linked=True)
         payment = self.ps.add_payment(PAYPAL)
+        mock_serial.assert_called_with()
+        mock_deserial.assert_called_once_with(PAYPAL)
+
+        mock_db.add.assert_called_once()
+        mock_db.commit.assert_called_once()
+
         self.assertTrue(type(payment), type({}))
         self.assertEqual(PP_RETURN, payment)
         self.assertEqual(temp, payment['details'])
-

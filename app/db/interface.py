@@ -17,18 +17,11 @@ class PaymentService(object):
         self.db = app_db
 
     def add_payment(self, payment_data):
-        """
-        Takes a dictionary of payment parameters and creates a new
-        payment item in the database using those parameters' data.
-
-        :param payment_data: <dict> a validated JSON payload that describes a new Payment object
-        """
         p = Payment()
         p.deserialize(payment_data)
         self.db.session.add(p)
         self.db.session.commit()
-        result = p.serialize()
-        return result
+        return p.serialize()
 
     def remove_payment(self, payment_id=None, payment_attributes=None):
         """
