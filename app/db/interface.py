@@ -5,6 +5,7 @@ from sqlalchemy import exc
 from app.db.models import Payment, Detail
 #from app.error_handlers import DataValidationError
 from app.db import app_db
+from app.db.models import Payment
 
 class PaymentService(object):
     """
@@ -89,12 +90,11 @@ class PaymentService(object):
         :return: <list[Payment]> a list of the Payment items returned by the query
         """
         try:
-            payments = self.db.session.query.filter_by(**payment_attributes)
+            payments = self.db.session.query(Payment).filter_by(**payment_attributes)
             return payments
 
         except exc.SQLAlchemyError:
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
-
 
 
 class PaymentServiceException(Exception):
