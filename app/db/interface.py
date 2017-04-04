@@ -65,5 +65,22 @@ class PaymentService(object):
         :param payment_attributes: <dict> a collection of payment attributes to be used in
                                    filtering for specific payments
         """
+        result = []
+        if payment_ids != None:
+            for i in range(0, len(payment_ids)):
+                ''' need to check if id exists here'''
+                result.append(Payment.query.get(payment_ids[i]))
+        elif payment_attributes != None:
+            ''' 
+            ### this doesn't work yet ###
 
-        raise NotImplementedError()
+            for key, value in payment_attributes.items():
+                if key not in Payment.__dict__:
+                    raise KeyError('Payment does not contain the field: %s' % key)
+                temp = Payment.query.filter(getattr(Payment, key).like('%%%s%%' % value))
+                result.extend(temp)
+            '''
+            raise NotImplementedError()
+        else:
+            result = Payment.query.all()
+        return result
