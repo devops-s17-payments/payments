@@ -88,7 +88,6 @@ class TestInterface(unittest.TestCase):
         garbage = 'afv@#(&@(#Z@#>X@C8rq rq34tr0q934r 9qr@(#*(@!$))'
         self.assertRaises(DataValidationError, self.ps.add_payment, garbage)
     
-
     @mock.patch.object(Payment, 'deserialize')
     @mock.patch.object(Payment, 'serialize', return_value=CC_RETURN)
     @mock.patch.object(app_db, 'session', autospec=True)
