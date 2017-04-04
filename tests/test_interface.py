@@ -3,6 +3,7 @@
 # nosetests -v --rednose --nologcapture
 
 import unittest, mock
+
 from app import payments
 from app.db import app_db
 from app.db.models import Payment, Detail
@@ -49,6 +50,11 @@ DC_RETURN['payment_id'] = 2
 
 ps = PaymentService()
 
+QUERY_ATTRIBUTES = {
+    'user_name': 'John Jameson',
+    'card_type': 'Mastercard'
+}
+
 class TestInterface(unittest.TestCase):
 
     def setUp(self):
@@ -63,6 +69,7 @@ class TestInterface(unittest.TestCase):
         app_db.session.add(payment)
         app_db.session.commit()
         self.app = payments.app.test_client()
+        self.ps = ps
 
     def tearDown(self):
         app_db.session.remove()
@@ -136,3 +143,12 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(PP_RETURN, payment)
         self.assertEqual(temp, payment['details'])
 
+    @mock.patch.object(app_db, 'session')
+    def test_interface_query_payments(self, mock_db):
+        # this is a long mock - note that the method call chaining matches that of the method call
+        # on self.db in _query_payments
+        mock_db.query(Payment).filter_by.return_value = [DEBIT]
+        result = self.ps._query_payments(QUERY_ATTRIBUTES)
+
+        mock_db.query(Payment).filter_by.assert_called_once_with(**QUERY_ATTRIBUTES)
+        self.assertEqual(result, [DEBIT])
