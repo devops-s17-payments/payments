@@ -102,35 +102,6 @@ def get_payments(id):
     return make_response(jsonify(message), rc)
 
 ######################################################################
-# RETRIEVE A PAYMENT ON QUERY
-######################################################################
-def query_payments():
-
-    q = request.query_string
-    key = re.search('\w*', q)
-    key = key.group(0)          
-    value = re.search('=\w*', q)
-    value = value.group(0)[1::]
-
-    list=[]
-    for p in payments:
-        if p.has_key(key):
-            if p[key] == value:
-                list.append(p)
-        else:
-            message = { 'error' : '%s is not a valid key' % key }
-            rc = HTTP_404_NOT_FOUND
-            return make_response(jsonify(message), rc)
-    
-    if len(list) > 0:
-        message = list
-        rc = HTTP_200_OK
-    else:
-        message = { 'error' : 'Payment with %s: %s was not found' % (key,value) }
-        rc = HTTP_404_NOT_FOUND
-    return make_response(jsonify(message), rc)
-
-######################################################################
 # UPDATE AN EXISTING PAYMENT
 ######################################################################
 @app.route('/payments/<int:id>', methods=['PUT'])
