@@ -47,8 +47,6 @@ DC_RETURN['is_default'] = False
 DC_RETURN['charge_history'] = 0.0
 DC_RETURN['payment_id'] = 2
 
-ps = PaymentService()
-
 class TestInterface(unittest.TestCase):
 
     def setUp(self):
@@ -62,6 +60,7 @@ class TestInterface(unittest.TestCase):
         payment.deserialize(data)
         app_db.session.add(payment)
         app_db.session.commit()
+        self.ps = PaymentService()
         self.app = payments.app.test_client()
 
     def tearDown(self):
@@ -70,7 +69,7 @@ class TestInterface(unittest.TestCase):
 
     def test_interface_add_card_returns_json(self):
         data = DEBIT
-        payment = ps.add_payment(data)
+        payment = self.ps.add_payment(data)
         self.assertTrue(type(payment), type({}))
         self.assertTrue(payment['nickname'] == 'my debit')
         self.assertTrue(payment['details']['user_name'] == 'John Jameson')
@@ -79,7 +78,7 @@ class TestInterface(unittest.TestCase):
         data = DEBIT
         p2 = app_db.session.query(Payment).get(2)
         self.assertEqual(p2, None)
-        ps.add_payment(data)
+        self.ps.add_payment(data)
         p2 = app_db.session.query(Payment).get(2)
         d2 = p2.details
         self.assertNotEqual(p2, None)
@@ -90,7 +89,7 @@ class TestInterface(unittest.TestCase):
         data = PAYPAL
         p2 = app_db.session.query(Payment).get(2)
         self.assertEqual(p2, None)
-        ps.add_payment(data)
+        self.ps.add_payment(data)
         p2 = app_db.session.query(Payment).get(2)
         d2 = p2.details
         self.assertNotEqual(p2, None)
@@ -100,15 +99,15 @@ class TestInterface(unittest.TestCase):
 
     def test_interface_add_missing_details(self):
         data = {'nickname' : 'my debit', 'user_id' : 2, 'payment_type' : 'debit'}
-        self.assertRaises(DataValidationError, ps.add_payment, data)
+        self.assertRaises(DataValidationError, self.ps.add_payment, data)
 
     def test_interface_add_bad_data(self):
         data = BAD_DATA
-        self.assertRaises(DataValidationError, ps.add_payment, data)
+        self.assertRaises(DataValidationError, self.ps.add_payment, data)
 
     def test_interface_add_garbage(self):
         garbage = 'afv@#(&@(#Z@#>X@C8rq rq34tr0q934r 9qr@(#*(@!$))'
-        self.assertRaises(DataValidationError, ps.add_payment, garbage)
+        self.assertRaises(DataValidationError, self.ps.add_payment, garbage)
 
     """ 
     adding some mock tests in addition to the above since add_payment
@@ -120,7 +119,7 @@ class TestInterface(unittest.TestCase):
     @mock.patch.object(Detail, 'serialize', return_valie=CC_DETAIL, autospec=True)
     @mock.patch.object(Payment, 'serialize', return_value=CC_RETURN, autospec=True)
     def test_interface_add_card_mock(self, mock_serial, mock_det_serial):
-        payment = ps.add_payment(CREDIT)
+        payment = self.ps.add_payment(CREDIT)
         self.assertTrue(type(payment), type({}))
         self.assertEqual(CC_RETURN, payment)
         self.assertEqual(CC_DETAIL, payment['details'])
@@ -131,7 +130,7 @@ class TestInterface(unittest.TestCase):
         temp = dict(PP_DETAIL)
         temp['is_linked'] = True
         mock_det_serial.return_value = temp
-        payment = ps.add_payment(PAYPAL)
+        payment = self.ps.add_payment(PAYPAL)
         self.assertTrue(type(payment), type({}))
         self.assertEqual(PP_RETURN, payment)
         self.assertEqual(temp, payment['details'])
