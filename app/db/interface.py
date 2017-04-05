@@ -162,7 +162,7 @@ class PaymentService(object):
 
         except exc.SQLAlchemyError:
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
-'''
+    '''
 # UTILITY FUNCTIONS
     def is_valid_put(self,old_data,new_data):
         valid = False
@@ -193,8 +193,7 @@ class PaymentService(object):
         except TypeError as e:
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
         return valid & valid_detail
-'''
-
+    '''
     def _remove_soft_deletes(self, payments):
         """
         Takes a list of payments and removes those payments that have been 'soft deleted,'

@@ -223,6 +223,7 @@ def charge_payment():
 ######################################################################
 #   U T I L I T I E S
 ######################################################################
+'''
 def index_inc():
     global current_payment_id
     with lock:
@@ -264,7 +265,7 @@ def is_valid(data):
     except:
         pass
     return valid & valid_detail
-
+'''
 def is_expired(payment):
     #get datetime object for last day of expiring month
     exp_date = payment['detail']['expires']
@@ -287,7 +288,3 @@ def is_positive(amount):
         return True
     else:
         return False
-
-def is_valid_patch(data):
-    #update later for validating data for PATCH method
-    return True
