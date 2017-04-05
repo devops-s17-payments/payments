@@ -2,10 +2,9 @@
 
 from sqlalchemy import exc
 
-from app.db.models import Payment, Detail
-#from app.error_handlers import DataValidationError
 from app.db import app_db
-from app.db.models import Payment
+from app.db.models import Payment, Detail
+
 
 class PaymentService(object):
     """
@@ -30,8 +29,7 @@ class PaymentService(object):
         p.deserialize(payment_data)
         self.db.session.add(p)
         self.db.session.commit()
-        result = p.serialize()
-        return result
+        return p.serialize()
 
     def remove_payment(self, payment_id=None, payment_attributes=None):
         """

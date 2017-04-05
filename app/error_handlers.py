@@ -30,4 +30,4 @@ def method_not_allowed(e):
 
 @app.errorhandler(500)
 def internal_error(e):
-	return make_response(jsonify(status=500, error='Internal Server Error', message='Well, this is embarrassing...'), status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return make_response(jsonify(status=500, error='Internal Server Error', message='Well, this is embarrassing...'), status.HTTP_500_INTERNAL_SERVER_ERROR)
