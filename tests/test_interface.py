@@ -56,6 +56,10 @@ QUERY_ATTRIBUTES = {
     'nickname': 'my paypal'
 }
 
+BAD_QUERY_ATTRIBUTES = {
+    'payment_type': 'Amateurcard'
+}
+
 class TestInterface(unittest.TestCase):
 
     def setUp(self):
@@ -198,7 +202,10 @@ class TestInterfaceFunctional(unittest.TestCase):
         result = ps._query_payments(QUERY_ATTRIBUTES)
         # in this case, PP_RETURN was the third item added, so its id should be 3, not 1
         PP_RETURN['payment_id'] = 3
-
         # should only be one result, so get the only element of the list
         assert result[0].serialize() == PP_RETURN
 
+    def test_unsuccessful_query(self):
+        # try querying for something that doesn't exist
+        result = ps._query_payments(BAD_QUERY_ATTRIBUTES)
+        assert result == []

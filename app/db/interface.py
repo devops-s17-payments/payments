@@ -85,6 +85,9 @@ class PaymentService(object):
         filter from all payment items.
 
         Note: this method assumes that the attributes are safe and have been validated.
+        Also, the attributes passed in *must* be part of the Payment schema, since the
+        query below is for the Payment model.  Later on we should have a parameter that
+        indicates which model to use.
 
         :param parameter_attributes: <dict> a collection of Payment attributes to filter by
         :return: <list[Payment]> a list of the Payment items returned by the query
