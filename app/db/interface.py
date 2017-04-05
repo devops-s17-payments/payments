@@ -3,7 +3,7 @@
 from sqlalchemy import exc
 
 from app.db.models import Payment, Detail
-from app.error_handlers import DataValidationError
+from app.error_handlers import DataValidationError,InvalidPaymentID
 from app.db import app_db
 from app.db.models import Payment
 
@@ -12,7 +12,7 @@ class PaymentService(object):
     Serves as an interface which takes requests from the front-end
     and runs the corresponding actions in the database.
     """
-
+    UPDATABLE_PAYMENT_FIELDS = [ 'nickname','payment-type','defaults']
     def __init__(self):
         """
         Initialize connection to database here.
@@ -57,26 +57,24 @@ class PaymentService(object):
         :param payment_replacement: <dict> a complete payload that describes a new payload which replaces the old one
         :param payment_attributes: <dict> a collection of new payment attribute values that will overwrite old ones
         """
-        
-        payment = Payment.query.get_or_404(payment_id)
+        payment = self.db.session.query(Payment).get(payment_id)
+        if payment == None or payment.is_removed == True :
+            raise InvalidPaymentID('Invalid payment: Payment ID not found',status_code=404)
         if payment_replacement:
-            #need to handle is valid and throw 400 bad request for payment_replacement
-            payment.deserialize(payment_replacement)
+            if not self.is_valid_put(payment.serialize(),payment_replacement):
+                raise DataValidationError('Invalid payment: body of request contained bad or no data')
+            payment.deserialize_put(payment_replacement)
             self.db.session.commit()
             return_object = payment.serialize()
             return return_object
         elif payment_attributes: #patch
-            print 'inside interface patch'
-            # implement isvalid on payment_attributes and throw 400 bad request otherwise
             existing_payment = payment.serialize()
-            payload_nickname = existing_payment['nickname'] if 'nickname' not in payment_attributes else payment_attributes['nickname']
-            payload_type = existing_payment['type'] if 'type' not in payment_attributes else payment_attributes['type']
-            payload_detail = existing_payment['detail'] if 'detail' not in payment_attributes else payment_attributes['detail']
-            payload_default = existing_payment['default'] if 'default' not in payment_attributes else payment_attributes['default'] # set only one default
-            payload_charge = existing_payment['charge-history'] if 'charge-history' not in payment_attributes else payment_attributes['charge-history']
-            target_payment = {'id' : payment_id, 'nickname' : payload_nickname, 'default' : payload_default,
-                'charge-history' :  payload_charge, 'type' : payload_type, 'detail' : payload_detail}
-            payment.deserialize(target_payment)
+            for key in payment_attributes:
+                if key in UPDATABLE_PAYMENT_FIELDS:
+                    existing_payment[key] = payment_attributes[key]
+                else:
+                    raise DataValidationError('Invalid payment: body of request contains invalid/un-updatable fields')
+            payment.deserialize_put(existing_payment)
             self.db.session.commit()
             return_object = payment.serialize()
             return return_object
@@ -118,10 +116,40 @@ class PaymentService(object):
 
         except exc.SQLAlchemyError:
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
-
+# UTILITY FUNCTIONS
+    def is_valid_put(self,old_data,new_data):
+        valid = False
+        valid_detail = False
+        try:
+            if new_data['is_removed'] and new_data['is_removed'] == True :
+                 raise DataValidationError('Invalid payment: Changes to is_removed field not allowed')
+            if new_data['is_default'] and old_data['is_default'] != new_data['is_default']:
+                raise DataValidationError('Invalid payment: Changes to is_default field not allowed')
+            if new_data['charge_history'] and old_data['charge_history'] != new_data['charge_history']:
+                raise DataValidationError('Invalid payment: Changes to charge_history field not allowed')
+            if new_data['user_id'] and old_data['user_id'] != new_data['user_id']:
+                raise DataValidationError('Invalid payment: Changes to user_id field not allowed')
+            type = data['payment_type']
+            detail = data['details']
+            if bool(re.search(r'\d', detail['user_name'])) == False:
+                valid = True
+            if type == 'credit' or type == 'debit':
+                card_number = detail['card_number']
+                expires_date = detail['expires']
+                if bool(re.match('^[0-9]+$', card_number)) and (len(card_number) == 16):
+                    datetime.strptime(expires_date, '%m/%Y')
+                    valid_detail = True
+            elif data['is_linked'] != None and type == 'paypal':
+                valid_detail = True
+        except KeyError as e:
+            raise DataValidationError('Invalid payment: missing ' + e.args[0])
+        except TypeError as e:
+            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+        return valid & valid_detail
 
 class PaymentServiceException(Exception):
     """ Generic exception class for PaymentService. """
 
 class PaymentServiceQueryError(Exception):
     """ Raised when an internal query fails. """
+

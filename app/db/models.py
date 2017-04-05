@@ -41,11 +41,31 @@ class Payment(app_db.Model):
             self.user_id = data['user_id']
             self.nickname = data['nickname']
             self.payment_type = data['payment_type']
-            self.is_default = False if 'is_default' not in data else data['is_default']
+            self.is_default = False
             self.is_removed = False
-            self.charge_history = 0.0 if 'charge_history' not in data else data['charge_history']
+            self.charge_history = 0.0
             details = data['details']
             
+            d = Detail()
+            if (self.payment_type == 'credit' or self.payment_type == 'debit'):
+                d.deserialize_card(details)
+            else:
+                d.deserialize_paypal(details)
+            self.details = d
+        except KeyError as e:
+            raise DataValidationError('Invalid payment: missing ' + e.args[0])
+        except TypeError as e:
+            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+
+    def deserialize_put(self, data):
+        try:
+            self.user_id = data['user_id']
+            self.nickname = data['nickname']
+            self.payment_type = data['payment_type']
+            self.is_default = data['is_default']
+            self.is_removed = False
+            self.charge_history = data['charge_history']
+            details = data['details']
             d = Detail()
             if (self.payment_type == 'credit' or self.payment_type == 'debit'):
                 d.deserialize_card(details)

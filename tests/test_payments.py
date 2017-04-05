@@ -9,7 +9,8 @@ from app.db.models import Payment, Detail
 from app.db.interface import PaymentService
 from flask_api import status   # HTTP Status Codes
 from flask import make_response,jsonify
-from app.error_handlers import DataValidationError
+from app.error_handlers import DataValidationError,InvalidPaymentID
+from mock import patch
 
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
              'expires' : '01/2019', 'card_type' : 'Mastercard'}
@@ -167,38 +168,17 @@ class TestPaymentsCRUD(unittest.TestCase):
         self.assertTrue('no data' in resp.data)
 
 # passing garbage data to put
-    @mock.patch.object(PaymentService, 'update_payment', side_effect=DataValidationError, autospec=True)
-    def test_crud_update_put_garbage(self, mock_ps_update):
-        garbage = 'a@$*&@#sdassdc3r 3284723X43&^@!#@*#'
-        data = json.dumps(garbage)
-        try:
-            resp = self.app.put('/payments/1', data=data, content_type='application/json')
-        except DataValidationError as e:
-            self.assertTrue('bad or no data' in e.message)
-            mock_ps_update.assert_called_with(mock.ANY, payment_replacement=None)
-            self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+#@mock.patch.object(PaymentService, 'update_payment',side_effect=DataValidationError, autospec=True)
+    def test_crud_update_put_garbage(self):
+        garbage = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#"
+        resp = self.app.put('/payments/1',data = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#", content_type='application/json')
+        self.assertTrue('bad or no data' in resp.data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
-# passing garbage data to put
-    @mock.patch.object(PaymentService, 'update_payment', side_effect=DataValidationError, autospec=True)
-    def test_crud_update_patch_garbage(self, mock_ps_update):
-        garbage = 'a@$*&@#sdassdc3r 3284723X43&^@!#@*#'
-        data = json.dumps(garbage)
-        try:
-            resp = self.app.patch('/payments/1', data=data, content_type='application/json')
-        except DataValidationError as e:
-            self.assertTrue('bad or no data' in e.message)
-            mock_ps_update.assert_called_with(mock.ANY, payment_attributes=None)
-            self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-'''
-# passing wrong payment id to put
-    @mock.patch.object(PaymentService, 'update_payment', return_value = err_response, autospec=True)
-    def test_crud_update_put_wrong_id(self,mock_ps_update):
-        data = json.dumps(PUT_CREDIT_RETURN)
-        print 'hwofhldfh;osfho;ehf'
-        resp = self.app.put('/payments/1111', data=data, content_type='application/json')
-        mock_ps_update.assert_called_with(mock.ANY,1111,payment_replacement=PUT_CREDIT_RETURN)
-        print resp
-        self.assertEqual( resp.status_code, status.HTTP_404_NOT_FOUND )
-        self.assertTrue('Not Found' in resp.error)
-# passing wrong payment id to
-'''
+# passing garbage data to patch
+    def test_crud_update_patch_garbage(self):
+        garbage = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#"
+        resp = self.app.patch('/payments/1',data = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#", content_type='application/json')
+        self.assertTrue('bad or no data' in resp.data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
