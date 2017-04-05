@@ -407,10 +407,6 @@ class TestInterface(unittest.TestCase):
         #TODO - next sprint : do get, check count, should be same
 #Test cases for update interface method
     @mock.patch.object(app_db, 'session')
-    def test_interface_update_with_invalidargs(self, mock_db):
-        with self.assertRaises(InvalidPaymentID):
-            result = self.ps.update_payment(None,None,None)
-    @mock.patch.object(app_db, 'session')
     def test_interface_update_with_vaild_id_invalidargs(self, mock_db):
         with self.assertRaises(DataValidationError):
             result = self.ps.update_payment(111,None,None)
