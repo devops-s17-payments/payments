@@ -43,10 +43,25 @@ class PaymentService(object):
         not known.
 
         :param payment_id: <int> the unique identifier of a payment to be removed
-        :param payment_attributes: <dict> a collection of new payment attribute values that will overwrite old ones
+        :param payment_attributes: <dict> a collection of payment attributes to identify the payment
+
+        Currently only supports finding payment with the id specified
+
         """
 
-        raise NotImplementedError()
+        payment = self.db.session.query(Payment).get(payment_id)
+        if payment:
+            """
+            payment_to_be_deleted = payment.serialize()
+            payment_to_be_deleted['is_removed'] = True
+            payment.deserialize_put(payment_to_be_deleted)
+            """
+            #workaround for deserialize_put as it always has is_removed = False
+            payment.is_removed = True
+            """
+            self.db.session.delete(payment)
+            """
+            self.db.session.commit()
 
     def update_payment(self, payment_id, payment_replacement=None, payment_attributes=None):
         """
@@ -104,7 +119,7 @@ class PaymentService(object):
         if payment_ids != None:
             payments = self.db.session.query(Payment).filter(Payment.id.in_(payment_ids)).all()
             """
-            #### will come back to this new implementation ### 
+            #### will come back to this new implementation ###
             try:
                 id_dict = [{'payment_id': id} for id in payment_ids]
                 payments = [self._query_payments(payment_attributes=val)[0] for key, val in id_dict.iteritems()]

@@ -171,6 +171,7 @@ def update_partial_payments(id):
         rc = HTTP_200_OK
     except InvalidPaymentID as e:
         message = 'Invalid payment: Payment ID not found'
+
         rc = HTTP_404_NOT_FOUND
     except DataValidationError as e:
         message = 'Invalid payment: body of request contained bad or no data'
@@ -183,9 +184,7 @@ def update_partial_payments(id):
 ######################################################################
 @app.route('/payments/<int:id>', methods=['DELETE'])
 def delete_payments(id):
-    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
-    if len(index) > 0:
-        del payments[index[0]]
+    payment_service.remove_payment(payment_id=id)
     return '', HTTP_204_NO_CONTENT
 
 ######################################################################
@@ -199,7 +198,7 @@ def charge_payment():
     if charge is None:
         return make_response(CONTENT_ERR_MSG, rc)
     if not is_positive(charge['amount']):
-        message = {'error' : ('Invalid order amount. Transaction cancelled. ', 
+        message = {'error' : ('Invalid order amount. Transaction cancelled. ',
                               'Please check your order and try again.')}
     else:
         index = [i for i, payment in enumerate(payments) if payment['default']]
@@ -207,18 +206,18 @@ def charge_payment():
             message = {'error' : 'No default payment method selected. Transaction cancelled'}
             return make_response(jsonify(message), rc)
         p = payments[index[0]]
-        
+
         if p['type'] == 'paypal' and not p['detail']['linked']:
-            message = {'error' : ('Your paypal account has not been linked. Transaction cancelled. ', 
+            message = {'error' : ('Your paypal account has not been linked. Transaction cancelled. ',
                                   'Please update your account and try your order again.')}
         elif p['type'] != 'paypal' and is_expired(p):
-            message = {'error' : ('Your credit/debit card has expired. Transaction cancelled. ', 
+            message = {'error' : ('Your credit/debit card has expired. Transaction cancelled. ',
                                   'Please update your account and try your order again.')}
         else:
             p['charge-history'] = p['charge-history'] + charge['amount']
             message = {'success' : 'Your payment method %s has been charged $%.2f' % (p['nickname'], charge['amount'])}
             rc = HTTP_200_OK
-    
+
     return make_response(jsonify(message), rc)
 
 
@@ -293,4 +292,3 @@ def is_positive(amount):
 def is_valid_patch(data):
     #update later for validating data for PATCH method
     return True
-
