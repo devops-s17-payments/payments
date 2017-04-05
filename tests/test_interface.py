@@ -83,83 +83,96 @@ class TestInterface(unittest.TestCase):
         mock_P.serialize.assert_not_called()
         self.assertEqual(result, [])
 
+    @mock.patch.object(PaymentService, '_remove_soft_deletes')
     @mock.patch('app.db.models.Payment')
     @mock.patch.object(app_db, 'session')
-    def test_interface_get_one_mock(self, mock_db, mock_P):
+    def test_interface_get_one_mock(self, mock_db, mock_P, mock_remove):
         id = [1]
 
         mock_P.serialize.return_value = CC_RETURN
         mock_db.query(Payment).filter.return_value.all.return_value = [mock_P]
+        mock_remove.return_value = [mock_P]
         result = self.ps.get_payments(payment_ids=id)
         mock_db.query(Payment).filter.assert_called_once()
         #mock_db.query(Payment).filter.all.assert_called_once()
         mock_P.serialize.assert_called_once()
+        mock_remove.assert_called_once()
         self.assertEqual(len(result), 1)
         self.assertEqual(result, [CC_RETURN])
 
+    @mock.patch.object(PaymentService, '_remove_soft_deletes')
     @mock.patch('app.db.models.Payment')
     @mock.patch.object(app_db, 'session')
-    def test_interface_get_multiple_mock(self, mock_db, mock_P):
+    def test_interface_get_multiple_mock(self, mock_db, mock_P, mock_remove):
         ids = [1,2,3]
 
         mock_P.serialize.side_effect = [CC_RETURN, DC_RETURN, PP_RETURN]
         mock_db.query(Payment).filter.return_value.all.return_value = [mock_P, mock_P, mock_P]
+        mock_remove.return_value = [mock_P, mock_P, mock_P]
         result = self.ps.get_payments(payment_ids=[ids])
         mock_db.query(Payment).filter.assert_called_once()
-        #mock_db.query(Payment).filter.all.assert_called_once()
+        mock_remove.assert_called_once()
         mock_P.serialize.assert_called()
         self.assertEqual(len(result), 3)
         self.assertEqual(result[0], CC_RETURN)
 
+    @mock.patch.object(PaymentService, '_remove_soft_deletes')
     @mock.patch('app.db.models.Payment')
     @mock.patch.object(app_db, 'session')
-    def test_interface_get_bad_multiple_mock(self, mock_db, mock_P):
+    def test_interface_get_bad_multiple_mock(self, mock_db, mock_P, mock_remove):
         ids = [1,99, 2]
 
         mock_P.serialize.side_effect = [CC_RETURN, DC_RETURN]
         mock_db.query(Payment).filter.return_value.all.return_value = [mock_P, mock_P]
+        mock_remove.return_value = [mock_P, mock_P]
         result = self.ps.get_payments(payment_ids=[ids])
         mock_db.query(Payment).filter.assert_called_once()
-        #mock_db.query(Payment).filter.all.assert_called_once()
         mock_P.serialize.assert_called()
+        mock_remove.assert_called_once()
         self.assertEqual(len(result), 2)
 
+    
+    @mock.patch.object(PaymentService, '_remove_soft_deletes')
     @mock.patch('app.db.models.Payment')
     @mock.patch.object(app_db, 'session')
-    def test_interface_get_all_mock(self, mock_db, mock_P):
-
+    def test_interface_get_all_mock(self, mock_db, mock_P, mock_remove):
         mock_P.serialize.side_effect = [CC_RETURN, DC_RETURN]
         mock_db.query(Payment).all.return_value = [mock_P, mock_P]
+        mock_remove.return_value = [mock_P, mock_P]
         result = self.ps.get_payments()
         mock_db.query(Payment).all.assert_called_once()
+        mock_remove.assert_called_once()
         mock_P.serialize.assert_called()
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], CC_RETURN)
 
+    @mock.patch.object(PaymentService, '_remove_soft_deletes')
     @mock.patch.object(PaymentService, '_query_payments', return_value=CC_RETURN)
     @mock.patch('app.db.models.Payment')
-    def test_interface_get_query_nick_mock(self, mock_P, mock_q):
+    def test_interface_get_query_nick_mock(self, mock_P, mock_q, mock_remove):
         q = {'nickname' : 'my credit'}
 
-        mock_P.serialize.return_value = [CC_RETURN]
+        mock_P.serialize.return_value = CC_RETURN
         mock_q.return_value = [mock_P]
+        mock_remove.return_value = [mock_P]
         result = self.ps.get_payments(payment_attributes=q)
-
-        result = self.ps.get_payments()
         mock_q.assert_called_once()
+        mock_remove.assert_called_once()
         mock_P.serialize.assert_called_once()
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0], CC_RETURN)
 
+    @mock.patch.object(PaymentService, '_remove_soft_deletes')
     @mock.patch.object(PaymentService, '_query_payments', side_effect=PaymentServiceQueryError)
     @mock.patch('app.db.models.Payment')
-    def test_interface_bad_query_mock(self, mock_P, mock_q):
+    def test_interface_bad_query_mock(self, mock_P, mock_q, mock_remove):
         q = {'whatever' : 'man'}
 
         with self.assertRaises(DataValidationError) as e:
             result = self.ps.get_payments(payment_attributes=q)
         mock_q.assert_called_once()
         mock_P.serialize.assert_not_called()
+        mock_remove.assert_not_called()
 
     def test_interface_get_single_payment(self):
         id = [1]
@@ -227,16 +240,36 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], CC_RETURN)
 
-    '''
-        ### not implemented yet ###
+    def test_interface_get_is_removed(self):
+        p = Payment()
+        p.deserialize(PAYPAL)
+        p.is_removed = True
+        app_db.session.add(p)
+        app_db.session.commit()
+
+        result = self.ps.get_payments()
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], CC_RETURN)
+
+    def test_interface_remove_soft_delete(self):
+        data = (CREDIT, DEBIT, PAYPAL)
+        payments = []
+        for d in data:
+            p = Payment()
+            p.deserialize(d)
+            p.is_removed = True
+            payments.append(p)
+
+        self.assertEqual(len(payments), 3)
+        payments = self.ps._remove_soft_deletes(payments)
+        self.assertEqual(len(payments), 0)
+        self.assertEqual(payments, [])
 
     def test_interface_query_nickname(self):
         q = {'nickname' : 'my credit'}
-
         result = self.ps.get_payments(payment_attributes=q)
-        self.assertEqual(len(result), 0)
+        self.assertEqual(len(result), 1)
         self.assertTrue(result[0], CC_RETURN)
-    '''
 
     def test_interface_add_card_returns_json(self):
         data = CREDIT
@@ -320,17 +353,20 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(PP_RETURN, payment)
         self.assertEqual(temp, payment['details'])
 
+    @mock.patch.object(PaymentService, '_remove_soft_deletes')
     @mock.patch.object(app_db, 'session')
-    def test_interface_query_payments(self, mock_db):
+    def test_interface_query_payments(self, mock_db, mock_remove):
         # this is a long mock - note that the method call chaining matches that of the method call
         # on self.db in _query_payments
 
         # set the return value of ...filter_by() to a new mock whose all property is a function that
         # returns [DC_RETURN]; this is done so that when payment_query.all() is called, [DC_RETURN] is returned
         mock_db.query(Payment).filter_by.return_value = mock.MagicMock(all=lambda: [DC_RETURN])
+        mock_remove.return_value = [DC_RETURN]
         result = self.ps._query_payments(QUERY_ATTRIBUTES)
 
         mock_db.query(Payment).filter_by.assert_called_once_with(**QUERY_ATTRIBUTES)
+        mock_remove.assert_called_once()
         self.assertEqual(result, [DC_RETURN])
 
     @mock.patch.object(app_db, 'session')
