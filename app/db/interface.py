@@ -94,6 +94,8 @@ class PaymentService(object):
         else:
             payments = self.db.session.query(Payment).all()
 
+        payments = self._remove_soft_deletes(payments)
+
         return [payment.serialize() for payment in payments]
 
     def _query_payments(self, payment_attributes):
@@ -112,10 +114,22 @@ class PaymentService(object):
         try:
             payment_query = self.db.session.query(Payment).filter_by(**payment_attributes)
             payments = payment_query.all()
+            payments = self._remove_soft_deletes(payments)
             return payments
 
         except exc.SQLAlchemyError:
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
+
+    def _remove_soft_deletes(self, payments):
+        """
+        Takes a list of payments and removes those payments that have been 'soft deleted,'
+        meaning the 'is_removed' field has been set to True
+        
+        Maybe there's a probably a better way to do this by including requirement in db query,
+        but this will do for now 
+        """
+        return [payment for payment in payments if not payment.is_removed]
+        
 
 class PaymentServiceException(Exception):
     """ Generic exception class for PaymentService. """
