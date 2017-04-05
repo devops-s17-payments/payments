@@ -3,28 +3,43 @@
 # nosetests -v --rednose --nologcapture
 
 import unittest
-#from mock import patch
+import mock
 from app import payments
 from app.db import app_db
-from app.db.models import Payment, Detail, DataValidationError #remove DVE before merging
-#from app.error_handlers import DataValidationError
+from app.db.models import Payment, Detail
+from app.error_handlers import DataValidationError
 
-CREDIT_DETAIL = {'user_name' : 'John Jameson', 'card_number' : '4444333322221111',
-                 'expires' : '02/2020', 'card_type' : 'Visa'}
+CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
+             'expires' : '01/2019', 'card_type' : 'Mastercard'}
 
-PAYPAL_DETAIL = {'user_name' : 'John Jameson', 'user_email' : 'jj@aol.com'}
+DC_DETAIL = {'user_name' : 'Jeremy Jenkins', 'card_number' : '4444333322221111',
+             'expires' : '02/2020', 'card_type' : 'Visa'}
 
-BAD_DETAIL = {'whatever' : 'John Jameson', 'card_number' : '4444333322221111',
-              'expires' : '02/2020', 'card_type' : 'Visa'}
+PP_DETAIL = {'user_name' : 'John Jameson', 'user_email' : 'jj@aol.com'}
 
-CREDIT = {'nickname' : 'my credit', 'user_id' : 1,
-          'payment_type' : 'credit', 'details' : CREDIT_DETAIL}
+BAD_DETAIL = {'whatever' : 'John Jameson', 'user_email' : 'jj@aol.com'}
 
-PAYPAL = {'nickname' : 'my paypal', 'user_id' : 2,
-          'payment_type' : 'paypal', 'details' : PAYPAL_DETAIL}
+CREDIT = {'nickname' : 'my credit', 'user_id' : 1, 'payment_type' : 'credit', 
+          'details' : CC_DETAIL}
 
-BAD_CARD = {'whatever' : 'bad', 'user_id' : 2,
-            'payment_type' : 'debit', 'details' : BAD_DETAIL}
+DEBIT = {'nickname' : 'my debit', 'user_id' : 1, 'payment_type' : 'debit', 
+         'details' : DC_DETAIL}
+
+PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal', 
+          'details' : PP_DETAIL}
+
+BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal', 
+            'details' : BAD_DETAIL}
+
+BAD_DATA2 = {"nicknam3" : "my paypal", "user_id" : 1, "payment_type" : "paypal",
+             "details" : {"user_name" : "John Jameson", "user_email" : "jj@aol.com"}}
+
+PP_RETURN = dict(PAYPAL, is_default=False, charge_history=0.0, payment_id=3)
+PP_RETURN['details']['is_linked'] = True
+
+CC_RETURN = dict(CREDIT, is_default=False, charge_history=0.0, payment_id=1)
+
+DC_RETURN = dict(DEBIT, is_default=False, charge_history=0.0, payment_id=2)
 
 class TestModels(unittest.TestCase):
 
@@ -62,18 +77,18 @@ class TestModels(unittest.TestCase):
         detail = Detail.query.get(1)
         d = detail.serialize()
         self.assertEqual(type(d), type({}))
-        self.assertEqual(CREDIT_DETAIL, detail.serialize())
+        self.assertEqual(CC_DETAIL, detail.serialize())
 
     def test_detail_serialize_paypal(self):
         d = Detail()
-        d.deserialize_paypal(PAYPAL_DETAIL)
+        d.deserialize_paypal(PP_DETAIL)
         app_db.session.add(d)
         app_db.session.commit()
         detail = Detail.query.get(2)
         d = detail.serialize()
         self.assertEqual(type(d), type({}))
 
-        temp = dict(PAYPAL_DETAIL)
+        temp = dict(PP_DETAIL)
         temp['is_linked'] = True
         self.assertEqual(temp, detail.serialize())
         
@@ -103,11 +118,11 @@ class TestModels(unittest.TestCase):
         self.assertEqual(d.expires, None)
         self.assertEqual(d.is_linked, None)
         self.assertEqual(d.user_email, None)
-        d.deserialize_card(CREDIT_DETAIL)
-        self.assertEqual(d.user_name, 'John Jameson')
-        self.assertEqual(d.card_type, 'Visa')
-        self.assertEqual(d.card_number, '4444333322221111')
-        self.assertEqual(d.expires, '02/2020')
+        d.deserialize_card(CC_DETAIL)
+        self.assertEqual(d.user_name, 'Jimmy Jones')
+        self.assertEqual(d.card_type, 'Mastercard')
+        self.assertEqual(d.card_number, '1111222233334444')
+        self.assertEqual(d.expires, '01/2019')
         self.assertEqual(d.is_linked, None)
         self.assertEqual(d.user_email, None)
 
@@ -119,7 +134,7 @@ class TestModels(unittest.TestCase):
         self.assertEqual(d.expires, None)
         self.assertEqual(d.is_linked, None)
         self.assertEqual(d.user_email, None)
-        d.deserialize_paypal(PAYPAL_DETAIL)
+        d.deserialize_paypal(PP_DETAIL)
         self.assertEqual(d.user_name, 'John Jameson')
         self.assertEqual(d.card_type, None)
         self.assertEqual(d.card_number, None)
@@ -135,7 +150,8 @@ class TestModels(unittest.TestCase):
 
     def test_payment_deserialize_bad_data(self):
         p = Payment();
-        self.assertRaises(DataValidationError, p.deserialize, BAD_CARD)
+        self.assertRaises(DataValidationError, p.deserialize, BAD_DATA)
+        self.assertRaises(DataValidationError, p.deserialize, BAD_DATA2)
         self.assertRaises(DataValidationError, p.deserialize, 'as@Q#$*)&2r923rz3ru3892')
 
     def test_detail_deserialize_bad_card(self):
@@ -147,3 +163,15 @@ class TestModels(unittest.TestCase):
         d = Detail()
         self.assertRaises(DataValidationError, d.deserialize_paypal, BAD_DETAIL)
         self.assertRaises(DataValidationError, d.deserialize_paypal, 'dfkh(!*@$*f394f4')
+
+    @mock.patch.object(Detail, 'serialize', return_value=DC_DETAIL)
+    def test_payment_serialize_mock(self, mock_detail_serial):
+        p = Payment()
+        p.deserialize(DEBIT)
+        payment = p.serialize()
+        mock_detail_serial.assert_called_once()
+        payment['payment_id'] = 2
+        self.assertEqual(payment, DC_RETURN)
+
+
+

@@ -32,6 +32,9 @@ PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal',
 BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal', 
             'details' : PP_DETAIL}
 
+BAD_DATA2 = {"nicknam3" : "my paypal", "user_id" : 1, "payment_type" : "paypal",
+             "details" : {"user_name" : "John Jameson", "user_email" : "jj@aol.com"}}
+
 PP_RETURN = dict(PAYPAL, is_default=False, charge_history=0.0, payment_id=3)
 PP_RETURN['details']['is_linked'] = True
 
@@ -268,13 +271,23 @@ class TestInterface(unittest.TestCase):
         data = {'nickname' : 'my debit', 'user_id' : 2, 'payment_type' : 'debit'}
         self.assertRaises(DataValidationError, self.ps.add_payment, data)
 
-    def test_interface_add_bad_data(self):
+    def test_interface_add_bad_data_single_quote(self):
         data = BAD_DATA
-        self.assertRaises(DataValidationError, self.ps.add_payment, data)
+        with self.assertRaises(DataValidationError) as e:
+            self.ps.add_payment(data)
+        self.assertTrue('missing nickname' in e.exception.message)
+
+    def test_interface_add_bad_data_double_quote(self):
+        data = BAD_DATA2
+        with self.assertRaises(DataValidationError) as e:
+            self.ps.add_payment(data)
+        self.assertTrue('missing nickname' in e.exception.message)
 
     def test_interface_add_garbage(self):
         garbage = 'afv@#(&@(#Z@#>X@C8rq rq34tr0q934r 9qr@(#*(@!$))'
-        self.assertRaises(DataValidationError, self.ps.add_payment, garbage)
+        with self.assertRaises(DataValidationError) as e:
+            self.ps.add_payment(garbage)
+        self.assertTrue('bad or no data' in e.exception.message)
     
     @mock.patch.object(Payment, 'deserialize')
     @mock.patch.object(Payment, 'serialize', return_value=CC_RETURN)
