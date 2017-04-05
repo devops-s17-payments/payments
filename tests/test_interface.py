@@ -233,29 +233,25 @@ class TestInterface(unittest.TestCase):
 
     def test_interface_add_card_to_db(self):
         data = CREDIT
-        p1 = app_db.session.query(Payment).get(1)
+        p1 = app_db.session.query(Payment).get(2)
         self.assertEqual(p1, None)
         self.ps.add_payment(data)
-        p1 = app_db.session.query(Payment).get(1)
+        p1 = app_db.session.query(Payment).get(2)
         d1 = p1.details
         self.assertEqual(p1.nickname, 'my credit')
         self.assertEqual(d1.user_name, 'Jimmy Jones')
-        p2 = app_db.session.query(Payment).get(2)
-        self.assertEqual(p2, None)
 
     def test_interface_add_paypal_to_db(self):
         data = PAYPAL
-        p1 = app_db.session.query(Payment).get(1)
+        p1 = app_db.session.query(Payment).get(2)
         self.assertEqual(p1, None)
         self.ps.add_payment(data)
-        p1 = app_db.session.query(Payment).get(1)
+        p1 = app_db.session.query(Payment).get(2)
         d1 = p1.details
         self.assertEqual(p1.nickname, 'my paypal')
         self.assertEqual(p1.user_id, 1)
         self.assertEqual(d1.user_name, 'John Jameson')
         self.assertEqual(d1.is_linked, True)
-        p2 = app_db.session.query(Payment).get(2)
-        self.assertEqual(p2, None)
 
     def test_interface_add_missing_details(self):
         data = {'nickname' : 'my debit', 'user_id' : 2, 'payment_type' : 'debit'}
