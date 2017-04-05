@@ -10,7 +10,7 @@ from app import payments
 from app.db import app_db
 from app.db.models import Payment, Detail
 from app.db.interface import PaymentService, PaymentServiceQueryError
-from app.error_handlers import DataValidationError
+from app.error_handlers import DataValidationError,InvalidPaymentID
 
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
              'expires' : '01/2019', 'card_type' : 'Mastercard'}
@@ -393,7 +393,7 @@ class TestInterface(unittest.TestCase):
         payment_after_deletion = mock_db.query(Payment).get(1)
         self.assertTrue(payment_after_deletion.is_removed)
         #TODO - next sprint : do get, check count, should be one less
-
+    
     @mock.patch.object(app_db, 'session')
     def test_interface_delete_payment_with_invalid_id(self, mock_db):
         invalid_id = 28462
@@ -405,8 +405,15 @@ class TestInterface(unittest.TestCase):
         payment_after_deletion = mock_db.query(Payment).get(invalid_id)
         self.assertNotEqual(payment_after_deletion.id,invalid_id)
         #TODO - next sprint : do get, check count, should be same
-
-
+#Test cases for update interface method
+    @mock.patch.object(app_db, 'session')
+    def test_interface_update_with_invalidargs(self, mock_db):
+        with self.assertRaises(InvalidPaymentID):
+            result = self.ps.update_payment(None,None,None)
+    @mock.patch.object(app_db, 'session')
+    def test_interface_update_with_vaild_id_invalidargs(self, mock_db):
+        with self.assertRaises(DataValidationError):
+            result = self.ps.update_payment(111,None,None)
 class TestInterfaceFunctional(unittest.TestCase):
     """
     A class for doing more functional tests involving the interface.py classes.
