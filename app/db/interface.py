@@ -1,9 +1,8 @@
 # -*- coding:utf-8 -*-
-
 from app.db.models import Payment, Detail
 from app.error_handlers import DataValidationError
 from app.db import app_db
-from app.db.models import Payment
+from sqlalchemy import exc
 
 class PaymentService(object):
     """
@@ -18,6 +17,12 @@ class PaymentService(object):
         self.db = app_db
 
     def add_payment(self, payment_data):
+        """
+        Takes a dictionary of payment parameters and creates a new
+        payment item in the database using those parameters' data.
+
+        :param payment_data: <dict> a validated JSON payload that describes a new Payment object
+        """
         p = Payment()
         p.deserialize(payment_data)
         self.db.session.add(p)
@@ -77,7 +82,6 @@ class PaymentService(object):
             except PaymentServiceQueryError as e:
                 raise DataValidationError(e.message)
             """
-
         elif payment_attributes != None:
             try:
                 payments = self._query_payments(payment_attributes)
@@ -89,10 +93,26 @@ class PaymentService(object):
 
         return [payment.serialize() for payment in payments]
 
-
     def _query_payments(self, payment_attributes):
-        raise NotImplementedError
+        """
+        Returns all payment items that fulfill the attributes used to
+        filter from all payment items.
 
+        Note: this method assumes that the attributes are safe and have been validated.
+        Also, the attributes passed in *must* be part of the Payment schema, since the
+        query below is for the Payment model.  Later on we should have a parameter that
+        indicates which model to use.
+
+        :param parameter_attributes: <dict> a collection of Payment attributes to filter by
+        :return: <list[Payment]> a list of the Payment items returned by the query
+        """
+        try:
+            payment_query = self.db.session.query(Payment).filter_by(**payment_attributes)
+            payments = payment_query.all()
+            return payments
+
+        except exc.SQLAlchemyError:
+            raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
 
 class PaymentServiceException(Exception):
     """ Generic exception class for PaymentService. """
