@@ -9,7 +9,7 @@ from app.error_handlers import DataValidationError
 ######################################################################
 
 class Payment(app_db.Model):
-    __tablename__ = 'Payment'
+    __tablename__ = 'payment'
     id = app_db.Column(app_db.Integer, primary_key=True)
     nickname = app_db.Column(app_db.String(20))
     user_id = app_db.Column(app_db.Integer)
@@ -18,7 +18,7 @@ class Payment(app_db.Model):
     is_removed = app_db.Column(app_db.Boolean)
     charge_history = app_db.Column(app_db.Float)
 
-    detail_id = app_db.Column(app_db.Integer, app_db.ForeignKey('Detail.id'))
+    detail_id = app_db.Column(app_db.Integer, app_db.ForeignKey('detail.id'))
     details = app_db.relationship('Detail',
         backref=app_db.backref('payment', lazy='joined'))
 
@@ -58,7 +58,7 @@ class Payment(app_db.Model):
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
 
 class Detail(app_db.Model):
-    __tablename__ = 'Detail'
+    __tablename__ = 'detail'
     id = app_db.Column(app_db.Integer, primary_key=True)
     user_name = app_db.Column(app_db.String(50))
     expires = app_db.Column(app_db.String(7))
