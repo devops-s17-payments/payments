@@ -42,7 +42,7 @@ CC_RETURN = dict(CREDIT, is_default=False, charge_history=0.0, payment_id=1)
 DC_RETURN = dict(DEBIT, is_default=False, charge_history=0.0, payment_id=2)
 
 QUERY_ATTRIBUTES = {
-    'user_id': 2,
+    'user_id': 1,
     'nickname': 'my paypal'
 }
 
@@ -191,7 +191,7 @@ class TestInterfaceFunctional(unittest.TestCase):
         # No mocking for this test since we want to test the method's ability to *actually* retrieve resources
         # the query attributes should match the CREDIT payment item
 
-        result = ps._query_payments(QUERY_ATTRIBUTES)
+        result = self.ps._query_payments(QUERY_ATTRIBUTES)
         # in this case, PP_RETURN was the third item added, so its id should be 3, not 2
         PP_RETURN['payment_id'] = 3
         # should only be one result, so get the only element of the list
@@ -199,5 +199,5 @@ class TestInterfaceFunctional(unittest.TestCase):
 
     def test_unsuccessful_query(self):
         # try querying for something that doesn't exist
-        result = ps._query_payments(BAD_QUERY_ATTRIBUTES)
+        result = self.ps._query_payments(BAD_QUERY_ATTRIBUTES)
         assert result == []

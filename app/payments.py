@@ -117,7 +117,7 @@ def get_payments(id):
     except Exception:
         result = NOT_FOUND_ERROR_BODY
         # place the id into the {} in the error message string
-        result['error'].format(id)
+        result['error'] = result['error'].format(id)
         rc = HTTP_404_NOT_FOUND
 
     return make_response(jsonify(result), rc)
