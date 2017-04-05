@@ -63,7 +63,6 @@ class TestErrorHandlers(unittest.TestCase):
     def test_crud_get_id_not_found(self):
         resp = self.app.get('payments/777')
         self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)
-        print resp.data
         self.assertTrue(payments.NOT_FOUND_ERROR_BODY['error'].format(777) in resp.data)
 
     def test_crud_put_id_not_found(self):
