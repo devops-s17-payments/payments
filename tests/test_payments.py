@@ -3,9 +3,8 @@
 # nosetests -v --rednose --nologcapture
 
 import unittest, json, mock
+from mock import patch
 from app import payments
-from app.db import app_db
-from app.db.models import Payment, Detail
 from app.db.interface import PaymentService
 from flask_api import status   # HTTP Status Codes
 from flask import make_response,jsonify
@@ -15,7 +14,7 @@ from mock import patch
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
              'expires' : '01/2019', 'card_type' : 'Mastercard'}
 
-DC_DETAIL = {'user_name' : 'John Jameson', 'card_number' : '4444333322221111',
+DC_DETAIL = {'user_name' : 'Jeremy Jenkins', 'card_number' : '4444333322221111',
              'expires' : '02/2020', 'card_type' : 'Visa'}
 
 PP_DETAIL = {'user_name' : 'John Jameson', 'user_email' : 'jj@aol.com'}
@@ -23,11 +22,12 @@ PP_DETAIL = {'user_name' : 'John Jameson', 'user_email' : 'jj@aol.com'}
 CREDIT = {'nickname' : 'my credit', 'user_id' : 1, 'payment_type' : 'credit', 
           'details' : CC_DETAIL}
 
-DEBIT = {'nickname' : 'my debit', 'user_id' : 2, 'payment_type' : 'debit', 
+DEBIT = {'nickname' : 'my debit', 'user_id' : 1, 'payment_type' : 'debit', 
          'details' : DC_DETAIL}
 
-PAYPAL = {'nickname' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal', 
+PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal', 
           'details' : PP_DETAIL}
+
 
 # for put updates
 PUT_CREDIT = {'nickname' : 'favcredit', 'user_id' : 1, 'payment_type' : 'credit',
@@ -42,85 +42,227 @@ PATCH_RETURN = {'nickname' : 'boringcredit', 'user_id' : 1, 'payment_type' : 'cr
 BAD_DATA = {'nicknam3' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal', 
             'details' : PP_DETAIL}
 
-PP_RETURN = dict(PAYPAL)
-PP_RETURN ['is_default'] = False
-PP_RETURN ['charge_history'] = 0.0
-PP_RETURN ['payment_id'] = 1
-PP_RETURN ['details']['is_linked'] = True
+BAD_DATA2 = {"nicknam3" : "my paypal", "user_id" : 1, "payment_type" : "paypal",
+             "details" : {"user_name" : "John Jameson", "user_email" : "jj@aol.com"}}
 
-CC_RETURN = dict(CREDIT)
-CC_RETURN['is_default'] = False
-CC_RETURN['charge_history'] = 0.0
-CC_RETURN['payment_id'] = 1
+PP_RETURN = dict(PAYPAL, is_default=False, charge_history=0.0, payment_id=3)
+PP_RETURN['details']['is_linked'] = True
 
-#this should always be added second
-DC_RETURN = dict(DEBIT)
-DC_RETURN['is_default'] = False
-DC_RETURN['charge_history'] = 0.0
-DC_RETURN['payment_id'] = 2
+CC_RETURN = dict(CREDIT, is_default=False, charge_history=0.0, payment_id=1)
+
+DC_RETURN = dict(DEBIT, is_default=False, charge_history=0.0, payment_id=2)
+
+SAMPLE_PAYMENT = {
+    'id': 0,
+    'nickname': 'my credit',
+    'user_id': 1,
+    'payment_type': 'credit',
+    'details':
+        {
+            'user_name': 'Jimmy Jones',
+            'card_number': '1111222233334444',
+            'expires': '01/2019',
+            'card_type': 'Mastercard'
+        }
+}
+
+SAMPLE_PAYMENTS = [
+    {
+        'id': 0,
+        'nickname': 'credit_one',
+        'user_id': 1,
+        'payment_type': 'credit',
+        'details':
+            {
+                'user_name': 'Tommy Stones',
+                'card_number': '123456789000',
+                'expires': '02/2020',
+                'card_type': 'Mastercard'
+            }
+    },
+    {
+        'id': 1,
+        'nickname': 'credit_two',
+        'user_id': 1,
+        'payment_type': 'paypal',
+        'details':
+            {
+                'user_name': 'Tommy Stones',
+                'user_email': 'tommy@stones.abc',
+                'is_linked': True
+            }
+    },
+    {
+        'id': 2,
+        'nickname': 'amex',
+        'user_id': 2,
+        'payment_type': 'credit',
+        'details':
+            {
+                'user_name': 'Jillian Jasper',
+                'card_number': '0101010101010101',
+                'expires': '12/2020',
+                'card_type': 'American Express'
+            }
+    }
+]
 
 class TestPaymentsCRUD(unittest.TestCase):
     """
     Test cases for CRUD methods contained in payments.py.
     """
-
     def setUp(self):
+        # Important!  Need to use the test_client method in order to test the flask-made routes
         self.app = payments.app.test_client()
 
-    @mock.patch.object(PaymentService, 'add_payment', return_value=CC_RETURN, autospec=True)
+    def test_get_payments_ok(self):
+        # return 200 OK and a simple payload for a successful request
+        id = 0
+        with patch.object(PaymentService, 'get_payments', return_value=SAMPLE_PAYMENT) as mocked_service:
+            response = self.app.get('/payments/{}'.format(id))
+
+            # when doing the assertion methods on a mocked object, make *very* sure that the method
+            # is one of the actual methods; otherwise the assertion will be meaningless
+            mocked_service.assert_called_once_with(payment_ids=[id])
+            self.assertEqual(response.status_code, payments.HTTP_200_OK)
+            self.assertEqual(json.loads(response.data), SAMPLE_PAYMENT)
+
+    def test_get_payments_not_found(self):
+        # something goes wrong with the GET request and the resource cannot be found
+        id = 0
+        with patch.object(PaymentService, 'get_payments', side_effect=Exception) as mocked_service:
+            error_response = payments.NOT_FOUND_ERROR_BODY
+            error_response['error'].format(id)
+            response = self.app.get('/payments/{}'.format(id))
+
+            self.assertEqual(response.status_code, payments.HTTP_404_NOT_FOUND)
+            self.assertEqual(json.loads(response.data), error_response)
+
+    def test_list_payments_all(self):
+        # ensure that all payments are returned
+        with patch.object(PaymentService, 'get_payments', return_value=SAMPLE_PAYMENTS) as mocked_service:
+            response = self.app.get('/payments')
+
+            mocked_service.assert_called_once_with()
+            self.assertEqual(response.status_code, payments.HTTP_200_OK)
+            self.assertEqual(json.loads(response.data), SAMPLE_PAYMENTS)
+
+    def test_list_payments_by_ids(self):
+        # return payments that have specific ids
+        ids = [1,2]
+        # the final query string will look like: ?ids=1&ids=2
+        # flask will know how to deal with a query param appearing multiple times
+        ids_query_string = 'ids={}&ids={}'.format(ids[0], ids[1])
+        payments_to_return = SAMPLE_PAYMENTS[1:3]
+
+        with patch.object(PaymentService, 'get_payments', return_value=payments_to_return) as mocked_service:
+            response = self.app.get('/payments?{}'.format(ids_query_string))
+
+            mocked_service.assert_called_once_with(payment_ids=ids)
+            self.assertEqual(response.status_code, payments.HTTP_200_OK)
+            self.assertEqual(json.loads(response.data), payments_to_return)
+            
+    def test_list_payments_by_attribute(self):
+        # return payments that have a specific attribute
+        specific_attribute = 'payment_type'
+        specific_attribute_value = 'paypal'
+        attribute_params = {'payment_type': ['paypal']}
+        paypal_payment = SAMPLE_PAYMENTS[1]
+
+        with patch.object(PaymentService, 'get_payments', return_value=paypal_payment) as mocked_service:
+            response = self.app.get('/payments?{}={}'.format(specific_attribute, specific_attribute_value))
+
+            mocked_service.assert_called_once_with(payment_attributes=attribute_params)
+            self.assertEqual(response.status_code, payments.HTTP_200_OK)
+            self.assertEqual(json.loads(response.data), paypal_payment)
+
+    def test_list_payments_not_found(self):
+        # attempt to retrieve payments and catch the exception raised; return 404
+        with patch.object(PaymentService, 'get_payments', side_effect=Exception) as mocked_service:
+            response = self.app.get('/payments')
+
+            self.assertEqual(response.status_code, payments.HTTP_404_NOT_FOUND)
+            self.assertEqual(json.loads(response.data), payments.GENERAL_NOT_FOUND_ERROR)
+
+    def test_list_payments_with_ids_and_other_params(self):
+        # test to make sure that the ids parameter takes priority over other parameters
+        ids = [1,2]
+        ids_query_string = 'ids={}&ids={}'.format(ids[0], ids[1])
+        payments_to_return = SAMPLE_PAYMENTS[1:3]
+        other_param = 'nickname'
+        other_param_value = 'amex'
+
+        with patch.object(PaymentService, 'get_payments', return_value=payments_to_return) as mocked_service:
+            query_string = '{}&{}={}'.format(ids_query_string, other_param, other_param_value)
+            response = self.app.get('/payments?{}'.format(query_string))
+
+            # important - we should call the get_payments method with payment_ids, *not* payment_attributes
+            mocked_service.assert_called_once_with(payment_ids=ids)
+            self.assertEqual(response.status_code, payments.HTTP_200_OK)
+            self.assertEqual(json.loads(response.data), payments_to_return)
+
+    @mock.patch.object(PaymentService, 'add_payment', return_value=CC_RETURN)
     def test_crud_create_card(self, mock_ps_add):
         data = json.dumps(CREDIT)
         resp = self.app.post('/payments', data=data, content_type='application/json')
-        mock_ps_add.assert_called_with(mock.ANY, CREDIT)
+        mock_ps_add.assert_called_with(CREDIT)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(json.loads(resp.data), {'created' : CC_RETURN})
 
-    @mock.patch.object(PaymentService, 'add_payment', return_value=PP_RETURN, autospec=True)
+    @mock.patch.object(PaymentService, 'add_payment', return_value=PP_RETURN)
     def test_crud_create_paypal(self, mock_ps_add):
         data = json.dumps(PAYPAL)
         resp = self.app.post('/payments', data=data, content_type='application/json')
-        mock_ps_add.assert_called_with(mock.ANY, PAYPAL)
+        mock_ps_add.assert_called_with(PAYPAL)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(json.loads(resp.data), {'created' : PP_RETURN})
 
-    @mock.patch.object(PaymentService, 'add_payment', autospec=True)
+    @mock.patch.object(PaymentService, 'add_payment')
     def test_crud_create_two_cards(self, mock_ps_add):
         data = json.dumps(CREDIT)
         mock_ps_add.return_value = CC_RETURN
         resp = self.app.post('/payments', data=data, content_type='application/json')
-        mock_ps_add.assert_called_with(mock.ANY, CREDIT)
+        mock_ps_add.assert_called_with(CREDIT)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(json.loads(resp.data), {'created' : CC_RETURN})
         
         data = json.dumps(DEBIT)
         mock_ps_add.return_value = DC_RETURN
         resp = self.app.post('/payments', data=data, content_type='application/json')
-        mock_ps_add.assert_called_with(mock.ANY, DEBIT)
+        mock_ps_add.assert_called_with(DEBIT)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(json.loads(resp.data), {'created' : DC_RETURN})
 
-    @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError, autospec=True)
-    def test_crud_create_bad_data(self, mock_ps_add):
+    @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError)
+    def test_crud_create_bad_data_single_quotes(self, mock_ps_add):
         data = json.dumps(BAD_DATA)
-        try:
-            resp = self.app.post('/payments', data=data, content_type='application/json')
-        except DataValidationError as e:
-            self.assertTrue('missing nickname' in e.message)
-            mock_ps_add.assert_called_with(mock.ANY, BAD_DATA)
-            self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-            self.assertTrue('missing nickname' in json.loads(resp.data))
+        
+        resp = self.app.post('/payments', data=data, content_type='application/json')
+        mock_ps_add.assert_called_with(BAD_DATA)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("error" in resp.data)
 
-    @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError, autospec=True)
+    @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError)
+    def test_crud_create_bad_data_double_quotes(self, mock_ps_add):
+        data = json.dumps(BAD_DATA2)
+        
+        resp = self.app.post('/payments', data=data, content_type='application/json')
+        mock_ps_add.assert_called_with(BAD_DATA2)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("error" in resp.data)
+
+    @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError)
     def test_crud_create_garbage(self, mock_ps_add):
         garbage = 'a@$*&@#sdassdc3r 3284723X43&^@!#@*#'
-        data = json.dumps(garbage)
-        try:
-            resp = self.app.post('/payments', data=data, content_type='application/json')
-        except DataValidationError as e:
-            self.assertTrue('bad or no data' in e.message)
-            mock_ps_add.assert_called_with(mock.ANY, None)
-            self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        resp = self.app.post('/payments', data=garbage, content_type='application/json')
+        mock_ps_add.assert_called_with(None)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("error" in resp.data)
 
+    def test_index(self):
+        resp = self.app.get('/')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue('Welcome to payments!' in resp.data)
 #test cases for update payments - put and patch
 # passing correct data to put
     @mock.patch.object(PaymentService, 'update_payment', return_value=PUT_CREDIT_RETURN, autospec=True)
@@ -181,4 +323,3 @@ class TestPaymentsCRUD(unittest.TestCase):
         resp = self.app.patch('/payments/1',data = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#", content_type='application/json')
         self.assertTrue('bad or no data' in resp.data)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-

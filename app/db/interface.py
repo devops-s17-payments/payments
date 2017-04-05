@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 
+
 from sqlalchemy import exc
 
 from app.db.models import Payment, Detail
@@ -27,12 +28,14 @@ class PaymentService(object):
         :param payment_data: <dict> a validated JSON payload that describes a new Payment object
         """
         p = Payment()
-        p.deserialize(payment_data)
+
+        try:
+            p.deserialize(payment_data)
+        except DataValidationError as e:
+            raise DataValidationError(e.message)
         self.db.session.add(p)
         self.db.session.commit()
-        result = p.serialize()
-        return result
-
+        return p.serialize()
     def remove_payment(self, payment_id=None, payment_attributes=None):
         """
         Accepts an id or a variable number of keyword arguments (in payment_attributes)
@@ -97,25 +100,50 @@ class PaymentService(object):
         :param payment_attributes: <dict> a collection of payment attributes to be used in
                                    filtering for specific payments
         """
+        if payment_ids != None:
+            payments = self.db.session.query(Payment).filter(Payment.id.in_(payment_ids)).all()
+            """
+            #### will come back to this new implementation ### 
+            try:
+                id_dict = [{'payment_id': id} for id in payment_ids]
+                payments = [self._query_payments(payment_attributes=val)[0] for key, val in id_dict.iteritems()]
+            except PaymentServiceQueryError as e:
+                raise DataValidationError(e.message)
+            """
+        elif payment_attributes != None:
+            try:
+                payments = self._query_payments(payment_attributes)
+            except PaymentServiceQueryError as e:
+                raise DataValidationError(e.message)
 
-        raise NotImplementedError()
+        else:
+            payments = self.db.session.query(Payment).all()
+
+        return [payment.serialize() for payment in payments]
 
     def _query_payments(self, payment_attributes):
         """
         Returns all payment items that fulfill the attributes used to
         filter from all payment items.
 
+
         Note: this method assumes that the attributes are safe and have been validated.
+        Also, the attributes passed in *must* be part of the Payment schema, since the
+        query below is for the Payment model.  Later on we should have a parameter that
+        indicates which model to use.
 
         :param parameter_attributes: <dict> a collection of Payment attributes to filter by
         :return: <list[Payment]> a list of the Payment items returned by the query
         """
         try:
-            payments = self.db.session.query(Payment).filter_by(**payment_attributes)
+
+            payment_query = self.db.session.query(Payment).filter_by(**payment_attributes)
+            payments = payment_query.all()
             return payments
 
         except exc.SQLAlchemyError:
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
+
 # UTILITY FUNCTIONS
     def is_valid_put(self,old_data,new_data):
         valid = False
@@ -146,6 +174,7 @@ class PaymentService(object):
         except TypeError as e:
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
         return valid & valid_detail
+
 
 class PaymentServiceException(Exception):
     """ Generic exception class for PaymentService. """
