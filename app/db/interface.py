@@ -3,8 +3,8 @@
 from sqlalchemy import exc
 
 from app.db import app_db
-from app.db.models import Payment, Detail
-
+from models import Payment, Detail
+from app.error_handlers import DataValidationError
 
 class PaymentService(object):
     """
@@ -26,7 +26,10 @@ class PaymentService(object):
         :param payment_data: <dict> a validated JSON payload that describes a new Payment object
         """
         p = Payment()
-        p.deserialize(payment_data)
+        try:
+            p.deserialize(payment_data)
+        except DataValidationError as e:
+            raise DataValidationError(e.message)
         self.db.session.add(p)
         self.db.session.commit()
         return p.serialize()

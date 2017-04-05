@@ -7,6 +7,7 @@ from flask_api import status    # HTTP Status Codes
 
 from app import app
 from app.db.interface import PaymentService
+from app.error_handlers import DataValidationError
 
 # Instantiate persistence service to be used in CRUD methods
 payment_service = PaymentService()
@@ -81,9 +82,14 @@ def list_payments():
 def create_payment():
     """ if get_json fails, no exception raised. returns None """
     data = request.get_json(silent=True)
-    payment = payment_service.add_payment(data)
-    message = {"created" : payment}
-    return make_response(jsonify(message), status.HTTP_201_CREATED)
+    try:
+        payment = payment_service.add_payment(data)
+        rc = status.HTTP_201_CREATED
+        message = {"created" : payment}
+    except DataValidationError as e:
+        message = {"error" : e.message}
+        rc = status.HTTP_400_BAD_REQUEST
+    return make_response(jsonify(message), rc)
 
 ######################################################################
 # SET DEFAULT PAYMENT (ACTION)
@@ -292,3 +298,4 @@ def is_positive(amount):
 def is_valid_patch(data):
     #update later for validating data for PATCH method
     return True
+
