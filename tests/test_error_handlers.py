@@ -89,7 +89,6 @@ class TestErrorHandlers(unittest.TestCase):
         self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)
         #self.assertTrue('requested URL was not found' in resp.data)
     def test_crud_update_id_not_found_patch(self):
-        print 'in porato'
         credit = json.dumps({'nickname' : 'mycredit'})
         resp = self.app.patch('payments/778',data = credit,content_type='application/json')
         self.assertTrue('not found' in resp.data)
@@ -97,6 +96,5 @@ class TestErrorHandlers(unittest.TestCase):
     def test_crud_update_id_not_found(self):
         credit = json.dumps(CREDIT)
         resp = self.app.put('payments/778',data = credit,content_type='application/json')
-        print resp.data
         self.assertTrue('not found' in resp.data)
         self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)

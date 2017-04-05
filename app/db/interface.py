@@ -77,11 +77,11 @@ class PaymentService(object):
         """
         payment = self.db.session.query(Payment).get(payment_id)
         if payment == None or payment.is_removed == True :
-            print 'monkey;'
             raise InvalidPaymentID('Invalid payment: Payment ID not found',status_code=404)
         if payment_replacement:
-            if not self.is_valid_put(payment.serialize(),payment_replacement):
-                raise DataValidationError('Invalid payment: body of request contained bad or no data')
+            # TODO : test cases for validity in next sprint
+            #if not self.is_valid_put(payment.serialize(),payment_replacement):
+            #   raise DataValidationError('Invalid payment: body of request contained bad or no data')
             payment.deserialize_put(payment_replacement)
             self.db.session.commit()
             return_object = payment.serialize()
@@ -162,7 +162,7 @@ class PaymentService(object):
 
         except exc.SQLAlchemyError:
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
-
+'''
 # UTILITY FUNCTIONS
     def is_valid_put(self,old_data,new_data):
         valid = False
@@ -193,7 +193,7 @@ class PaymentService(object):
         except TypeError as e:
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
         return valid & valid_detail
-
+'''
 
     def _remove_soft_deletes(self, payments):
         """

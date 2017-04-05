@@ -171,7 +171,6 @@ def update_partial_payments(id):
         rc = HTTP_200_OK
     except InvalidPaymentID as e:
         message = 'Invalid payment: Payment ID not found'
-
         rc = HTTP_404_NOT_FOUND
     except DataValidationError as e:
         message = 'Invalid payment: body of request contained bad or no data'

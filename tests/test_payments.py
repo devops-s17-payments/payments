@@ -297,7 +297,6 @@ class TestPaymentsCRUD(unittest.TestCase):
 # passing correct data to patch
     @mock.patch.object(PaymentService, 'update_payment', return_value=PATCH_RETURN, autospec=True)
     def test_crud_update_patch(self,mock_ps_update):
-        print 'here'
         data = json.dumps(PATCH_CREDIT)
         resp = self.app.patch('/payments/1', data=data, content_type='application/json')
         mock_ps_update.assert_called_with(mock.ANY,1,payment_attributes=PATCH_CREDIT)
