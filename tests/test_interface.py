@@ -49,13 +49,13 @@ class TestInterface(unittest.TestCase):
         p.deserialize(CREDIT)
         app_db.session.add(p)
         app_db.session.commit()
+
         self.ps = PaymentService()
         self.app = payments.app.test_client()
 
     def tearDown(self):
         app_db.session.remove()
         app_db.drop_all()
-
 
     @mock.patch('app.db.models.Payment')
     @mock.patch.object(app_db, 'session')
@@ -223,4 +223,79 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(len(result), 0)
         self.assertTrue(result[0], CC_RETURN)
     '''
+    
+    def test_interface_add_card_returns_json(self):
+        data = CREDIT
+        payment = self.ps.add_payment(data)
+        self.assertTrue(type(payment), type({}))
+        self.assertTrue(payment['nickname'] == 'my credit')
+        self.assertTrue(payment['details']['user_name'] == 'Jimmy Jones')
 
+    def test_interface_add_card_to_db(self):
+        data = CREDIT
+        p1 = app_db.session.query(Payment).get(1)
+        self.assertEqual(p1, None)
+        self.ps.add_payment(data)
+        p1 = app_db.session.query(Payment).get(1)
+        d1 = p1.details
+        self.assertEqual(p1.nickname, 'my credit')
+        self.assertEqual(d1.user_name, 'Jimmy Jones')
+        p2 = app_db.session.query(Payment).get(2)
+        self.assertEqual(p2, None)
+
+    def test_interface_add_paypal_to_db(self):
+        data = PAYPAL
+        p1 = app_db.session.query(Payment).get(1)
+        self.assertEqual(p1, None)
+        self.ps.add_payment(data)
+        p1 = app_db.session.query(Payment).get(1)
+        d1 = p1.details
+        self.assertEqual(p1.nickname, 'my paypal')
+        self.assertEqual(p1.user_id, 1)
+        self.assertEqual(d1.user_name, 'John Jameson')
+        self.assertEqual(d1.is_linked, True)
+        p2 = app_db.session.query(Payment).get(2)
+        self.assertEqual(p2, None)
+
+    def test_interface_add_missing_details(self):
+        data = {'nickname' : 'my debit', 'user_id' : 2, 'payment_type' : 'debit'}
+        self.assertRaises(DataValidationError, self.ps.add_payment, data)
+
+    def test_interface_add_bad_data(self):
+        data = BAD_DATA
+        self.assertRaises(DataValidationError, self.ps.add_payment, data)
+
+    def test_interface_add_garbage(self):
+        garbage = 'afv@#(&@(#Z@#>X@C8rq rq34tr0q934r 9qr@(#*(@!$))'
+        self.assertRaises(DataValidationError, self.ps.add_payment, garbage)
+    
+    @mock.patch.object(Payment, 'deserialize')
+    @mock.patch.object(Payment, 'serialize', return_value=CC_RETURN)
+    @mock.patch.object(app_db, 'session', autospec=True)
+    def test_interface_add_card_mock(self, mock_db, mock_serial, mock_deserial):
+        payment = self.ps.add_payment(CREDIT)
+        mock_serial.assert_called_once_with()
+        mock_deserial.assert_called_once_with(CREDIT)
+
+        mock_db.add.assert_called_once()
+        mock_db.commit.assert_called_once()
+
+        self.assertTrue(type(payment), type({}))
+        self.assertEqual(CC_RETURN, payment)
+        self.assertEqual(CC_DETAIL, payment['details'])
+
+    @mock.patch.object(Payment, 'deserialize')
+    @mock.patch.object(Payment, 'serialize', return_value=PP_RETURN)
+    @mock.patch.object(app_db, 'session')
+    def test_interface_add_paypal_mock(self, mock_db, mock_serial, mock_deserial):
+        temp = dict(PP_DETAIL, is_linked=True)
+        payment = self.ps.add_payment(PAYPAL)
+        mock_serial.assert_called_with()
+        mock_deserial.assert_called_once_with(PAYPAL)
+
+        mock_db.add.assert_called_once()
+        mock_db.commit.assert_called_once()
+
+        self.assertTrue(type(payment), type({}))
+        self.assertEqual(PP_RETURN, payment)
+        self.assertEqual(temp, payment['details'])

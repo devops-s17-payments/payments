@@ -2,8 +2,8 @@
 import re
 from datetime import datetime, timedelta
 from threading import Lock
-
 from flask import jsonify, request, make_response, url_for
+from flask_api import status    # HTTP Status Codes
 
 from app import app
 from app.db.interface import PaymentService
@@ -29,6 +29,10 @@ HTTP_409_CONFLICT = 409
 # this will move to error_handlers during refactor
 CONTENT_ERR_MSG = "If you see this, something needs to be refactored in payments.py"
 
+# Error bodies
+NOT_FOUND_ERROR_BODY = {'error': 'Payment with id {} could not be found'}
+GENERAL_NOT_FOUND_ERROR = {'error': 'Requested resource(s) could not be found'}
+
 ######################################################################
 # GET INDEX
 ######################################################################
@@ -42,48 +46,44 @@ def index():
 ######################################################################
 @app.route('/payments', methods=['GET'])
 def list_payments():
-    print 'TEST'
-    if request.query_string != "":
-        return query_payments()
-    results = []
-    type = request.args.get('type')
-    if type:
-        results = [payment for payment in payments if payment['type'] == type]
-    else:
-        results = payments
+    request_args = request.args
 
-    return make_response(jsonify(results), HTTP_200_OK)
+    try:
+        if 'ids' in request_args:
+            # just retrieve a list of payments where each payment corresponds to one of the ids
+            ids = request_args.getlist('ids', type=int)
+            results = payment_service.get_payments(payment_ids=ids)
+
+        elif request_args:
+            # if there is anything else in the request args, query by those parameters;
+            # flask puts the request_args into a proprietary data structure called ImmutableMultiDict
+            # this cast allows us to make a simple dictionary where each query param is a key and the
+            # value is a list that contains the value(s) of that query parameter
+            request_args = dict(request_args)
+            results = payment_service.get_payments(payment_attributes=request_args)
+
+        else:
+            # if no request args are present, simply return all payments
+            results = payment_service.get_payments()
+
+        return make_response(jsonify(results), HTTP_200_OK)
+
+    except Exception:
+        # we will want to make more specific exception handling later in order to differentiate
+        # the case in which it's a 404 and the case where it's a 400 - we'll assume for now that
+        # the client makes good requests for resources that may or may not exist
+        return make_response(jsonify(GENERAL_NOT_FOUND_ERROR), HTTP_404_NOT_FOUND)
 
 ######################################################################
-# ADD A NEW PAYMENT
+# CREATE PAYMENT
 ######################################################################
 @app.route('/payments', methods=['POST'])
-def add_payment():
+def create_payment():
+    """ if get_json fails, no exception raised. returns None """
     data = request.get_json(silent=True)
-    if data is None:
-        return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
-
-    if is_valid(data):
-        id = index_inc()
-    
-        newData = {'id' : id, 'default' : False, 'charge-history' : 0.0, 
-               'nickname' : data['nickname'], 'type' : data['type'], 'detail' : data['detail']}
-
-        #assumes successful authentication w/ paypal
-        if newData['type'] == 'paypal':
-            newData['detail']['linked'] = True
-  
-        payments.append(newData)
-        message = {'successfully created' : payments[len(payments)-1]}
-        rc = HTTP_201_CREATED
-    else:
-        message = {'error' : 'Data is not valid.' }
-        rc = HTTP_400_BAD_REQUEST
-    
-    response = make_response(jsonify(message), rc)
-    if rc == HTTP_201_CREATED:
-        response.headers['Location'] = url_for('get_payments', id = id)
-    return response
+    payment = payment_service.add_payment(data)
+    message = {"created" : payment}
+    return make_response(jsonify(message), status.HTTP_201_CREATED)
 
 ######################################################################
 # SET DEFAULT PAYMENT (ACTION)
@@ -111,15 +111,16 @@ def set_default(id):
 ######################################################################
 @app.route('/payments/<int:id>', methods=['GET'])
 def get_payments(id):
-    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
-    if len(index) > 0:
-        message = payments[index[0]]
+    try:
+        result = payment_service.get_payments(payment_ids=[id])
         rc = HTTP_200_OK
-    else:
-        message = { 'error' : 'Payment with id: %s was not found' % str(id) }
+    except Exception:
+        result = NOT_FOUND_ERROR_BODY
+        # place the id into the {} in the error message string
+        result['error'].format(id)
         rc = HTTP_404_NOT_FOUND
 
-    return make_response(jsonify(message), rc)
+    return make_response(jsonify(result), rc)
 
 ######################################################################
 # RETRIEVE A PAYMENT ON QUERY
