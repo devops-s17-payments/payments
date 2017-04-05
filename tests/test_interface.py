@@ -20,16 +20,16 @@ DC_DETAIL = {'user_name' : 'Jeremy Jenkins', 'card_number' : '4444333322221111',
 
 PP_DETAIL = {'user_name' : 'John Jameson', 'user_email' : 'jj@aol.com'}
 
-CREDIT = {'nickname' : 'my credit', 'user_id' : 1, 'payment_type' : 'credit', 
+CREDIT = {'nickname' : 'my credit', 'user_id' : 1, 'payment_type' : 'credit',
           'details' : CC_DETAIL}
 
-DEBIT = {'nickname' : 'my debit', 'user_id' : 2, 'payment_type' : 'debit', 
+DEBIT = {'nickname' : 'my debit', 'user_id' : 2, 'payment_type' : 'debit',
          'details' : DC_DETAIL}
 
-PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal', 
+PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal',
           'details' : PP_DETAIL}
 
-BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal', 
+BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal',
             'details' : PP_DETAIL}
 
 BAD_DATA2 = {"nicknam3" : "my paypal", "user_id" : 1, "payment_type" : "paypal",
@@ -75,20 +75,20 @@ class TestInterface(unittest.TestCase):
     @mock.patch.object(app_db, 'session')
     def test_interface_get_missing_mock(self, mock_db, mock_P):
         id = [99]
-        
+
         mock_db.query(Payment).filter.return_value.all.return_value = []
         result = self.ps.get_payments(payment_ids=id)
         mock_db.query(Payment).filter.assert_called_once()
         #mock_db.query(Payment).filter.all.assert_called_once()
         mock_P.serialize.assert_not_called()
         self.assertEqual(result, [])
-    
+
     @mock.patch.object(PaymentService, '_remove_soft_deletes')
     @mock.patch('app.db.models.Payment')
     @mock.patch.object(app_db, 'session')
     def test_interface_get_one_mock(self, mock_db, mock_P, mock_remove):
         id = [1]
-        
+
         mock_P.serialize.return_value = CC_RETURN
         mock_db.query(Payment).filter.return_value.all.return_value = [mock_P]
         mock_remove.return_value = [mock_P]
@@ -105,7 +105,7 @@ class TestInterface(unittest.TestCase):
     @mock.patch.object(app_db, 'session')
     def test_interface_get_multiple_mock(self, mock_db, mock_P, mock_remove):
         ids = [1,2,3]
-        
+
         mock_P.serialize.side_effect = [CC_RETURN, DC_RETURN, PP_RETURN]
         mock_db.query(Payment).filter.return_value.all.return_value = [mock_P, mock_P, mock_P]
         mock_remove.return_value = [mock_P, mock_P, mock_P]
@@ -121,7 +121,7 @@ class TestInterface(unittest.TestCase):
     @mock.patch.object(app_db, 'session')
     def test_interface_get_bad_multiple_mock(self, mock_db, mock_P, mock_remove):
         ids = [1,99, 2]
-        
+
         mock_P.serialize.side_effect = [CC_RETURN, DC_RETURN]
         mock_db.query(Payment).filter.return_value.all.return_value = [mock_P, mock_P]
         mock_remove.return_value = [mock_P, mock_P]
@@ -130,12 +130,12 @@ class TestInterface(unittest.TestCase):
         mock_P.serialize.assert_called()
         mock_remove.assert_called_once()
         self.assertEqual(len(result), 2)
+
     
     @mock.patch.object(PaymentService, '_remove_soft_deletes')
     @mock.patch('app.db.models.Payment')
     @mock.patch.object(app_db, 'session')
     def test_interface_get_all_mock(self, mock_db, mock_P, mock_remove):
-        
         mock_P.serialize.side_effect = [CC_RETURN, DC_RETURN]
         mock_db.query(Payment).all.return_value = [mock_P, mock_P]
         mock_remove.return_value = [mock_P, mock_P]
@@ -156,7 +156,6 @@ class TestInterface(unittest.TestCase):
         mock_q.return_value = [mock_P]
         mock_remove.return_value = [mock_P]
         result = self.ps.get_payments(payment_attributes=q)
-        
         mock_q.assert_called_once()
         mock_remove.assert_called_once()
         mock_P.serialize.assert_called_once()
@@ -177,14 +176,14 @@ class TestInterface(unittest.TestCase):
 
     def test_interface_get_single_payment(self):
         id = [1]
-        
+
         result = self.ps.get_payments(payment_ids=id)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0], CC_RETURN)
 
     def test_interface_get_missing_payment(self):
         id = [99]
-        
+
         result = self.ps.get_payments(payment_ids=id)
         self.assertEqual(len(result), 0)
         self.assertEqual(result, [])
@@ -199,7 +198,7 @@ class TestInterface(unittest.TestCase):
         p.deserialize(PAYPAL)
         app_db.session.add(p)
         app_db.session.commit()
-        
+
         result = self.ps.get_payments(payment_ids=ids)
         self.assertEqual(len(result), 3)
         self.assertEqual(result, [CC_RETURN, DC_RETURN, PP_RETURN])
@@ -214,7 +213,7 @@ class TestInterface(unittest.TestCase):
         p.deserialize(PAYPAL)
         app_db.session.add(p)
         app_db.session.commit()
-        
+
         result = self.ps.get_payments(payment_ids=ids)
         self.assertEqual(len(result), 2)
         self.assertEqual(result, [CC_RETURN, PP_RETURN])
@@ -226,7 +225,7 @@ class TestInterface(unittest.TestCase):
         p.deserialize(DEBIT)
         app_db.session.add(p)
         app_db.session.commit()
-        
+
         result = self.ps.get_payments(payment_ids=ids)
         self.assertEqual(len(result), 2)
         self.assertEqual(result[1], DC_RETURN)
@@ -272,7 +271,6 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertTrue(result[0], CC_RETURN)
 
-    
     def test_interface_add_card_returns_json(self):
         data = CREDIT
         payment = self.ps.add_payment(data)
@@ -323,7 +321,7 @@ class TestInterface(unittest.TestCase):
         with self.assertRaises(DataValidationError) as e:
             self.ps.add_payment(garbage)
         self.assertTrue('bad or no data' in e.exception.message)
-    
+
     @mock.patch.object(Payment, 'deserialize')
     @mock.patch.object(Payment, 'serialize', return_value=CC_RETURN)
     @mock.patch.object(app_db, 'session', autospec=True)
@@ -380,6 +378,26 @@ class TestInterface(unittest.TestCase):
         # also check that the mocked app_db was called appropriately
         mock_db.query(Payment).filter_by.assert_called_once_with(**QUERY_ATTRIBUTES)
 
+    #Testing delete/remove payments
+    @mock.patch.object(app_db, 'session')
+    def test_interface_delete_payment_with_valid_id(self, mock_db):
+        #payment_to_be_deleted = mock_db.query(Payment).get(1)
+        result = self.ps.remove_payment(payment_id=1)
+        payment_after_deletion = mock_db.query(Payment).get(1)
+        self.assertTrue(payment_after_deletion.is_removed)
+        #TODO - next sprint : do get, check count, should be one less
+
+    @mock.patch.object(app_db, 'session')
+    def test_interface_delete_payment_with_invalid_id(self, mock_db):
+        invalid_id = 28462
+        payment_to_be_deleted = mock_db.query(Payment).get(invalid_id)
+        self.assertNotEqual(payment_to_be_deleted.id,invalid_id)
+        result = self.ps.remove_payment(payment_id=invalid_id)
+        self.assertIsNone(result)
+        #This doesn't raise an error because Deletes are idempotent
+        payment_after_deletion = mock_db.query(Payment).get(invalid_id)
+        self.assertNotEqual(payment_after_deletion.id,invalid_id)
+        #TODO - next sprint : do get, check count, should be same
 
 class TestInterfaceFunctional(unittest.TestCase):
     """
