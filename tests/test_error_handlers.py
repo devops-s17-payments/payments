@@ -5,7 +5,7 @@
 import unittest, json
 from app import payments
 from app.db import app_db
-from app.error_handlers import DataValidationError
+from app.error_handlers import DataValidationError,InvalidPaymentID
 from app.db.interface import PaymentService
 from app.db.models import Payment, Detail
 from flask_api import status    # HTTP Status Codes
@@ -88,3 +88,15 @@ class TestErrorHandlers(unittest.TestCase):
         resp = self.app.get('<24@#&*^@sd35vqr\]/.,diiv8989')
         self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)
         #self.assertTrue('requested URL was not found' in resp.data)
+    def test_crud_update_id_not_found_patch(self):
+        print 'in porato'
+        credit = json.dumps({'nickname' : 'mycredit'})
+        resp = self.app.patch('payments/778',data = credit,content_type='application/json')
+        self.assertTrue('not found' in resp.data)
+        self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)
+    def test_crud_update_id_not_found(self):
+        credit = json.dumps(CREDIT)
+        resp = self.app.put('payments/778',data = credit,content_type='application/json')
+        print resp.data
+        self.assertTrue('not found' in resp.data)
+        self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)

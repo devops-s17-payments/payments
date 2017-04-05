@@ -62,6 +62,7 @@ class PaymentService(object):
         """
         payment = self.db.session.query(Payment).get(payment_id)
         if payment == None or payment.is_removed == True :
+            print 'monkey;'
             raise InvalidPaymentID('Invalid payment: Payment ID not found',status_code=404)
         if payment_replacement:
             if not self.is_valid_put(payment.serialize(),payment_replacement):
