@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 from threading import Lock
 from flask import jsonify, request, make_response, url_for
 from flask_api import status    # HTTP Status Codes
-
 from app import app
 from app.db.interface import PaymentService
+from app.error_handlers import DataValidationError
 # Instantiate persistence service to be used in CRUD methods
 payment_service = PaymentService()
 
@@ -59,7 +59,6 @@ def list_payments():
 @app.route('/payments', methods=['POST'])
 def create_payment():
     """ if get_json fails, no exception raised. returns None """
-    print("here:")
     data = request.get_json(silent=True)
     payment = payment_service.add_payment(data)
     message = {"created" : payment}
@@ -106,19 +105,23 @@ def get_payments(id):
 ######################################################################
 @app.route('/payments/<int:id>', methods=['PUT'])
 def update_payments(id):
+    if not request.data:
+        raise DataValidationError('Invalid payment: body of request contained bad or no data')
     if not request.is_json:
-        return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+        raise DataValidationError('Invalid payment: body of request contained bad or no data')
     data = request.get_json()
     message = payment_service.update_payment(id,payment_replacement=data)
-    return make_response(jsonify(message), rc)
+    return make_response(jsonify(message), HTTP_200_OK)
 
 ######################################################################
 # UPDATE AN EXISTING PAYMENT PARTIALLY
 ######################################################################
 @app.route('/payments/<int:id>', methods=['PATCH'])
 def update_partial_payments(id):
+    if not request.data:
+        raise DataValidationError('Invalid payment: body of request contained bad or no data')
     if not request.is_json:
-        return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
+        raise DataValidationError('Invalid payment: body of request contained bad or no data')
     data = request.get_json()
     message = payment_service.update_payment(id,payment_attributes=data)
     return make_response(jsonify(message), HTTP_200_OK)

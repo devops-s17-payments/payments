@@ -57,6 +57,7 @@ class PaymentService(object):
         :param payment_replacement: <dict> a complete payload that describes a new payload which replaces the old one
         :param payment_attributes: <dict> a collection of new payment attribute values that will overwrite old ones
         """
+        
         payment = Payment.query.get_or_404(payment_id)
         if payment_replacement:
             #need to handle is valid and throw 400 bad request for payment_replacement
@@ -65,6 +66,7 @@ class PaymentService(object):
             return_object = payment.serialize()
             return return_object
         elif payment_attributes: #patch
+            print 'inside interface patch'
             # implement isvalid on payment_attributes and throw 400 bad request otherwise
             existing_payment = payment.serialize()
             payload_nickname = existing_payment['nickname'] if 'nickname' not in payment_attributes else payment_attributes['nickname']
@@ -78,6 +80,8 @@ class PaymentService(object):
             self.db.session.commit()
             return_object = payment.serialize()
             return return_object
+        else:
+            raise DataValidationError('Invalid payment: body of request contained bad or no data')
 
     def get_payments(self, payment_ids=None, payment_attributes=None):
         """

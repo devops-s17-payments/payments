@@ -41,9 +41,9 @@ class Payment(app_db.Model):
             self.user_id = data['user_id']
             self.nickname = data['nickname']
             self.payment_type = data['payment_type']
-            self.is_default = False
+            self.is_default = False if 'is_default' not in data else data['is_default']
             self.is_removed = False
-            self.charge_history = 0.0
+            self.charge_history = 0.0 if 'charge_history' not in data else data['charge_history']
             details = data['details']
             
             d = Detail()
