@@ -1,10 +1,8 @@
 # -*- coding:utf-8 -*-
-
-from sqlalchemy import exc
-
-from app.db import app_db
-from models import Payment, Detail
+from app.db.models import Payment, Detail
 from app.error_handlers import DataValidationError
+from app.db import app_db
+from sqlalchemy import exc
 
 class PaymentService(object):
     """
@@ -77,8 +75,26 @@ class PaymentService(object):
         :param payment_attributes: <dict> a collection of payment attributes to be used in
                                    filtering for specific payments
         """
+        if payment_ids != None:
+            payments = self.db.session.query(Payment).filter(Payment.id.in_(payment_ids)).all()
+            """
+            #### will come back to this new implementation ### 
+            try:
+                id_dict = [{'payment_id': id} for id in payment_ids]
+                payments = [self._query_payments(payment_attributes=val)[0] for key, val in id_dict.iteritems()]
+            except PaymentServiceQueryError as e:
+                raise DataValidationError(e.message)
+            """
+        elif payment_attributes != None:
+            try:
+                payments = self._query_payments(payment_attributes)
+            except PaymentServiceQueryError as e:
+                raise DataValidationError(e.message)
 
-        raise NotImplementedError()
+        else:
+            payments = self.db.session.query(Payment).all()
+
+        return [payment.serialize() for payment in payments]
 
     def _query_payments(self, payment_attributes):
         """
@@ -100,7 +116,6 @@ class PaymentService(object):
 
         except exc.SQLAlchemyError:
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
-
 
 class PaymentServiceException(Exception):
     """ Generic exception class for PaymentService. """
