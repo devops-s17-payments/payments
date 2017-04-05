@@ -2,20 +2,32 @@
 # python -m unittest discover
 # nosetests -v --rednose --nologcapture
 
-import unittest, mock
+
+import unittest
+import mock
+
 from app import payments
 from app.db import app_db
 from app.db.models import Payment, Detail
-from app.db.interface import PaymentService
+from app.db.interface import PaymentService, PaymentServiceQueryError
+
 from app.error_handlers import DataValidationError
+
 
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
              'expires' : '01/2019', 'card_type' : 'Mastercard'}
+
+DC_DETAIL = {'user_name' : 'John Jameson', 'card_number' : '4444333322221111',
+             'expires' : '02/2020', 'card_type' : 'Visa'}
 
 PP_DETAIL = {'user_name' : 'John Jameson', 'user_email' : 'jj@aol.com'}
 
 CREDIT = {'nickname' : 'my credit', 'user_id' : 1, 'payment_type' : 'credit', 
           'details' : CC_DETAIL}
+
+
+DEBIT = {'nickname' : 'my debit', 'user_id' : 2, 'payment_type' : 'debit', 
+         'details' : DC_DETAIL}
 
 PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal', 
           'details' : PP_DETAIL}
@@ -26,7 +38,17 @@ BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal',
 PP_RETURN = dict(PAYPAL, is_default=False, charge_history=0.0, payment_id=1)
 PP_RETURN['details']['is_linked'] = True
 
-CC_RETURN = dict(CREDIT,is_default=False, charge_history=0.0, payment_id=1)
+CC_RETURN = dict(CREDIT, is_default=False, charge_history=0.0, payment_id=1)
+DC_RETURN = dict(DEBIT, is_default=False, charge_history=0.0, payment_id=2)
+
+QUERY_ATTRIBUTES = {
+    'user_id': 1,
+    'nickname': 'my paypal'
+}
+
+BAD_QUERY_ATTRIBUTES = {
+    'payment_type': 'Amateurcard'
+}
 
 
 class TestInterface(unittest.TestCase):
@@ -35,7 +57,6 @@ class TestInterface(unittest.TestCase):
         payments.app.debug = True
         payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
         app_db.create_all()  # make our sqlalchemy tables
-
         self.ps = PaymentService()
         self.app = payments.app.test_client()
 
@@ -118,3 +139,65 @@ class TestInterface(unittest.TestCase):
         self.assertTrue(type(payment), type({}))
         self.assertEqual(PP_RETURN, payment)
         self.assertEqual(temp, payment['details'])
+
+    @mock.patch.object(app_db, 'session')
+    def test_interface_query_payments(self, mock_db):
+        # this is a long mock - note that the method call chaining matches that of the method call
+        # on self.db in _query_payments
+
+        # set the return value of ...filter_by() to a new mock whose all property is a function that
+        # returns [DC_RETURN]; this is done so that when payment_query.all() is called, [DC_RETURN] is returned
+        mock_db.query(Payment).filter_by.return_value = mock.MagicMock(all=lambda: [DC_RETURN])
+        result = self.ps._query_payments(QUERY_ATTRIBUTES)
+
+        mock_db.query(Payment).filter_by.assert_called_once_with(**QUERY_ATTRIBUTES)
+        self.assertEqual(result, [DC_RETURN])
+
+    @mock.patch.object(app_db, 'session')
+    def test_interface_query_payments_error(self, mock_db):
+        mock_db.query(Payment).filter_by.side_effect = PaymentServiceQueryError
+
+        with self.assertRaises(PaymentServiceQueryError):
+            result = self.ps._query_payments(QUERY_ATTRIBUTES)
+        # also check that the mocked app_db was called appropriately
+        mock_db.query(Payment).filter_by.assert_called_once_with(**QUERY_ATTRIBUTES)
+
+
+class TestInterfaceFunctional(unittest.TestCase):
+    """
+    A class for doing more functional tests involving the interface.py classes.
+    Actual db connections are used, so db resources are created and destroyed.
+    """
+
+    def setUp(self):
+        payments.app.debug = True
+        payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
+        app_db.create_all()  # make our sqlalchemy tables
+
+        payments_to_add = (CREDIT, DEBIT, PAYPAL)
+        for p in payments_to_add:
+            payment = Payment()
+            payment.deserialize(p)
+            app_db.session.add(payment)
+            app_db.session.commit()
+
+        self.ps = PaymentService()
+
+    def tearDown(self):
+        app_db.session.remove()
+        app_db.drop_all()
+
+    def test_successful_query(self):
+        # No mocking for this test since we want to test the method's ability to *actually* retrieve resources
+        # the query attributes should match the CREDIT payment item
+
+        result = self.ps._query_payments(QUERY_ATTRIBUTES)
+        # in this case, PP_RETURN was the third item added, so its id should be 3, not 2
+        PP_RETURN['payment_id'] = 3
+        # should only be one result, so get the only element of the list
+        assert result[0].serialize() == PP_RETURN
+
+    def test_unsuccessful_query(self):
+        # try querying for something that doesn't exist
+        result = self.ps._query_payments(BAD_QUERY_ATTRIBUTES)
+        assert result == []
