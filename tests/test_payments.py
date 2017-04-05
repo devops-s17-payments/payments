@@ -246,3 +246,8 @@ class TestPaymentsCRUD(unittest.TestCase):
         mock_ps_add.assert_called_with(None)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("error" in resp.data)
+
+    def test_index(self):
+        resp = self.app.get('/')
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue('Welcome to payments!' in resp.data)
