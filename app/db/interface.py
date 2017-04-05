@@ -90,7 +90,8 @@ class PaymentService(object):
         :return: <list[Payment]> a list of the Payment items returned by the query
         """
         try:
-            payments = self.db.session.query(Payment).filter_by(**payment_attributes)
+            payment_query = self.db.session.query(Payment).filter_by(**payment_attributes)
+            payments = payment_query.all()
             return payments
 
         except exc.SQLAlchemyError:
