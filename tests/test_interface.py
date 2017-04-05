@@ -12,10 +12,16 @@ from app.error_handlers import DataValidationError
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
              'expires' : '01/2019', 'card_type' : 'Mastercard'}
 
+DC_DETAIL = {'user_name' : 'Jeremy Jenkins', 'card_number' : '4444333322221111',
+             'expires' : '02/2020', 'card_type' : 'Visa'}
+
 PP_DETAIL = {'user_name' : 'John Jameson', 'user_email' : 'jj@aol.com'}
 
 CREDIT = {'nickname' : 'my credit', 'user_id' : 1, 'payment_type' : 'credit', 
           'details' : CC_DETAIL}
+
+DEBIT = {'nickname' : 'my debit', 'user_id' : 1, 'payment_type' : 'debit', 
+         'details' : DC_DETAIL}
 
 PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal', 
           'details' : PP_DETAIL}
@@ -23,10 +29,15 @@ PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal',
 BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal', 
             'details' : PP_DETAIL}
 
-PP_RETURN = dict(PAYPAL, is_default=False, charge_history=0.0, payment_id=1)
+BAD_DATA2 = {"nicknam3" : "my paypal", "user_id" : 1, "payment_type" : "paypal",
+             "details" : {"user_name" : "John Jameson", "user_email" : "jj@aol.com"}}
+
+PP_RETURN = dict(PAYPAL, is_default=False, charge_history=0.0, payment_id=3)
 PP_RETURN['details']['is_linked'] = True
 
-CC_RETURN = dict(CREDIT,is_default=False, charge_history=0.0, payment_id=1)
+CC_RETURN = dict(CREDIT, is_default=False, charge_history=0.0, payment_id=1)
+
+DC_RETURN = dict(DEBIT, is_default=False, charge_history=0.0, payment_id=2)
 
 
 class TestInterface(unittest.TestCase):
@@ -80,13 +91,23 @@ class TestInterface(unittest.TestCase):
         data = {'nickname' : 'my debit', 'user_id' : 2, 'payment_type' : 'debit'}
         self.assertRaises(DataValidationError, self.ps.add_payment, data)
 
-    def test_interface_add_bad_data(self):
+    def test_interface_add_bad_data_single_quote(self):
         data = BAD_DATA
-        self.assertRaises(DataValidationError, self.ps.add_payment, data)
+        with self.assertRaises(DataValidationError) as e:
+            self.ps.add_payment(data)
+        self.assertTrue('missing nickname' in e.exception.message)
+
+    def test_interface_add_bad_data_double_quote(self):
+        data = BAD_DATA2
+        with self.assertRaises(DataValidationError) as e:
+            self.ps.add_payment(data)
+        self.assertTrue('missing nickname' in e.exception.message)
 
     def test_interface_add_garbage(self):
         garbage = 'afv@#(&@(#Z@#>X@C8rq rq34tr0q934r 9qr@(#*(@!$))'
-        self.assertRaises(DataValidationError, self.ps.add_payment, garbage)
+        with self.assertRaises(DataValidationError) as e:
+            self.ps.add_payment(garbage)
+        self.assertTrue('bad or no data' in e.exception.message)
     
     @mock.patch.object(Payment, 'deserialize')
     @mock.patch.object(Payment, 'serialize', return_value=CC_RETURN)

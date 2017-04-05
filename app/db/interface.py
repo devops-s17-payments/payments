@@ -2,7 +2,7 @@
 
 from app.db import app_db
 from models import Payment, Detail
-#from app.error_handlers import DataValidationError
+from app.error_handlers import DataValidationError
 
 class PaymentService(object):
     """
@@ -18,10 +18,14 @@ class PaymentService(object):
 
     def add_payment(self, payment_data):
         p = Payment()
-        p.deserialize(payment_data)
+        try:
+            p.deserialize(payment_data)
+        except DataValidationError as e:
+            raise DataValidationError(e.message)
         self.db.session.add(p)
         self.db.session.commit()
-        return p.serialize()
+        result = p.serialize()
+        return result
 
     def remove_payment(self, payment_id=None, payment_attributes=None):
         """
