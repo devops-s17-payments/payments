@@ -78,7 +78,7 @@ class PaymentService(object):
         if payment_ids != None:
             payments = self.db.session.query(Payment).filter(Payment.id.in_(payment_ids)).all()
             """
-            #### will come back to this new implementation ### 
+            #### will come back to this new implementation ###
             try:
                 id_dict = [{'payment_id': id} for id in payment_ids]
                 payments = [self._query_payments(payment_attributes=val)[0] for key, val in id_dict.iteritems()]
@@ -124,12 +124,79 @@ class PaymentService(object):
         """
         Takes a list of payments and removes those payments that have been 'soft deleted,'
         meaning the 'is_removed' field has been set to True
-        
+
         Maybe there's a probably a better way to do this by including requirement in db query,
-        but this will do for now 
+        but this will do for now
         """
         return [payment for payment in payments if not payment.is_removed]
-        
+
+    def perform_payment_action(self, user_id, payment_attributes=None):
+        """
+        Accepts a payment with user_id and performs an action on it
+
+        :param user_id: <int> the unique identifier of a user_id whose payment/s is/are to be actioned upon
+        :param payment_attributes: <dict> a collection of new payment attribute values that will update old ones
+
+        if payment_attributes has payment_id, then it is "set-default" action.
+        This also sets any other default payment of the same user to False
+
+        if payment_attributes has amount, then it is performing "charge" action.
+        This would update the charge history
+        """
+
+        payments = self.get_payments(payment_attributes={"user_id":user_id})
+
+        if len(payments) <= 0 :
+            raise PaymentNotFoundException
+        else:
+            if payment_attributes['payment_id']: #for set-default action
+                payment_id_to_be_updated = payment_attributes['payment_id']
+                for payment in payments:
+                    if payment.is_removed == False and payment.id == payment_id_to_be_updated:
+                        payment_to_be_updated = payment
+                if not payment_to_be_updated:
+                    existing_payment = payment_to_be_updated.serialize()
+                    existing_payment['is_default'] = True
+                    payment_to_be_updated.deserialize_put(existing_payment)
+                    #making sure other payments have default as false
+                    other_payments = [payment for payment in payments if not payment_to_be_updated]
+                    for other_payment in other_payments:
+                        other_payment_serialized = other_payment.serialize()
+                        other_payment_serialized['is_default'] = False
+                        other_payment.deserialize_put(other_payment_serialized)
+                    #Committing all changes
+                    self.db.session.commit()
+                    return True
+                else:
+                    return False
+            elif payment_attributes['amount']: #for charge action
+                default_payment = payment for payment in payments if payment.is_default
+                if not default_payment:
+                    payment_to_be_updated = default_payment.serialize()
+                    if payment_to_be_updated['payment_type'] == 'paypal' and not payment_to_be_updated['detail']['linked']:
+                        raise PayPalAccountNotLinkedException
+                    elif payment_to_be_updated['payment_type'] != 'paypal':
+                        exp_date = payment_to_be_updated['detail']['expires']
+                        month = int(exp_date[:2]) + 1
+                        exp_date = '%s%s' % (month, exp_date[2:])
+                        exp_date = datetime.strptime(exp_date, '%m/%Y')
+                        exp_date = exp_date - timedelta(1)
+                        exp_date = datetime.date(exp_date)
+
+                        now = datetime.now()
+                        now = datetime.date(now)
+
+                        if(now > exp_date):
+                            raise CardExpiredException
+                    else:
+                        payment_to_be_updated['charge-history'] = payment_to_be_updated['charge-history'] + payment_attributes['amount']
+                        default_payment.deserialize_put(payment_to_be_updated)
+                        self.db.session.commit()
+                        return True
+                else:
+                    raise DefaultPaymentNotFoundException
+            else:
+                raise NotSupportedException
 
 class PaymentServiceException(Exception):
     """ Generic exception class for PaymentService. """
