@@ -17,16 +17,16 @@ DC_DETAIL = {'user_name' : 'Jeremy Jenkins', 'card_number' : '4444333322221111',
 
 PP_DETAIL = {'user_name' : 'John Jameson', 'user_email' : 'jj@aol.com'}
 
-CREDIT = {'nickname' : 'my credit', 'user_id' : 1, 'payment_type' : 'credit', 
+CREDIT = {'nickname' : 'my credit', 'user_id' : 1, 'payment_type' : 'credit',
           'details' : CC_DETAIL}
 
-DEBIT = {'nickname' : 'my debit', 'user_id' : 1, 'payment_type' : 'debit', 
+DEBIT = {'nickname' : 'my debit', 'user_id' : 1, 'payment_type' : 'debit',
          'details' : DC_DETAIL}
 
-PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal', 
+PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal',
           'details' : PP_DETAIL}
 
-BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal', 
+BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal',
             'details' : PP_DETAIL}
 
 BAD_DATA2 = {"nicknam3" : "my paypal", "user_id" : 1, "payment_type" : "paypal",
@@ -148,7 +148,7 @@ class TestPaymentsCRUD(unittest.TestCase):
             mocked_service.assert_called_once_with(payment_ids=ids)
             self.assertEqual(response.status_code, payments.HTTP_200_OK)
             self.assertEqual(json.loads(response.data), payments_to_return)
-            
+
     def test_list_payments_by_attribute(self):
         # return payments that have a specific attribute
         specific_attribute = 'payment_type'
@@ -212,7 +212,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         mock_ps_add.assert_called_with(CREDIT)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(json.loads(resp.data), {'created' : CC_RETURN})
-        
+
         data = json.dumps(DEBIT)
         mock_ps_add.return_value = DC_RETURN
         resp = self.app.post('/payments', data=data, content_type='application/json')
@@ -223,7 +223,7 @@ class TestPaymentsCRUD(unittest.TestCase):
     @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError)
     def test_crud_create_bad_data_single_quotes(self, mock_ps_add):
         data = json.dumps(BAD_DATA)
-        
+
         resp = self.app.post('/payments', data=data, content_type='application/json')
         mock_ps_add.assert_called_with(BAD_DATA)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
@@ -232,7 +232,7 @@ class TestPaymentsCRUD(unittest.TestCase):
     @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError)
     def test_crud_create_bad_data_double_quotes(self, mock_ps_add):
         data = json.dumps(BAD_DATA2)
-        
+
         resp = self.app.post('/payments', data=data, content_type='application/json')
         mock_ps_add.assert_called_with(BAD_DATA2)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
@@ -241,11 +241,33 @@ class TestPaymentsCRUD(unittest.TestCase):
     @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError)
     def test_crud_create_garbage(self, mock_ps_add):
         garbage = 'a@$*&@#sdassdc3r 3284723X43&^@!#@*#'
-        
+
         resp = self.app.post('/payments', data=garbage, content_type='application/json')
         mock_ps_add.assert_called_with(None)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("error" in resp.data)
+
+    #Tests for Deleting
+    @mock.patch.object(PaymentService, 'remove_payment')
+    def test_delete_payment_with_valid_id(self, mock_ps_delete):
+        resp = self.app.delete('/payments/1')
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertTrue('' in resp.data)
+        #TODO - next sprint: Do a get and check count, should be one less
+
+    @mock.patch.object(PaymentService, 'remove_payment')
+    def test_delete_payment_with_invalid_id(self, mock_ps_delete):
+        resp = self.app.delete('/payments/1345345')
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertTrue('' in resp.data)
+        #TODO - next sprint: Do a get and check count, should be the same
+
+    def test_delete_payment_with_gibberish_id(self):
+        resp = self.app.delete('/payments/jghjeshg')
+        #will not go to the payment service so no need to mock
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue("Not Found" in resp.data)
+        #TODO - next sprint: Do a get and check count, should be the same
 
     def test_index(self):
         resp = self.app.get('/')

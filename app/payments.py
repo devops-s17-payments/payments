@@ -193,9 +193,7 @@ def update_partial_payments(id):
 ######################################################################
 @app.route('/payments/<int:id>', methods=['DELETE'])
 def delete_payments(id):
-    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
-    if len(index) > 0:
-        del payments[index[0]]
+    payment_service.remove_payment(payment_id=id)
     return '', HTTP_204_NO_CONTENT
 
 ######################################################################
