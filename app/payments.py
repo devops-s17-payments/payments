@@ -94,22 +94,27 @@ def create_payment():
 ######################################################################
 # SET DEFAULT PAYMENT (ACTION)
 ######################################################################
-@app.route('/payments/<int:id>/set-default', methods=['PUT'])
-def set_default(id):
-    if id > current_payment_id or id < 1:
-        message = { 'error' : 'Payment with id: %s was not found' % str(id) }
-        rc = HTTP_404_NOT_FOUND
-    else:
-        index = [i for i, payment in enumerate(payments) if payment['id'] == id]
-        if len(index) <= 0:
-            message = { 'error' : 'Payment with id: %s was not found' % str(id) }
-            rc = HTTP_404_NOT_FOUND
+@app.route('/payments/<int:user_id>/set-default', methods=['PATCH'])
+def set_default(user_id):
+    try:
+        if not request.data:
+            raise DataValidationError('Invalid request: body of request contained no data')
+        if not request.is_json:
+            raise DataValidationError('Invalid request: body of request contained bad data')
+        data = request.get_json()
+        if not data['payment_id']:
+            raise DataValidationError('Invalid request: body of request does not have the payment_id')
         else:
-            for payment in payments:
-                payment['default'] = False
-            payments[index[0]]['default'] = True
-            message = { 'success' : 'Payment with id: %s set as default.' % str(id) }
-            rc = HTTP_200_OK
+            resp = payment_service.perform_payment_action(user_id=user_id,payment_attributes=data)
+            if resp == True:
+                message = { 'success' : 'Payment with id: %s set as default for user with user_id: %s.' % (data['payment_id'], str(user_id)) }
+                rc = HTTP_200_OK
+            else:
+                message = { 'error' : 'No Payment with id: %s was found for user with user_id: %s.' % (data['payment_id'], str(user_id)) }
+                rc = HTTP_404_NOT_FOUND
+    except Exception:
+        message = {"error" : e.message}
+        rc = status.HTTP_400_BAD_REQUEST
     return make_response(jsonify(message), rc)
 
 ######################################################################
@@ -170,7 +175,7 @@ def update_partial_payments(id):
             payload_nickname = target_payment['nickname'] if 'nickname' not in payload else payload['nickname']
             payload_type = target_payment['type'] if 'type' not in payload else payload['type']
             payload_detail = target_payment['detail'] if 'detail' not in payload else payload['detail']
-            payments[index[0]] = {'id' : id, 'nickname' : payload_nickname, 'default' : target_payment['default'], 
+            payments[index[0]] = {'id' : id, 'nickname' : payload_nickname, 'default' : target_payment['default'],
                 'charge-history' : target_payment['charge-history'], 'type' : payload_type, 'detail' : payload_detail}
             message = payments[index[0]]
             rc = HTTP_200_OK
@@ -197,80 +202,58 @@ def delete_payments(id):
 # CHARGE PAYMENT (ACTION)
 ######################################################################
 
-@app.route('/payments/charge', methods=['PUT'])
-def charge_payment():
-    rc = HTTP_400_BAD_REQUEST
-    charge = request.get_json(silent=True)
-    if charge is None:
-        return make_response(CONTENT_ERR_MSG, rc)
-    if not is_positive(charge['amount']):
-        message = {'error' : ('Invalid order amount. Transaction cancelled. ', 
-                              'Please check your order and try again.')}
+@app.route('/payments/<int:user_id>/charge', methods=['PATCH'])
+def charge_payment(user_id):
+    try:
+        if not request.data:
+            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+        if not request.is_json:
+            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+        data = request.get_json()
+        if not data['amount']:
+            raise DataValidationError('Invalid request: body of request does not have the amount')
+        elif (data['amount'] < 0):
+            raise DataValidationError('Invalid order amount. Transaction cancelled. Please check your order and try again.')
+        else:
+            resp = payment_service.perform_payment_action(user_id=user_id, payment_attributes=data)
+            if resp == True:
+                message = {'success' : 'Default payment method for user_id: %s has been charged $%.2f' % (str(user_id), data['amount'])}
+                rc = HTTP_200_OK
+    except Exception:
+
+'''
     else:
         index = [i for i, payment in enumerate(payments) if payment['default']]
         if len(index) < 1:
             message = {'error' : 'No default payment method selected. Transaction cancelled'}
             return make_response(jsonify(message), rc)
         p = payments[index[0]]
-        
+
         if p['type'] == 'paypal' and not p['detail']['linked']:
-            message = {'error' : ('Your paypal account has not been linked. Transaction cancelled. ', 
+            message = {'error' : ('Your paypal account has not been linked. Transaction cancelled. ',
                                   'Please update your account and try your order again.')}
         elif p['type'] != 'paypal' and is_expired(p):
-            message = {'error' : ('Your credit/debit card has expired. Transaction cancelled. ', 
+            message = {'error' : ('Your credit/debit card has expired. Transaction cancelled. ',
                                   'Please update your account and try your order again.')}
         else:
             p['charge-history'] = p['charge-history'] + charge['amount']
             message = {'success' : 'Your payment method %s has been charged $%.2f' % (p['nickname'], charge['amount'])}
             rc = HTTP_200_OK
-    
+'''
     return make_response(jsonify(message), rc)
 
 
 ######################################################################
 #   U T I L I T I E S
 ######################################################################
+"""
+Commenting this out as it is not being used currently
 def index_inc():
     global current_payment_id
     with lock:
         current_payment_id += 1
     return current_payment_id
-
-def is_valid(data):
-    valid = False
-    valid_detail = False
-    try:
-        nickname = data['nickname']
-        type = data['type']
-        detail = data['detail']
-
-        if bool(re.search(r'\d', detail['name'])) == False:
-            valid = True
-
-        if type == 'credit' or type == 'debit':
-            name = detail['name']
-            card_number = detail['number']
-            expires_date = detail['expires']
-            subtype = detail['type']
-            if bool(re.match('^[0-9]+$', card_number)) and (len(card_number) == 16):
-                datetime.strptime(expires_date, '%m/%Y')
-                valid_detail = True
-        else:
-            #TO DO: perform validation of e-mail
-            email = detail['e-mail']
-            valid_detail = True
-    #except KeyError as err:
-    #app.logger.warn('Missing parameter error: %s', err)
-    #    pass
-    #except TypeError:
-    #app.logger.warn('Invalid Content Type error')
-    #    pass
-    #except ValueError:
-    #app.logger.warn('Invalid Content Type error')
-    #   pass
-    except:
-        pass
-    return valid & valid_detail
+"""
 
 def is_expired(payment):
     #get datetime object for last day of expiring month
@@ -288,14 +271,3 @@ def is_expired(payment):
         return False
     else:
         return True
-
-def is_positive(amount):
-    if(amount > 0):
-        return True
-    else:
-        return False
-
-def is_valid_patch(data):
-    #update later for validating data for PATCH method
-    return True
-
