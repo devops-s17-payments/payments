@@ -239,33 +239,3 @@ def charge_payment(user_id):
             rc = HTTP_200_OK
 '''
     return make_response(jsonify(message), rc)
-
-
-######################################################################
-#   U T I L I T I E S
-######################################################################
-"""
-Commenting this out as it is not being used currently
-def index_inc():
-    global current_payment_id
-    with lock:
-        current_payment_id += 1
-    return current_payment_id
-"""
-
-def is_expired(payment):
-    #get datetime object for last day of expiring month
-    exp_date = payment['detail']['expires']
-    month = int(exp_date[:2]) + 1
-    exp_date = '%s%s' % (month, exp_date[2:])
-    exp_date = datetime.strptime(exp_date, '%m/%Y')
-    exp_date = exp_date - timedelta(1)
-    exp_date = datetime.date(exp_date)
-
-    now = datetime.now()
-    now = datetime.date(now)
-
-    if(now < exp_date):
-        return False
-    else:
-        return True
