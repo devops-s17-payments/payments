@@ -12,10 +12,10 @@ def before_all(context):
     payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
     app_db.drop_all()    # clean up the last tests
     app_db.create_all()  # make our sqlalchemy tables
+    app_db.session.commit()
     
     context.app = payments.app.test_client()
     context.server = payments
 
 def after_all(context):
-    app.db.drop_all()
-    context.server.shutdown()
+    app_db.drop_all()
