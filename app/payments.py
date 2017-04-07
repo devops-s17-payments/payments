@@ -116,11 +116,10 @@ def set_default(user_id):
     except KeyError as e:
         message = {'error' : 'Invalid request: body of request does not have the payment_id'}
         rc = status.HTTP_400_BAD_REQUEST
-    '''
-except PaymentNotFoundError as e:
-        message = {'error' : e.message}
-        rc = status.HTTP_404_NOT_FOUND
-    '''
+    #except PaymentNotFoundError as e:
+    #    message = {'error' : e.message}
+    #    rc = status.HTTP_404_NOT_FOUND
+
     return make_response(jsonify(message), rc)
 
 ######################################################################
@@ -210,20 +209,25 @@ def delete_payments(id):
 def charge_payment(user_id):
     try:
         if not request.data:
-            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+            raise DataValidationError('Invalid payment: body of request contained no data')
         if not request.is_json:
-            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+            raise DataValidationError('Invalid payment: body of request contained bad data')
         data = request.get_json()
-        if not data['amount']:
-            raise DataValidationError('Invalid request: body of request does not have the amount')
-        elif (data['amount'] < 0):
-            raise DataValidationError('Invalid request: Order amount is negative.')
-        else:
-            resp = payment_service.perform_payment_action(user_id=user_id, payment_attributes=data)
-            if resp == True:
-                message = {'success' : 'Default payment method for user_id: %s has been charged $%.2f' % (str(user_id), data['amount'])}
-                rc = HTTP_200_OK
+        if data['amount']:
+            if(data['amount'] < 0):
+                raise DataValidationError('Invalid request: Order amount is negative.')
+            else:
+                resp = payment_service.perform_payment_action(user_id,payment_attributes=data)
+                if resp == True:
+                    message = {'success' : 'Default payment method for user_id: %s has been charged $%.2f' % (str(user_id), data['amount'])}
+                    rc = HTTP_200_OK
     except DataValidationError as e:
         message = {'error' : e.message}
         rc = HTTP_400_BAD_REQUEST
+    except KeyError as e:
+        message = {'error' : 'Invalid request: body of request does not have the amount to be charged'}
+        rc = status.HTTP_400_BAD_REQUEST
+    #except PaymentNotFoundError as e:
+    #    message = {'error' : e.message}
+    #    rc = status.HTTP_404_NOT_FOUND
     return make_response(jsonify(message), rc)
