@@ -1,4 +1,3 @@
-from behave import *
 from app import payments
 from app.db import app_db
 
