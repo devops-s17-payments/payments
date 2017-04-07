@@ -162,7 +162,8 @@ class PaymentService(object):
         payments = self.get_payments(payment_attributes={"user_id":user_id})
 
         if len(payments) <= 0 :
-            raise PaymentNotFoundException
+            error_msg = "Payments not found for the user_id: "+ user_id
+            raise DataValidationError(error_msg)
         else:
             if payment_attributes['payment_id']: #for set-default action
                 payment_id_to_be_updated = payment_attributes['payment_id']
@@ -185,11 +186,14 @@ class PaymentService(object):
                 else:
                     return False
             elif payment_attributes['amount']: #for charge action
-                default_payment = payment for payment in payments if payment.is_default
+                for payment in payments:
+                    if payment.is_default == True:
+                        default_payment = payment
                 if not default_payment:
                     payment_to_be_updated = default_payment.serialize()
                     if payment_to_be_updated['payment_type'] == 'paypal' and not payment_to_be_updated['detail']['linked']:
-                        raise PayPalAccountNotLinkedException
+                        error_msg = "Invalid request: Default Payment for this user_id: "+ user_id+" (Paypal) is not linked."
+                        raise DataValidationError(error_msg)
                     elif payment_to_be_updated['payment_type'] != 'paypal':
                         exp_date = payment_to_be_updated['detail']['expires']
                         month = int(exp_date[:2]) + 1
@@ -202,16 +206,18 @@ class PaymentService(object):
                         now = datetime.date(now)
 
                         if(now > exp_date):
-                            raise CardExpiredException
+                            error_msg = "Invalid request: Default Payment for this user_id: "+ user_id+" ("+payment_to_be_updated['payment_type']+") is expired"
+                            raise DataValidationError(error_msg)
                     else:
                         payment_to_be_updated['charge-history'] = payment_to_be_updated['charge-history'] + payment_attributes['amount']
                         default_payment.deserialize_put(payment_to_be_updated)
                         self.db.session.commit()
                         return True
                 else:
-                    raise DefaultPaymentNotFoundException
+                    error_msg = "Invalid request: Default Payment for this user_id: "+ user_id+" not found. Please update the default_payment first!"
+                    raise DataValidationError(error_msg)
             else:
-                raise NotSupportedException
+                raise DataValidationError("Invalid request: The request body contains bad data")
 
 class PaymentServiceException(Exception):
     """ Generic exception class for PaymentService. """
