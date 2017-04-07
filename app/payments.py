@@ -102,19 +102,25 @@ def set_default(user_id):
         if not request.is_json:
             raise DataValidationError('Invalid request: body of request contained bad data')
         data = request.get_json()
-        if not data['payment_id']:
-            raise DataValidationError('Invalid request: body of request does not have the payment_id')
-        else:
-            resp = payment_service.perform_payment_action(user_id=user_id,payment_attributes=data)
+        if data['payment_id']:
+            resp = payment_service.perform_payment_action(user_id,payment_attributes=data)
             if resp == True:
                 message = { 'success' : 'Payment with id: %s set as default for user with user_id: %s.' % (data['payment_id'], str(user_id)) }
                 rc = HTTP_200_OK
             else:
                 message = { 'error' : 'No Payment with id: %s was found for user with user_id: %s.' % (data['payment_id'], str(user_id)) }
                 rc = HTTP_404_NOT_FOUND
-    except Exception:
-        message = {"error" : e.message}
+    except DataValidationError as e:
+        message = {'error' : e.message}
         rc = status.HTTP_400_BAD_REQUEST
+    except KeyError as e:
+        message = {'error' : 'Invalid request: body of request does not have the payment_id'}
+        rc = status.HTTP_400_BAD_REQUEST
+    '''
+except PaymentNotFoundError as e:
+        message = {'error' : e.message}
+        rc = status.HTTP_404_NOT_FOUND
+    '''
     return make_response(jsonify(message), rc)
 
 ######################################################################
@@ -211,31 +217,13 @@ def charge_payment(user_id):
         if not data['amount']:
             raise DataValidationError('Invalid request: body of request does not have the amount')
         elif (data['amount'] < 0):
-            raise DataValidationError('Invalid order amount. Transaction cancelled. Please check your order and try again.')
+            raise DataValidationError('Invalid request: Order amount is negative.')
         else:
             resp = payment_service.perform_payment_action(user_id=user_id, payment_attributes=data)
             if resp == True:
                 message = {'success' : 'Default payment method for user_id: %s has been charged $%.2f' % (str(user_id), data['amount'])}
                 rc = HTTP_200_OK
-    except Exception:
-
-'''
-    else:
-        index = [i for i, payment in enumerate(payments) if payment['default']]
-        if len(index) < 1:
-            message = {'error' : 'No default payment method selected. Transaction cancelled'}
-            return make_response(jsonify(message), rc)
-        p = payments[index[0]]
-
-        if p['type'] == 'paypal' and not p['detail']['linked']:
-            message = {'error' : ('Your paypal account has not been linked. Transaction cancelled. ',
-                                  'Please update your account and try your order again.')}
-        elif p['type'] != 'paypal' and is_expired(p):
-            message = {'error' : ('Your credit/debit card has expired. Transaction cancelled. ',
-                                  'Please update your account and try your order again.')}
-        else:
-            p['charge-history'] = p['charge-history'] + charge['amount']
-            message = {'success' : 'Your payment method %s has been charged $%.2f' % (p['nickname'], charge['amount'])}
-            rc = HTTP_200_OK
-'''
+    except DataValidationError as e:
+        message = {'error' : e.message}
+        rc = HTTP_400_BAD_REQUEST
     return make_response(jsonify(message), rc)
