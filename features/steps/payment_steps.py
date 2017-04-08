@@ -1,9 +1,16 @@
 from behave import given, when, then
+from flask_api import status
 import json
 
 @when('I visit the "home page"')
 def step_impl(context):
     context.resp = context.app.get('/')
+    assert context.resp.status_code == status.HTTP_200_OK
+
+@when(u'I visit "{url}"')
+def step_impl(context, url):
+    context.resp = context.app.get(url)
+    assert context.resp.status_code == status.HTTP_200_OK
 
 @then('I should see "{message}"')
 def step_impl(context, message):
