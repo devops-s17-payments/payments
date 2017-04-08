@@ -274,6 +274,17 @@ class PaymentService(object):
         else:
             return False
 
+    @staticmethod
+    def load_sample(public, private):
+        p = Payment()
+        p.deserialize(public)
+        p.is_default = private['is_default']
+        p.is_removed = private['is_removed']
+        p.charge_history = private['charge_history'] 
+        app_db.session.add(p)
+        app_db.session.commit()
+
+
 class PaymentNotFoundError(Exception):
     """ Exception when payment is not found """
 
