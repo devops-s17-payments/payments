@@ -35,6 +35,15 @@ BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal',
 
 BAD_DATA2 = {"nicknam3" : "my paypal", "user_id" : 1, "payment_type" : "paypal",
              "details" : {"user_name" : "John Jameson", "user_email" : "jj@aol.com"}}
+# for put updates
+PUT_CREDIT = {'nickname' : 'favcredit', 'user_id' : 1, 'payment_type' : 'credit',
+    'details' : CC_DETAIL}
+PUT_CREDIT_RETURN = {'nickname' : 'favcredit', 'user_id' : 1, 'payment_type' : 'credit',
+    'details' : CC_DETAIL, 'is_default' : False, 'charge_history' : 0.0, 'payment_id' : 1, 'is_removed' : True}
+# for patch updates
+PATCH_CREDIT = { 'nickname' : 'boringcredit'}
+PATCH_RETURN = {'nickname' : 'boringcredit', 'user_id' : 1, 'payment_type' : 'credit',
+    'details' : CC_DETAIL, 'is_default' : False, 'charge_history' : 0.0, 'payment_id' : 1}
 
 PP_RETURN = dict(PAYPAL, is_default=False, charge_history=0.0, payment_id=3)
 PP_RETURN['details']['is_linked'] = True
@@ -405,11 +414,29 @@ class TestInterface(unittest.TestCase):
         payment_after_deletion = mock_db.query(Payment).get(invalid_id)
         self.assertNotEqual(payment_after_deletion.id,invalid_id)
         #TODO - next sprint : do get, check count, should be same
-#Test cases for update interface method
+
+#valid PUT data
+    @mock.patch.object(PaymentService,'is_valid_put',return_value = True)
     @mock.patch.object(app_db, 'session')
-    def test_interface_update_with_vaild_id_invalidargs(self, mock_db):
-        with self.assertRaises(DataValidationError):
-            result = self.ps.update_payment(111,None,None)
+    @mock.patch('app.db.models.Payment')
+    #@mock.patch.object(Payment, 'deserialize_put')
+    #@mock.patch.object(Payment, 'serialize', return_value=PUT_CREDIT_RETURN)
+    def test_interface_update_with_valid_put_data(self,mock_isvalid,mock_db,mock_P):
+        print 'in here'
+        mock_db.query(Payment).get(1).return_value = mock_P
+        #mock_db.query(Payment).get(1).return_value.serialize.return_value = PUT_CREDIT_RETURN
+        #mock_P.serialize.return_value = PUT_CREDIT_RETURN
+        resp = self.ps.update_payment(1,payment_replacement = PUT_CREDIT_RETURN)
+        #self.assertEqual(PUT_CREDIT_RETURN,resp)
+        #print resp.response_data
+        #mock_db.query(Payment).get.assert_called_with(1)
+        #mock_isvalid.assert_called_once()
+        #mock_db.query(Payment).get(1).return_value.deserialize_put.assert_called_once_with(PUT_CREDIT_RETURN)
+        mock_P.serialize.assert_called_once()
+        #mock_P.deserialize_put().assert_called_once()
+        mock_db.commit.assert_called_once()
+        self.assertEqual(resp['nickname'],'favcredit')
+
 class TestInterfaceFunctional(unittest.TestCase):
     """
     A class for doing more functional tests involving the interface.py classes.
@@ -448,4 +475,18 @@ class TestInterfaceFunctional(unittest.TestCase):
         # try querying for something that doesn't exist
         result = self.ps._query_payments(BAD_QUERY_ATTRIBUTES)
         assert result == []
-
+'''
+    #Test cases for update interface method
+    #none put and patch inputs
+    @mock.patch.object(app_db, 'session')
+    def test_interface_update_with_vaild_id_invalidargs(self, mock_db):
+    with self.assertRaises(DataValidationError):
+    result = self.ps.update_payment(111,None,None)
+    @mock.patch.object(app_db, 'session')
+    def test_interface_update_with_invalid_id(self, mock_db):
+    with self.assertRaises(DataValidationError):
+    mock_db.query(Payment).get(111).return_value = None
+    result = self.ps.update_payment(111,payment_replacement = PUT_CREDIT_RETURN)
+    mock_db.query(Payment).get.assert_called_with(111)
+    print 'bla'
+'''

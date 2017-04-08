@@ -75,17 +75,22 @@ class PaymentService(object):
         :param payment_replacement: <dict> a complete payload that describes a new payload which replaces the old one
         :param payment_attributes: <dict> a collection of new payment attribute values that will overwrite old ones
         """
+        print 'hhhhhhh'
         payment = self.db.session.query(Payment).get(payment_id)
+        print 'kkkk'
         if payment == None or payment.is_removed == True :
+            print 'potato'
             raise InvalidPaymentID('Invalid payment: Payment ID not found',status_code=404)
+        if not payment_replacement and not payment_attributes:
+            raise DataValidationError('Invalid payment: body of request contained bad or no data')
         if payment_replacement:
-            # TODO : test cases for validity in next sprint
-            #if not self.is_valid_put(payment.serialize(),payment_replacement):
-            #   raise DataValidationError('Invalid payment: body of request contained bad or no data')
+            print 'jjjjjj'
+            # TODO 	: test cases for validity in next sprint
+            if not self.is_valid_put(payment.serialize(),payment_replacement):
+                print 'not valid'
+                raise DataValidationError('Invalid payment: body of request contained bad or no data')
+            print 'lllllllll'
             payment.deserialize_put(payment_replacement)
-            self.db.session.commit()
-            return_object = payment.serialize()
-            return return_object
         elif payment_attributes: #patch
             existing_payment = payment.serialize()
             for key in payment_attributes:
@@ -94,11 +99,9 @@ class PaymentService(object):
                 else:
                     raise DataValidationError('Invalid payment: body of request contains invalid/un-updatable fields')
             payment.deserialize_put(existing_payment)
-            self.db.session.commit()
-            return_object = payment.serialize()
-            return return_object
-        else:
-            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+        self.db.session.commit()
+        return_object = payment.serialize()
+        return return_object
 
     def get_payments(self, payment_ids=None, payment_attributes=None):
         """
@@ -162,7 +165,7 @@ class PaymentService(object):
 
         except exc.SQLAlchemyError:
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
-    '''
+
 # UTILITY FUNCTIONS
     def is_valid_put(self,old_data,new_data):
         valid = False
@@ -193,7 +196,7 @@ class PaymentService(object):
         except TypeError as e:
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
         return valid & valid_detail
-    '''
+
     def _remove_soft_deletes(self, payments):
         """
         Takes a list of payments and removes those payments that have been 'soft deleted,'

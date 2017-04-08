@@ -332,13 +332,30 @@ class TestPaymentsCRUD(unittest.TestCase):
 #@mock.patch.object(PaymentService, 'update_payment',side_effect=DataValidationError, autospec=True)
     def test_crud_update_put_garbage(self):
         garbage = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#"
-        resp = self.app.put('/payments/1',data = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#", content_type='application/json')
+        resp = self.app.put('/payments/1',data = garbage, content_type='application/json')
         self.assertTrue('bad or no data' in resp.data)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
 # passing garbage data to patch
     def test_crud_update_patch_garbage(self):
         garbage = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#"
-        resp = self.app.patch('/payments/1',data = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#", content_type='application/json')
+        resp = self.app.patch('/payments/1',data = garbage, content_type='application/json')
         self.assertTrue('bad or no data' in resp.data)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+# passing a non existing payment id to PATCH
+    @mock.patch.object(PaymentService, 'update_payment', side_effect=InvalidPaymentID('Invalid payment: Payment ID not found',status_code=404), autospec = True)
+    def test_crud_update_id_not_found_patch(self,mock_ps_update):
+        credit = json.dumps({'nickname' : 'mycredit'})
+        resp = self.app.patch('payments/778',data = credit,content_type='application/json')
+        mock_ps_update.assert_called_with(mock.ANY,778,payment_attributes={'nickname' : 'mycredit'})
+        self.assertTrue('Invalid payment: Payment ID not found' in resp.data)
+        self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)
+# passing a non existing payment id to PUT
+    @mock.patch.object(PaymentService, 'update_payment', side_effect=InvalidPaymentID('Invalid payment: Payment ID not found',status_code=404), autospec = True)
+    def test_crud_update_id_not_found_put(self,mock_ps_update):
+        credit = json.dumps(CC_RETURN)
+        resp = self.app.put('payments/778',data = credit,content_type='application/json')
+        mock_ps_update.assert_called_with(mock.ANY,778,payment_replacement=CC_RETURN)
+        self.assertTrue('Invalid payment: Payment ID not found' in resp.data)
+        self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)
