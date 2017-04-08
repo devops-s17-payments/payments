@@ -144,7 +144,17 @@ class PaymentService(object):
         but this will do for now 
         """
         return [payment for payment in payments if not payment.is_removed]
-        
+
+    @staticmethod
+    def load_sample(public, private):
+        p = Payment()
+        p.deserialize(public)
+        p.is_default = private['is_default']
+        p.is_removed = private['is_removed']
+        p.charge_history = private['charge_history'] 
+        app_db.session.add(p)
+        app_db.session.commit()
+
 
 class PaymentServiceException(Exception):
     """ Generic exception class for PaymentService. """
