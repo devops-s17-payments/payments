@@ -10,7 +10,6 @@ import json
 @given('the following payments')
 def step_impl(context):
 	for row in context.table:
-
 		details = {
 			'user_name' : row['user_name'],
 			'user_email' : row['user_email'],
