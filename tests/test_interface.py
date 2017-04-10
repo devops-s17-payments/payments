@@ -396,24 +396,63 @@ class TestInterface(unittest.TestCase):
 
     #Testing delete/remove payments
     @mock.patch.object(app_db, 'session')
-    def test_interface_delete_payment_with_valid_id(self, mock_db):
-        #payment_to_be_deleted = mock_db.query(Payment).get(1)
-        result = self.ps.remove_payment(payment_id=1)
-        payment_after_deletion = mock_db.query(Payment).get(1)
-        self.assertTrue(payment_after_deletion.is_removed)
-        #TODO - next sprint : do get, check count, should be one less
-    
+    def test_interface_delete_payment_with_valid_id_mock(self, mock_db):
+        payment_id = 1
+
+        cc_payment = Payment()
+        cc_payment.deserialize(CC_RETURN)
+        cc_payment.id = 1
+
+        mock_db.query(Payment).get.return_value = cc_payment
+
+        result = self.ps.remove_payment(payment_id=payment_id)
+        mock_db.query(Payment).get.assert_called_once_with(payment_id)
+        mock_db.commit.assert_called_once()
+        self.assertTrue(cc_payment.is_removed)
+
     @mock.patch.object(app_db, 'session')
-    def test_interface_delete_payment_with_invalid_id(self, mock_db):
+    def test_interface_delete_payment_with_invalid_id_mock(self, mock_db):
         invalid_id = 28462
-        payment_to_be_deleted = mock_db.query(Payment).get(invalid_id)
-        self.assertNotEqual(payment_to_be_deleted.id,invalid_id)
-        result = self.ps.remove_payment(payment_id=invalid_id)
-        self.assertIsNone(result)
+        mock_db.query(Payment).get.return_value = None
+
         #This doesn't raise an error because Deletes are idempotent
-        payment_after_deletion = mock_db.query(Payment).get(invalid_id)
-        self.assertNotEqual(payment_after_deletion.id,invalid_id)
-        #TODO - next sprint : do get, check count, should be same
+        result = self.ps.remove_payment(payment_id=invalid_id)
+
+        mock_db.query(Payment).get.assert_called_once_with(invalid_id)
+        mock_db.commit.assert_not_called
+
+    #Delete test cases without any mock
+    def test_interface_delete_payment_with_valid_id(self):
+        #setUp has one item in the DB
+        payment_id = 1
+
+        existing_payments = self.ps.get_payments()
+        self.assertEqual(len(existing_payments),1)
+
+        result = self.ps.remove_payment(payment_id=payment_id)
+
+        deleted_payment = app_db.session.query(Payment).get(payment_id)
+        self.assertIsNotNone(deleted_payment)
+        self.assertTrue(deleted_payment.is_removed)
+
+        current_payments = self.ps.get_payments()
+        self.assertEqual(len(current_payments),0)
+
+    def test_interface_delete_payment_with_invalid_id(self):
+        #setUp has one item in the DB
+        invalid_id = 28462
+
+        existing_payments = self.ps.get_payments()
+        self.assertEqual(len(existing_payments),1)
+
+        #This doesn't raise an error because Deletes are idempotent
+        result = self.ps.remove_payment(payment_id=invalid_id)
+
+        deleted_payment = app_db.session.query(Payment).get(invalid_id)
+        self.assertIsNone(deleted_payment)
+
+        current_payments = self.ps.get_payments()
+        self.assertEqual(len(current_payments),1)    
 
 #Test cases for update interface method
 #valid PUT data
@@ -428,14 +467,14 @@ class TestInterface(unittest.TestCase):
         mock_isvalid.assert_called_once()
         mock_P.deserialize_put.assert_called_once()
         mock_db.commit.assert_called_once()
-    
+
 #none put and patch inputs
     @mock.patch.object(app_db, 'session')
     def test_interface_update_with_vaild_id_invalidargs(self, mock_db):
         with self.assertRaises(DataValidationError):
             result = self.ps.update_payment(111,None,None)
         mock_db.commit.assert_not_called()
-    
+
 #update a non existing (payment id not found or is removed = true) payment
     @mock.patch.object(app_db, 'session')
     def test_interface_update_with_invalid_id(self, mock_db):

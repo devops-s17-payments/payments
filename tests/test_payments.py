@@ -263,21 +263,18 @@ class TestPaymentsCRUD(unittest.TestCase):
         resp = self.app.delete('/payments/1')
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue('' in resp.data)
-        #TODO - next sprint: Do a get and check count, should be one less
 
     @mock.patch.object(PaymentService, 'remove_payment')
     def test_delete_payment_with_invalid_id(self, mock_ps_delete):
         resp = self.app.delete('/payments/1345345')
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue('' in resp.data)
-        #TODO - next sprint: Do a get and check count, should be the same
 
     def test_delete_payment_with_gibberish_id(self):
         resp = self.app.delete('/payments/jghjeshg')
         #will not go to the payment service so no need to mock
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertTrue("Not Found" in resp.data)
-        #TODO - next sprint: Do a get and check count, should be the same
+        self.assertTrue('Not Found' in resp.data)
 
     #Tests for action - set-default
     @mock.patch.object(PaymentService, 'perform_payment_action')
