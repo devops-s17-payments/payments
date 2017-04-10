@@ -89,11 +89,11 @@ class TestInterface(unittest.TestCase):
         id = [99]
 
         mock_db.query(Payment).filter.return_value.all.return_value = []
-        result = self.ps.get_payments(payment_ids=id)
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.get_payments(payment_ids=id)
+            self.assertTrue('id 99 could not be found' in e)
         mock_db.query(Payment).filter.assert_called_once()
-        #mock_db.query(Payment).filter.all.assert_called_once()
         mock_P.serialize.assert_not_called()
-        self.assertEqual(result, [])
 
     @mock.patch.object(PaymentService, '_remove_soft_deletes')
     @mock.patch('app.db.models.Payment')
@@ -196,9 +196,9 @@ class TestInterface(unittest.TestCase):
     def test_interface_get_missing_payment(self):
         id = [99]
 
-        result = self.ps.get_payments(payment_ids=id)
-        self.assertEqual(len(result), 0)
-        self.assertEqual(result, [])
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.get_payments(payment_ids=id)
+            self.assertTrue('id 99 could not be found' in e)
 
     def test_interface_get_three_consec_payment(self):
         ids = [1,2,3]
