@@ -9,8 +9,8 @@ import mock
 from app import payments
 from app.db import app_db
 from app.db.models import Payment, Detail
-from app.db.interface import PaymentService, PaymentServiceQueryError
-from app.error_handlers import DataValidationError,InvalidPaymentID
+from app.db.interface import PaymentService, PaymentServiceQueryError, PaymentNotFoundError
+from app.error_handlers import DataValidationError
 
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
              'expires' : '01/2019', 'card_type' : 'Mastercard'}
@@ -39,7 +39,7 @@ BAD_DATA2 = {"nicknam3" : "my paypal", "user_id" : 1, "payment_type" : "paypal",
 PUT_CREDIT = {'nickname' : 'favcredit', 'user_id' : 1, 'payment_type' : 'credit',
     'details' : CC_DETAIL}
 PUT_CREDIT_RETURN = {'nickname' : 'favcredit', 'user_id' : 1, 'payment_type' : 'credit',
-    'details' : CC_DETAIL, 'is_default' : False, 'charge_history' : 0.0, 'payment_id' : 1, 'is_removed' : True}
+    'details' : CC_DETAIL, 'is_default' : False, 'charge_history' : 0.0, 'payment_id' : 1}
 # for patch updates
 PATCH_CREDIT = { 'nickname' : 'boringcredit'}
 PATCH_RETURN = {'nickname' : 'boringcredit', 'user_id' : 1, 'payment_type' : 'credit',
@@ -423,7 +423,7 @@ class TestInterface(unittest.TestCase):
     def test_interface_update_with_valid_put_data(self,mock_P,mock_db,mock_isvalid):
         mock_db.query(Payment).get.return_value = mock_P
         mock_P.serialize.return_value = PUT_CREDIT_RETURN
-        resp = self.ps.update_payment(1,payment_replacement = PUT_CREDIT_RETURN)
+        resp = self.ps.update_payment(1,payment_replacement = PUT_CREDIT)
         mock_P.serialize.assert_called()
         mock_isvalid.assert_called_once()
         mock_P.deserialize_put.assert_called_once()
@@ -436,12 +436,12 @@ class TestInterface(unittest.TestCase):
             result = self.ps.update_payment(111,None,None)
         mock_db.commit.assert_not_called()
     
-#update a non existing payment
+#update a non existing (payment id not found or is removed = true) payment
     @mock.patch.object(app_db, 'session')
     def test_interface_update_with_invalid_id(self, mock_db):
         mock_db.query(Payment).get.return_value = None
-        with self.assertRaises(InvalidPaymentID):
-            result = self.ps.update_payment(111,payment_replacement = PUT_CREDIT_RETURN)
+        with self.assertRaises(PaymentNotFoundError):
+            result = self.ps.update_payment(111,payment_replacement = PUT_CREDIT)
         mock_db.query(Payment).get.assert_called_with(111)
         mock_db.commit.assert_not_called()
 

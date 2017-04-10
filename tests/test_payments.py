@@ -5,10 +5,10 @@
 import unittest, json, mock
 from mock import patch
 from app import payments
-from app.db.interface import PaymentService
+from app.db.interface import PaymentService, PaymentNotFoundError
 from flask_api import status   # HTTP Status Codes
 from flask import make_response,jsonify
-from app.error_handlers import DataValidationError,InvalidPaymentID
+from app.error_handlers import DataValidationError
 from mock import patch
 
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
@@ -287,9 +287,9 @@ class TestPaymentsCRUD(unittest.TestCase):
 # passing correct data to put
     @mock.patch.object(PaymentService, 'update_payment', return_value=PUT_CREDIT_RETURN, autospec=True)
     def test_crud_update_put(self,mock_ps_update):
-        data = json.dumps(PUT_CREDIT_RETURN)
+        data = json.dumps(PUT_CREDIT)
         resp = self.app.put('/payments/1', data=data, content_type='application/json')
-        mock_ps_update.assert_called_with(mock.ANY,1,payment_replacement=PUT_CREDIT_RETURN)
+        mock_ps_update.assert_called_with(mock.ANY,1,payment_replacement=PUT_CREDIT)
         self.assertEqual( resp.status_code, status.HTTP_200_OK )
         new_json = json.loads(resp.data)
         self.assertEqual (new_json['nickname'], 'favcredit')
@@ -344,7 +344,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
 # passing a non existing payment id to PATCH
-    @mock.patch.object(PaymentService, 'update_payment', side_effect=InvalidPaymentID('Invalid payment: Payment ID not found',status_code=404), autospec = True)
+    @mock.patch.object(PaymentService, 'update_payment', side_effect=PaymentNotFoundError('Invalid payment: Payment ID not found'), autospec = True)
     def test_crud_update_id_not_found_patch(self,mock_ps_update):
         credit = json.dumps({'nickname' : 'mycredit'})
         resp = self.app.patch('payments/778',data = credit,content_type='application/json')
@@ -352,7 +352,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         self.assertTrue('Invalid payment: Payment ID not found' in resp.data)
         self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)
 # passing a non existing payment id to PUT
-    @mock.patch.object(PaymentService, 'update_payment', side_effect=InvalidPaymentID('Invalid payment: Payment ID not found',status_code=404), autospec = True)
+    @mock.patch.object(PaymentService, 'update_payment', side_effect=PaymentNotFoundError('Invalid payment: Payment ID not found'), autospec = True)
     def test_crud_update_id_not_found_put(self,mock_ps_update):
         credit = json.dumps(CC_RETURN)
         resp = self.app.put('payments/778',data = credit,content_type='application/json')

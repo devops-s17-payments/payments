@@ -5,7 +5,7 @@
 import unittest, json
 from app import payments
 from app.db import app_db
-from app.error_handlers import DataValidationError,InvalidPaymentID
+from app.error_handlers import DataValidationError
 from app.db.interface import PaymentService
 from app.db.models import Payment, Detail
 from flask_api import status    # HTTP Status Codes

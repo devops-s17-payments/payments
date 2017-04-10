@@ -4,7 +4,7 @@
 from sqlalchemy import exc
 
 from app.db.models import Payment, Detail
-from app.error_handlers import DataValidationError,InvalidPaymentID
+from app.error_handlers import DataValidationError
 from app.db import app_db
 from app.db.models import Payment
 
@@ -80,7 +80,7 @@ class PaymentService(object):
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
         payment = self.db.session.query(Payment).get(payment_id)
         if payment == None or payment.is_removed == True :
-            raise InvalidPaymentID('Invalid payment: Payment ID not found',status_code=404)
+            raise PaymentNotFoundError('Invalid payment: Payment ID not found')
         if payment_replacement:
             # TODO 	: test cases for validity in next sprint
             if not self.is_valid_put(payment.user_id,payment_replacement):
@@ -199,7 +199,8 @@ class PaymentService(object):
         """
         return [payment for payment in payments if not payment.is_removed]
         
-
+class PaymentNotFoundError(Exception):
+    """ Exception when payment is not found """
 
 class PaymentServiceException(Exception):
     """ Generic exception class for PaymentService. """

@@ -5,9 +5,9 @@ from threading import Lock
 from flask import jsonify, request, make_response, url_for
 from flask_api import status    # HTTP Status Codes
 from app import app
-from app.db.interface import PaymentService
+from app.db.interface import PaymentService,PaymentNotFoundError
 
-from app.error_handlers import DataValidationError,InvalidPaymentID
+from app.error_handlers import DataValidationError
 
 # Instantiate persistence service to be used in CRUD methods
 payment_service = PaymentService()
@@ -135,17 +135,12 @@ def get_payments(id):
 @app.route('/payments/<int:id>', methods=['PUT'])
 def update_payments(id):
     try:
-        if not request.data:
-            raise DataValidationError('Invalid payment: body of request contained bad or no data')
         if not request.is_json:
             raise DataValidationError('Invalid payment: Content Type is not json')
-        try:
-            data = request.get_json()
-        except Exception:
-            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+        data = request.get_json(silent=True)
         message = payment_service.update_payment(id,payment_replacement=data)
         rc = HTTP_200_OK
-    except InvalidPaymentID as e:
+    except PaymentNotFoundError as e:
         message = e.message
         rc = HTTP_404_NOT_FOUND
     except DataValidationError as e:
@@ -159,17 +154,12 @@ def update_payments(id):
 @app.route('/payments/<int:id>', methods=['PATCH'])
 def update_partial_payments(id):
     try:
-        if not request.data:
-            raise DataValidationError('Invalid payment: body of request contained bad or no data')
         if not request.is_json:
             raise DataValidationError('Invalid payment: Content Type is not json')
-        try:
-            data = request.get_json()
-        except Exception:
-            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+        data = request.get_json(silent=True)
         message = payment_service.update_payment(id,payment_attributes=data)
         rc = HTTP_200_OK
-    except InvalidPaymentID as e:
+    except PaymentNotFoundError as e:
         message = e.message
         rc = HTTP_404_NOT_FOUND
     except DataValidationError as e:

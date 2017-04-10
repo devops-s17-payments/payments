@@ -175,7 +175,7 @@ class TestModels(unittest.TestCase):
         payment['payment_id'] = 2
         self.assertEqual(payment, DC_RETURN)
     
-    def test_payment_deserialize_put(self,):
+    def test_payment_deserialize_put(self):
         p = Payment()
         p.deserialize(PUT_CREDIT)
         p.deserialize_put(PUT_CREDIT_IP)
@@ -186,7 +186,6 @@ class TestModels(unittest.TestCase):
         self.assertEqual(p.is_default, False)
         self.assertEqual(p.is_removed, False)
         self.assertEqual(p.charge_history, 0.0)
-        print 'yellow'
     
     def test_detail_deserialize_put_paypal(self):
         p = Payment()
