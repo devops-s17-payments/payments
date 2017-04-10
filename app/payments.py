@@ -138,7 +138,7 @@ def update_payments(id):
         if not request.data:
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
         if not request.is_json:
-            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+            raise DataValidationError('Invalid payment: Content Type is not json')
         try:
             data = request.get_json()
         except Exception:
@@ -146,10 +146,10 @@ def update_payments(id):
         message = payment_service.update_payment(id,payment_replacement=data)
         rc = HTTP_200_OK
     except InvalidPaymentID as e:
-        message = 'Invalid payment: Payment ID not found'
+        message = e.message
         rc = HTTP_404_NOT_FOUND
     except DataValidationError as e:
-        message = 'Invalid payment: body of request contained bad or no data'
+        message = e.message
         rc = HTTP_400_BAD_REQUEST
     return make_response(jsonify(message), rc)
 
@@ -162,7 +162,7 @@ def update_partial_payments(id):
         if not request.data:
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
         if not request.is_json:
-            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+            raise DataValidationError('Invalid payment: Content Type is not json')
         try:
             data = request.get_json()
         except Exception:
@@ -170,10 +170,10 @@ def update_partial_payments(id):
         message = payment_service.update_payment(id,payment_attributes=data)
         rc = HTTP_200_OK
     except InvalidPaymentID as e:
-        message = 'Invalid payment: Payment ID not found'
+        message = e.message
         rc = HTTP_404_NOT_FOUND
     except DataValidationError as e:
-        message = 'Invalid payment: body of request contained bad or no data'
+        message = e.message
         rc = HTTP_400_BAD_REQUEST
     return make_response(jsonify(message), rc)
 

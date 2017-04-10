@@ -13,7 +13,8 @@ class PaymentService(object):
     Serves as an interface which takes requests from the front-end
     and runs the corresponding actions in the database.
     """
-    UPDATABLE_PAYMENT_FIELDS = [ 'nickname','payment-type','defaults']
+    UPDATABLE_PAYMENT_FIELDS = [ 'nickname','payment_type','defaults']
+    NONUPDATABLE_PAYMENT_RREQUEST_FIELDS = [ 'is_default','is_removed','charge_history']
     def __init__(self):
         """
         Initialize connection to database here.
@@ -75,26 +76,20 @@ class PaymentService(object):
         :param payment_replacement: <dict> a complete payload that describes a new payload which replaces the old one
         :param payment_attributes: <dict> a collection of new payment attribute values that will overwrite old ones
         """
-        print 'hhhhhhh'
-        payment = self.db.session.query(Payment).get(payment_id)
-        print 'kkkk'
-        if payment == None or payment.is_removed == True :
-            print 'potato'
-            raise InvalidPaymentID('Invalid payment: Payment ID not found',status_code=404)
         if not payment_replacement and not payment_attributes:
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
+        payment = self.db.session.query(Payment).get(payment_id)
+        if payment == None or payment.is_removed == True :
+            raise InvalidPaymentID('Invalid payment: Payment ID not found',status_code=404)
         if payment_replacement:
-            print 'jjjjjj'
             # TODO 	: test cases for validity in next sprint
-            if not self.is_valid_put(payment.serialize(),payment_replacement):
-                print 'not valid'
+            if not self.is_valid_put(payment.user_id,payment_replacement):
                 raise DataValidationError('Invalid payment: body of request contained bad or no data')
-            print 'lllllllll'
             payment.deserialize_put(payment_replacement)
         elif payment_attributes: #patch
             existing_payment = payment.serialize()
             for key in payment_attributes:
-                if key in UPDATABLE_PAYMENT_FIELDS:
+                if key in self.UPDATABLE_PAYMENT_FIELDS:
                     existing_payment[key] = payment_attributes[key]
                 else:
                     raise DataValidationError('Invalid payment: body of request contains invalid/un-updatable fields')
@@ -167,17 +162,14 @@ class PaymentService(object):
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
 
 # UTILITY FUNCTIONS
-    def is_valid_put(self,old_data,new_data):
+    def is_valid_put(self,existing_user_id,new_data):
         valid = False
         valid_detail = False
         try:
-            if new_data['is_removed'] and new_data['is_removed'] == True :
-                 raise DataValidationError('Invalid payment: Changes to is_removed field not allowed')
-            if new_data['is_default'] and old_data['is_default'] != new_data['is_default']:
-                raise DataValidationError('Invalid payment: Changes to is_default field not allowed')
-            if new_data['charge_history'] and old_data['charge_history'] != new_data['charge_history']:
-                raise DataValidationError('Invalid payment: Changes to charge_history field not allowed')
-            if new_data['user_id'] and old_data['user_id'] != new_data['user_id']:
+            for key in self.NONUPDATABLE_PAYMENT_RREQUEST_FIELDS :
+                if key in new_data:
+                   raise DataValidationError('Invalid payment: body of request contained bad or no data')
+            if existing_user_id != new_data['user_id']:
                 raise DataValidationError('Invalid payment: Changes to user_id field not allowed')
             type = data['payment_type']
             detail = data['details']

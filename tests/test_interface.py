@@ -415,27 +415,70 @@ class TestInterface(unittest.TestCase):
         self.assertNotEqual(payment_after_deletion.id,invalid_id)
         #TODO - next sprint : do get, check count, should be same
 
+#Test cases for update interface method
 #valid PUT data
     @mock.patch.object(PaymentService,'is_valid_put',return_value = True)
     @mock.patch.object(app_db, 'session')
     @mock.patch('app.db.models.Payment')
-    #@mock.patch.object(Payment, 'deserialize_put')
-    #@mock.patch.object(Payment, 'serialize', return_value=PUT_CREDIT_RETURN)
-    def test_interface_update_with_valid_put_data(self,mock_isvalid,mock_db,mock_P):
-        print 'in here'
-        mock_db.query(Payment).get(1).return_value = mock_P
-        #mock_db.query(Payment).get(1).return_value.serialize.return_value = PUT_CREDIT_RETURN
-        #mock_P.serialize.return_value = PUT_CREDIT_RETURN
+    def test_interface_update_with_valid_put_data(self,mock_P,mock_db,mock_isvalid):
+        mock_db.query(Payment).get.return_value = mock_P
+        mock_P.serialize.return_value = PUT_CREDIT_RETURN
         resp = self.ps.update_payment(1,payment_replacement = PUT_CREDIT_RETURN)
-        #self.assertEqual(PUT_CREDIT_RETURN,resp)
-        #print resp.response_data
-        #mock_db.query(Payment).get.assert_called_with(1)
-        #mock_isvalid.assert_called_once()
-        #mock_db.query(Payment).get(1).return_value.deserialize_put.assert_called_once_with(PUT_CREDIT_RETURN)
-        mock_P.serialize.assert_called_once()
-        #mock_P.deserialize_put().assert_called_once()
+        mock_P.serialize.assert_called()
+        mock_isvalid.assert_called_once()
+        mock_P.deserialize_put.assert_called_once()
         mock_db.commit.assert_called_once()
-        self.assertEqual(resp['nickname'],'favcredit')
+    
+#none put and patch inputs
+    @mock.patch.object(app_db, 'session')
+    def test_interface_update_with_vaild_id_invalidargs(self, mock_db):
+        with self.assertRaises(DataValidationError):
+            result = self.ps.update_payment(111,None,None)
+        mock_db.commit.assert_not_called()
+    
+#update a non existing payment
+    @mock.patch.object(app_db, 'session')
+    def test_interface_update_with_invalid_id(self, mock_db):
+        mock_db.query(Payment).get.return_value = None
+        with self.assertRaises(InvalidPaymentID):
+            result = self.ps.update_payment(111,payment_replacement = PUT_CREDIT_RETURN)
+        mock_db.query(Payment).get.assert_called_with(111)
+        mock_db.commit.assert_not_called()
+
+#updating with a false is_valid update input
+    @mock.patch.object(PaymentService,'is_valid_put',return_value = False)
+    @mock.patch.object(app_db, 'session')
+    @mock.patch('app.db.models.Payment')
+    def test_interface_update_with_invalid_input(self,mock_P, mock_db,mock_isvalid):
+        mock_db.query(Payment).get.return_value = mock_P
+        with self.assertRaises(DataValidationError):
+            result = self.ps.update_payment(111,payment_replacement=PUT_CREDIT_RETURN)
+        mock_isvalid.assert_called_once()
+        mock_P.deserialize_put.assert_not_called()
+        mock_db.commit.assert_not_called()
+
+#patch with valid data
+    @mock.patch.object(app_db, 'session')
+    @mock.patch('app.db.models.Payment')
+    def test_interface_update_with_valid_patch_data(self,mock_P, mock_db):
+        mock_db.query(Payment).get.return_value = mock_P
+        resp = self.ps.update_payment(1,payment_attributes = {'nickname' : 'favourite'})
+        mock_db.query(Payment).get.assert_called_with(1)
+        mock_P.serialize.assert_called()
+        mock_P.deserialize_put.assert_called_once()
+        mock_db.commit.assert_called_once()
+
+# patch with unupdatable fields
+    @mock.patch.object(app_db, 'session')
+    @mock.patch('app.db.models.Payment')
+    def test_interface_update_with_invalid_patch_data(self,mock_P, mock_db):
+        mock_db.query(Payment).get.return_value = mock_P
+        with self.assertRaises(DataValidationError):
+            resp = self.ps.update_payment(1,payment_attributes = {'is_default' : 'True'})
+        mock_db.query(Payment).get.assert_called_with(1)
+        mock_P.serialize.assert_called_once()
+        mock_P.deserialize_put.assert_not_called()
+        mock_db.commit.assert_not_called()
 
 class TestInterfaceFunctional(unittest.TestCase):
     """
@@ -475,18 +518,3 @@ class TestInterfaceFunctional(unittest.TestCase):
         # try querying for something that doesn't exist
         result = self.ps._query_payments(BAD_QUERY_ATTRIBUTES)
         assert result == []
-'''
-    #Test cases for update interface method
-    #none put and patch inputs
-    @mock.patch.object(app_db, 'session')
-    def test_interface_update_with_vaild_id_invalidargs(self, mock_db):
-    with self.assertRaises(DataValidationError):
-    result = self.ps.update_payment(111,None,None)
-    @mock.patch.object(app_db, 'session')
-    def test_interface_update_with_invalid_id(self, mock_db):
-    with self.assertRaises(DataValidationError):
-    mock_db.query(Payment).get(111).return_value = None
-    result = self.ps.update_payment(111,payment_replacement = PUT_CREDIT_RETURN)
-    mock_db.query(Payment).get.assert_called_with(111)
-    print 'bla'
-'''

@@ -308,13 +308,13 @@ class TestPaymentsCRUD(unittest.TestCase):
     def test_crud_update_put_with_text_data(self):
         resp = self.app.put('/payments/1', data="hello", content_type='text/plain')
         self.assertEqual( resp.status_code, status.HTTP_400_BAD_REQUEST )
-        self.assertTrue('bad or no data' in resp.data)
+        self.assertTrue('not json' in resp.data)
 
 # passing text data to patch
     def test_crud_update_patch_with_text_data(self):
         resp = self.app.patch('/payments/1', data="hello", content_type='text/plain')
         self.assertEqual( resp.status_code, status.HTTP_400_BAD_REQUEST )
-        self.assertTrue('bad or no data' in resp.data)
+        self.assertTrue('not json' in resp.data)
 
 # passing no data to put
     def test_crud_update_put_with_no_data(self):

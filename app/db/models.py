@@ -62,9 +62,6 @@ class Payment(app_db.Model):
             self.user_id = data['user_id']
             self.nickname = data['nickname']
             self.payment_type = data['payment_type']
-            self.is_default = data['is_default']
-            self.is_removed = False
-            self.charge_history = data['charge_history']
             details = data['details']
             d = Detail()
             if (self.payment_type == 'credit' or self.payment_type == 'debit'):
