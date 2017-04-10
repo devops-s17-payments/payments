@@ -320,7 +320,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         mock_db_action.assert_not_called()
         self.assertRaises(DataValidationError)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue('bad data' in resp.data)
+        self.assertTrue('not json' in resp.data)
 
     @mock.patch.object(PaymentService, 'perform_payment_action')
     def test_set_default_action_with_wrong_request_data(self, mock_db_action):
@@ -364,7 +364,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         mock_db_action.assert_not_called()
         self.assertRaises(DataValidationError)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue('bad data' in resp.data)
+        self.assertTrue('not json' in resp.data)
 
     @mock.patch.object(PaymentService, 'perform_payment_action')
     def test_charge_action_with_wrong_request_data(self, mock_db_action):

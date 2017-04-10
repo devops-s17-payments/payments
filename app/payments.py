@@ -1,6 +1,5 @@
 #import logging
 import re
-from datetime import datetime, timedelta
 from threading import Lock
 from flask import jsonify, request, make_response, url_for
 from flask_api import status    # HTTP Status Codes
@@ -100,7 +99,7 @@ def set_default(user_id):
         if not request.data:
             raise DataValidationError('Invalid request: body of request contained no data')
         if not request.is_json:
-            raise DataValidationError('Invalid request: body of request contained bad data')
+            raise DataValidationError('Invalid request: request not json')
         data = request.get_json()
         if data['payment_id']:
             resp = payment_service.perform_payment_action(user_id,payment_attributes=data)
@@ -209,9 +208,9 @@ def delete_payments(id):
 def charge_payment(user_id):
     try:
         if not request.data:
-            raise DataValidationError('Invalid payment: body of request contained no data')
+            raise DataValidationError('Invalid request: body of request contained no data')
         if not request.is_json:
-            raise DataValidationError('Invalid payment: body of request contained bad data')
+            raise DataValidationError('Invalid request: request not json')
         data = request.get_json()
         if data['amount']:
             if(data['amount'] < 0):
