@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, json
 
 if 'VCAP_SERVICES' in os.environ:
     VCAP_SERVICES = os.environ['VCAP_SERVICES']
