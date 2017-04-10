@@ -62,8 +62,12 @@ Vagrant.configure(2) do |config|
     # Install app dependencies
     cd /vagrant
     sudo pip install -r requirements.txt
+    
     # Make vi look nice
     echo "colorscheme desert" > ~/.vimrc
+
+    # Add DB connect string as environment variable
+    echo "export LOCAL_DB=postgresql://payments:payments@localhost:5432/dev" > /home/vagrant/.profile
 
     cat <<-EOF | su - postgres -c psql
     -- Create the database user:
@@ -84,6 +88,7 @@ Vagrant.configure(2) do |config|
       TEMPLATE=template0;
 	EOF
   SHELL
+
 
   ######################################################################
   # Add PostgreSQL docker container
