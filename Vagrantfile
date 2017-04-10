@@ -41,10 +41,24 @@ Vagrant.configure(2) do |config|
     sudo apt-get update
     sudo apt-get install -y git zip tree python-pip python-dev build-essential postgresql postgresql-contrib libpq-dev
     sudo apt-get -y autoremove
+
     # Install the Cloud Foundry CLI
     wget -O cf-cli-installer_6.24.0_x86-64.deb 'https://cli.run.pivotal.io/stable?release=debian64&source=github'
     sudo dpkg -i cf-cli-installer_6.24.0_x86-64.deb
     rm cf-cli-installer_6.24.0_x86-64.deb
+
+    # Install PhantomJS for Selenium browser support
+    sudo apt-get install -y chrpath libssl-dev libxft-dev
+    sudo apt-get -y autoremove
+    # PhantomJS https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
+    cd $HOME
+    export PHANTOM_JS="phantomjs-2.1.1-linux-x86_64"
+    wget https://bitbucket.org/ariya/phantomjs/downloads/$PHANTOM_JS.tar.bz2
+    sudo tar xvjf $PHANTOM_JS.tar.bz2
+    sudo mv $PHANTOM_JS /usr/local/share
+    sudo ln -sf /usr/local/share/$PHANTOM_JS/bin/phantomjs /usr/local/bin
+    rm -f $PHANTOM_JS.tar.bz2
+    
     # Install app dependencies
     cd /vagrant
     sudo pip install -r requirements.txt
@@ -78,7 +92,7 @@ Vagrant.configure(2) do |config|
   #  # Prepare PostgreSQL data share
   #  sudo mkdir -p /var/lib/postgresql/data
   #  sudo chown vagrant:vagrant /var/lib/postgresql/data
-  #vagrantSHELL
+  #SHELL
   # Add PostgreSQL docker container
   #config.vm.provision "docker" do |d|
   #  d.pull_images "postgres"
