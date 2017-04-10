@@ -269,6 +269,174 @@ class TestPaymentsCRUD(unittest.TestCase):
         self.assertTrue("Not Found" in resp.data)
         #TODO - next sprint: Do a get and check count, should be the same
 
+    #Tests for action - set-default
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_set_default_action_with_no_payments_for_user_id(self, mock_db_action):
+        user_id = payment_id = 1
+        payment_data = {'payment_id': payment_id}
+        data = json.dumps(payment_data)
+        mock_db_action.side_effect = DataValidationError('Payments not found for the user_id: {}'.format(user_id))
+        resp = self.app.patch('payments/{}/set-default'.format(user_id),data=data, content_type='application/json')
+        mock_db_action.assert_called_once_with(user_id, payment_attributes=payment_data)
+        self.assertRaises(DataValidationError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('error' in resp.data)
+        self.assertTrue('Payments not found' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action', return_value=True)
+    def test_set_default_action_success(self, mock_db_action):
+        user_id = payment_id = 1
+        payment_data = {'payment_id': payment_id}
+        data = json.dumps(payment_data)
+        resp = self.app.patch('payments/{}/set-default'.format(user_id),data=data, content_type='application/json')
+        mock_db_action.assert_called_once_with(user_id, payment_attributes=payment_data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue('success' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action', return_value=False)
+    def test_set_default_action_with_no_default_payment(self, mock_db_action):
+        user_id = payment_id = 1
+        payment_data = {'payment_id': payment_id}
+        data = json.dumps(payment_data)
+        resp = self.app.patch('payments/{}/set-default'.format(user_id),data=data, content_type='application/json')
+        mock_db_action.assert_called_once_with(user_id, payment_attributes=payment_data)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue('No Payment' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_set_default_action_with_no_request_data(self, mock_db_action):
+        user_id = 1
+        resp = self.app.patch('payments/{}/set-default'.format(user_id),data=None, content_type='application/json')
+        mock_db_action.assert_not_called()
+        self.assertRaises(DataValidationError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('no data' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_set_default_action_with_text_request_data(self, mock_db_action):
+        user_id = payment_id = 1
+        payment_data = "payment_id"
+        resp = self.app.patch('payments/{}/set-default'.format(user_id),data=payment_data, content_type='text/plain')
+        mock_db_action.assert_not_called()
+        self.assertRaises(DataValidationError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('not json' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_set_default_action_with_wrong_request_data(self, mock_db_action):
+        user_id = payment_id = 1
+        payment_data = {'random_id': payment_id}
+        data = json.dumps(payment_data)
+        resp = self.app.patch('payments/{}/set-default'.format(user_id),data=data, content_type='application/json')
+        mock_db_action.assert_not_called()
+        self.assertRaises(KeyError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('does not have the payment_id' in resp.data)
+
+    #Tests for action - charge
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_charge_action_with_no_payments_for_user_id(self, mock_db_action):
+        user_id = 1
+        amount_data = {'amount' : 25.0 }
+        data = json.dumps(amount_data)
+        mock_db_action.side_effect = DataValidationError('Payments not found for the user_id: {}'.format(user_id))
+        resp = self.app.patch('payments/{}/charge'.format(user_id),data=data, content_type='application/json')
+        mock_db_action.assert_called_once_with(user_id, payment_attributes=amount_data)
+        self.assertRaises(DataValidationError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('error' in resp.data)
+        self.assertTrue('Payments not found' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_charge_action_with_no_request_data(self, mock_db_action):
+        user_id = 1
+        resp = self.app.patch('payments/{}/charge'.format(user_id),data=None, content_type='application/json')
+        mock_db_action.assert_not_called()
+        self.assertRaises(DataValidationError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('no data' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_charge_action_with_text_request_data(self, mock_db_action):
+        user_id = 1
+        amount_data = "payment_id"
+        resp = self.app.patch('payments/{}/charge'.format(user_id),data=amount_data, content_type='text/plain')
+        mock_db_action.assert_not_called()
+        self.assertRaises(DataValidationError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('not json' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_charge_action_with_wrong_request_data(self, mock_db_action):
+        user_id = 1
+        amount_data = {'charge-amount' : 25.0 }
+        data = json.dumps(amount_data)
+        resp = self.app.patch('payments/{}/charge'.format(user_id),data=data, content_type='application/json')
+        mock_db_action.assert_not_called()
+        self.assertRaises(KeyError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('does not have the amount' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_charge_action_with_negative_amount(self, mock_db_action):
+        user_id = 1
+        amount_data = {'amount' : -25.0 }
+        data = json.dumps(amount_data)
+        resp = self.app.patch('payments/{}/charge'.format(user_id),data=data, content_type='application/json')
+        mock_db_action.assert_not_called()
+        self.assertRaises(DataValidationError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('Order amount is negative.' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action', return_value=True)
+    def test_charge_action_success(self, mock_db_action):
+        user_id = 1
+        amount_data = {'amount' : 25.0 }
+        data = json.dumps(amount_data)
+        resp = self.app.patch('payments/{}/charge'.format(user_id),data=data, content_type='application/json')
+        mock_db_action.assert_called_once_with(user_id, payment_attributes=amount_data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue('success' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_charge_action_with_no_default_payment_for_user(self, mock_db_action):
+        user_id = 1
+        amount_data = {'amount' : 25.0 }
+        data = json.dumps(amount_data)
+        mock_db_action.side_effect = DataValidationError('Invalid request: Default Payment for this user_id: {} not found. Please update the default_payment first.'.format(user_id))
+        resp = self.app.patch('payments/{}/charge'.format(user_id),data=data, content_type='application/json')
+        mock_db_action.assert_called_once_with(user_id, payment_attributes=amount_data)
+        self.assertRaises(DataValidationError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('error' in resp.data)
+        self.assertTrue('Invalid request: Default Payment' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_charge_action_with_default_payment_card_expired(self, mock_db_action):
+        user_id = 1
+        amount_data = {'amount' : 25.0 }
+        data = json.dumps(amount_data)
+        mock_db_action.side_effect = DataValidationError('Invalid request: Default Payment for this user_id: {} (credit) is expired'.format(user_id))
+        resp = self.app.patch('payments/{}/charge'.format(user_id),data=data, content_type='application/json')
+        mock_db_action.assert_called_once_with(user_id, payment_attributes=amount_data)
+        self.assertRaises(DataValidationError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('error' in resp.data)
+        self.assertTrue('expired' in resp.data)
+
+    @mock.patch.object(PaymentService, 'perform_payment_action')
+    def test_charge_action_with_no_default_payment_paypal_not_linked(self, mock_db_action):
+        user_id = 1
+        amount_data = {'amount' : 25.0 }
+        data = json.dumps(amount_data)
+        mock_db_action.side_effect = DataValidationError('Invalid request: Default Payment for this user_id: {} (Paypal) is not linked'.format(user_id))
+        resp = self.app.patch('payments/{}/charge'.format(user_id),data=data, content_type='application/json')
+        mock_db_action.assert_called_once_with(user_id, payment_attributes=amount_data)
+        self.assertRaises(DataValidationError)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('error' in resp.data)
+        self.assertTrue('not linked' in resp.data)
+
     def test_index(self):
         resp = self.app.get('/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
