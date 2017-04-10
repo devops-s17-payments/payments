@@ -794,3 +794,25 @@ class TestInterfaceFunctional(unittest.TestCase):
         # try querying for something that doesn't exist
         result = self.ps._query_payments(BAD_QUERY_ATTRIBUTES)
         assert result == []
+
+    def test_load_sample(self):
+        self.assertTrue(len(self.ps.get_payments()), 3)
+        details = {
+            'user_name' : 'test',
+            'user_email' : 'test@gmail.com',
+            'is_linked' : True
+        }
+        public_data = {
+            'nickname' : 'nickname',
+            'user_id' : 1,
+            'payment_type' : 'paypal',
+            'details' : details
+        }
+        private_data = {
+            'is_default' : True,
+            'is_removed' : False,
+            'charge_history' : 9.99
+        }
+        PaymentService.load_sample(public_data, private_data)
+        self.assertTrue(len(self.ps.get_payments()), 4)
+        self.assertTrue(self.ps._query_payments({'id' : 1})[0].nickname, 'nickname')
