@@ -6,7 +6,8 @@ from sqlalchemy import exc
 from app.db.models import Payment, Detail
 from app.error_handlers import DataValidationError
 from app.db import app_db
-from app.db.models import Payment
+from sqlalchemy import exc
+from datetime import datetime, timedelta
 
 class PaymentService(object):
     """
@@ -193,12 +194,86 @@ class PaymentService(object):
         """
         Takes a list of payments and removes those payments that have been 'soft deleted,'
         meaning the 'is_removed' field has been set to True
-        
+
         Maybe there's a probably a better way to do this by including requirement in db query,
-        but this will do for now 
+        but this will do for now
         """
         return [payment for payment in payments if not payment.is_removed]
-        
+
+    def perform_payment_action(self, user_id, payment_attributes=None):
+        """
+        Accepts a payment with user_id and performs an action on it
+
+        :param user_id: <int> the unique identifier of a user_id whose payment/s is/are to be actioned upon
+        :param payment_attributes: <dict> a collection of new payment attribute values that will update old ones
+
+        if payment_attributes has payment_id, then it is "set-default" action.
+        This also sets any other default payment of the same user to False
+
+        if payment_attributes has amount, then it is performing "charge" action.
+        This would update the charge history
+        """
+        try:
+            payments = self._query_payments(payment_attributes={"user_id":user_id})
+            if 'payment_id' in payment_attributes: #for set-default action
+                payment_id_to_be_updated = payment_attributes['payment_id']
+                payment_to_be_updated = None
+                for payment in payments:
+                    if payment.id == payment_id_to_be_updated: #no need to check if is_removed = False because the query filters it
+                        payment_to_be_updated = payment
+                if payment_to_be_updated != None:
+                    payment_to_be_updated.is_default = True
+                    #making sure other payments have default as false
+                    other_payments = [payment for payment in payments if payment != payment_to_be_updated]
+                    for other_payment in other_payments:
+                        other_payment.is_default = False
+                    #Committing all changes
+                    self.db.session.commit()
+                    return True
+                else:
+                    return False
+            elif 'amount' in payment_attributes: #for charge action
+                default_payment = None
+                for payment in payments:
+                    if payment.is_default == True:
+                        default_payment = payment
+                if default_payment != None:
+                    update_payment_flag = True
+
+                    if default_payment.payment_type == 'paypal' and not default_payment.details.is_linked:
+                        error_msg = 'Invalid request: Default Payment for this user_id: '+ str(user_id)+' (Paypal) is not linked.'
+                        raise DataValidationError(error_msg)
+                    elif default_payment.payment_type != 'paypal' and self.is_expired(default_payment.details.expires):
+                        error_msg = 'Invalid request: Default Payment for this user_id: '+ str(user_id)+' ('+default_payment.payment_type+') is expired'
+                        raise DataValidationError(error_msg)
+
+                    default_payment.charge_history = default_payment.charge_history + payment_attributes['amount']
+                    self.db.session.commit()
+                    return True
+                else:
+                    error_msg = 'Invalid request: Default Payment for this user_id: '+ str(user_id)+' not found. Please update the default_payment first.'
+                    raise DataValidationError(error_msg) #PaymentNotFoundError
+            else:
+                raise DataValidationError('Invalid request: The request body contains bad or missing data.')
+        except PaymentServiceQueryError as e:
+            error_msg = 'Payments not found for the user_id: '+ str(user_id)
+            raise DataValidationError(error_msg) #PaymentNotFoundError
+
+    def is_expired(self, exp_date):
+        month = int(exp_date[:2]) + 1
+        exp_date = '%s%s' % (month, exp_date[2:])
+        exp_date = datetime.strptime(exp_date, '%m/%Y')
+        exp_date = exp_date - timedelta(1)
+        exp_date = datetime.date(exp_date)
+
+        now = datetime.now()
+        now = datetime.date(now)
+
+        if(now > exp_date):
+            return True
+        else:
+            return False
+
 class PaymentNotFoundError(Exception):
     """ Exception when payment is not found """
 

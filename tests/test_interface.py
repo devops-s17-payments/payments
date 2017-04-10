@@ -143,7 +143,7 @@ class TestInterface(unittest.TestCase):
         mock_remove.assert_called_once()
         self.assertEqual(len(result), 2)
 
-    
+
     @mock.patch.object(PaymentService, '_remove_soft_deletes')
     @mock.patch('app.db.models.Payment')
     @mock.patch.object(app_db, 'session')
@@ -478,6 +478,282 @@ class TestInterface(unittest.TestCase):
         mock_db.query(Payment).get.assert_called_with(1)
         mock_P.serialize.assert_called_once()
         mock_P.deserialize_put.assert_not_called()
+        mock_db.commit.assert_not_called()
+
+    # set-default action test cases
+    @mock.patch.object(app_db, 'session')
+    @mock.patch.object(PaymentService, '_query_payments')
+    def test_interface_payment_set_default_action_success(self, mock_query, mock_db):
+        user_id = payment_id = 1
+        payment_default_data = {'payment_id' : payment_id}
+        user_data = {'user_id': user_id}
+
+        cc_payment = Payment()
+        cc_payment.deserialize(CC_RETURN)
+        cc_payment.id = 1
+
+        pp_payment = Payment()
+        pp_payment.deserialize(PP_RETURN)
+        pp_payment.id = 3
+
+        self.assertFalse(cc_payment.is_default)
+        self.assertFalse(pp_payment.is_default)
+
+        mock_query.return_value = [cc_payment, pp_payment]
+
+        result = self.ps.perform_payment_action(user_id,payment_attributes=payment_default_data)
+        self.assertTrue(result)
+
+        self.assertTrue(cc_payment.is_default)
+        self.assertFalse(pp_payment.is_default)
+
+        mock_query.assert_called_once_with(payment_attributes=user_data)
+        mock_db.commit.assert_called_once()
+
+    @mock.patch.object(app_db, 'session')
+    @mock.patch.object(PaymentService, '_query_payments')
+    def test_interface_payment_set_default_action_with_no_payment_found_for_the_user(self, mock_query, mock_db):
+        user_id = 1
+        payment_default_data = {'payment_id' : 2}
+        user_data = {'user_id': user_id}
+
+        cc_payment = Payment()
+        cc_payment.deserialize(CC_RETURN)
+        cc_payment.id = 1
+
+        pp_payment = Payment()
+        pp_payment.deserialize(PP_RETURN)
+        pp_payment.id = 3
+
+        self.assertFalse(cc_payment.is_default)
+        self.assertFalse(pp_payment.is_default)
+
+        mock_query.return_value = [cc_payment, pp_payment]
+
+        result = self.ps.perform_payment_action(user_id,payment_attributes=payment_default_data)
+        self.assertFalse(result)
+
+        self.assertFalse(cc_payment.is_default)
+        self.assertFalse(pp_payment.is_default)
+
+        mock_query.assert_called_once_with(payment_attributes=user_data)
+        mock_db.commit.assert_not_called()
+
+    @mock.patch.object(app_db, 'session')
+    @mock.patch.object(PaymentService, '_query_payments', side_effect = PaymentServiceQueryError)
+    def test_interface_payment_set_default_action_with_no_payments_for_user(self, mock_query, mock_db):
+        user_id = 1
+        payment_default_data = {'payment_id' : 2}
+        user_data = {'user_id': user_id}
+
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.perform_payment_action(user_id,payment_attributes=payment_default_data)
+
+        self.assertTrue('Payments not found' in e.exception.message)
+
+        mock_query.assert_called_once_with(payment_attributes=user_data)
+        mock_db.commit.assert_not_called()
+
+    #charge action test cases
+    @mock.patch.object(app_db, 'session')
+    @mock.patch.object(PaymentService, '_query_payments')
+    def test_interface_payment_charge_action_for_card_success(self, mock_query, mock_db):
+        #This test case also tests is_expired (as the default payment here is a card) interface utility method which returns false
+        user_id = 1
+        amount_data = {'amount' : 25.0}
+        user_data = {'user_id': user_id}
+
+        cc_payment = Payment()
+        cc_payment.deserialize(CC_RETURN)
+        cc_payment.id = 1
+        cc_payment.is_default = True
+
+        pp_payment = Payment()
+        pp_payment.deserialize(PP_RETURN)
+        pp_payment.id = 3
+
+        self.assertEqual(cc_payment.charge_history,0.0)
+        self.assertEqual(pp_payment.charge_history,0.0)
+
+        mock_query.return_value = [cc_payment, pp_payment]
+
+        result = self.ps.perform_payment_action(user_id,payment_attributes=amount_data)
+        self.assertTrue(result)
+
+        self.assertEqual(cc_payment.charge_history,25.0)
+        self.assertEqual(pp_payment.charge_history,0.0)
+
+        mock_query.assert_called_once_with(payment_attributes=user_data)
+        mock_db.commit.assert_called_once()
+
+    @mock.patch.object(app_db, 'session')
+    @mock.patch.object(PaymentService, '_query_payments')
+    def test_interface_payment_charge_action_for_paypal_success(self, mock_query, mock_db):
+        user_id = 1
+        amount_data = {'amount' : 25.0}
+        user_data = {'user_id': user_id}
+
+        cc_payment = Payment()
+        cc_payment.deserialize(CC_RETURN)
+        cc_payment.id = 1
+
+        pp_payment = Payment()
+        pp_payment.deserialize(PP_RETURN)
+        pp_payment.id = 3
+        pp_payment.details.is_linked = True
+        pp_payment.is_default = True
+
+        self.assertEqual(cc_payment.charge_history,0.0)
+        self.assertEqual(pp_payment.charge_history,0.0)
+
+        mock_query.return_value = [cc_payment, pp_payment]
+
+        result = self.ps.perform_payment_action(user_id,payment_attributes=amount_data)
+        self.assertTrue(result)
+
+        self.assertEqual(cc_payment.charge_history,0.0)
+        self.assertEqual(pp_payment.charge_history,25.0)
+
+        mock_query.assert_called_once_with(payment_attributes=user_data)
+        mock_db.commit.assert_called_once()
+
+    @mock.patch.object(app_db, 'session')
+    @mock.patch.object(PaymentService, '_query_payments')
+    def test_interface_payment_charge_action_with_no_default_payment(self, mock_query, mock_db):
+        user_id = 1
+        amount_data = {'amount' : 25.0}
+        user_data = {'user_id': user_id}
+
+        cc_payment = Payment()
+        cc_payment.deserialize(CC_RETURN)
+        cc_payment.id = 1
+
+        pp_payment = Payment()
+        pp_payment.deserialize(PP_RETURN)
+        pp_payment.id = 3
+
+        self.assertEqual(cc_payment.charge_history,0.0)
+        self.assertEqual(pp_payment.charge_history,0.0)
+
+        mock_query.return_value = [cc_payment, pp_payment]
+
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.perform_payment_action(user_id,payment_attributes=amount_data)
+
+        self.assertTrue('update the default_payment' in e.exception.message)
+
+        self.assertEqual(cc_payment.charge_history,0.0)
+        self.assertEqual(pp_payment.charge_history,0.0)
+
+        mock_query.assert_called_once_with(payment_attributes=user_data)
+        mock_db.commit.assert_not_called()
+
+    @mock.patch.object(app_db, 'session')
+    @mock.patch.object(PaymentService, '_query_payments')
+    def test_interface_payment_charge_action_with_default_payment_card_expired(self, mock_query, mock_db):
+        #This test case also tests is_expired interface utility method which returns true
+        user_id = 1
+        amount_data = {'amount' : 25.0}
+        user_data = {'user_id': user_id}
+
+        cc_payment = Payment()
+        cc_payment.deserialize(CC_RETURN)
+        cc_payment.id = 1
+        cc_payment.is_default = True
+        cc_payment.details.expires = '01/2017'
+
+        pp_payment = Payment()
+        pp_payment.deserialize(PP_RETURN)
+        pp_payment.id = 3
+
+        self.assertEqual(cc_payment.charge_history,0.0)
+        self.assertEqual(pp_payment.charge_history,0.0)
+
+        mock_query.return_value = [cc_payment, pp_payment]
+
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.perform_payment_action(user_id,payment_attributes=amount_data)
+
+        self.assertTrue('is expired' in e.exception.message)
+
+        self.assertEqual(cc_payment.charge_history,0.0)
+        self.assertEqual(pp_payment.charge_history,0.0)
+
+        mock_query.assert_called_once_with(payment_attributes=user_data)
+        mock_db.commit.assert_not_called()
+
+    @mock.patch.object(app_db, 'session')
+    @mock.patch.object(PaymentService, '_query_payments')
+    def test_interface_payment_charge_action_with_default_payment_paypal_not_linked(self, mock_query, mock_db):
+        user_id = 1
+        amount_data = {'amount' : 25.0}
+        user_data = {'user_id': user_id}
+
+        cc_payment = Payment()
+        cc_payment.deserialize(CC_RETURN)
+        cc_payment.id = 1
+
+        pp_payment = Payment()
+        pp_payment.deserialize(PP_RETURN)
+        pp_payment.id = 3
+        pp_payment.is_default = True
+        pp_payment.details.is_linked = False
+
+        self.assertEqual(cc_payment.charge_history,0.0)
+        self.assertEqual(pp_payment.charge_history,0.0)
+
+        mock_query.return_value = [cc_payment, pp_payment]
+
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.perform_payment_action(user_id,payment_attributes=amount_data)
+
+        self.assertTrue(' not linked' in e.exception.message)
+
+        self.assertEqual(cc_payment.charge_history,0.0)
+        self.assertEqual(pp_payment.charge_history,0.0)
+
+        mock_query.assert_called_once_with(payment_attributes=user_data)
+        mock_db.commit.assert_not_called()
+
+    @mock.patch.object(app_db, 'session')
+    @mock.patch.object(PaymentService, '_query_payments', side_effect = PaymentServiceQueryError)
+    def test_interface_payment_charge_action_with_no_payments_for_user(self, mock_query, mock_db):
+        user_id = 1
+        amount_data = {'amount' : 25.0}
+        user_data = {'user_id': user_id}
+
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.perform_payment_action(user_id,payment_attributes=amount_data)
+
+        self.assertTrue('Payments not found' in e.exception.message)
+
+        mock_query.assert_called_once_with(payment_attributes=user_data)
+        mock_db.commit.assert_not_called()
+
+    #test case for perform_payment_action in case payment_attributes (or request data) has any other key other than payment_id or amount
+    @mock.patch.object(app_db, 'session')
+    @mock.patch.object(PaymentService, '_query_payments')
+    def test_interface_payment_action_with_wrong_actionable_data(self, mock_query, mock_db):
+        user_id = 1
+        wrong_data = {'history' : 12312}
+        user_data = {'user_id': user_id}
+
+        cc_payment = Payment()
+        cc_payment.deserialize(CC_RETURN)
+        cc_payment.id = 1
+
+        pp_payment = Payment()
+        pp_payment.deserialize(PP_RETURN)
+        pp_payment.id = 3
+
+        mock_query.return_value = [cc_payment, pp_payment]
+
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.perform_payment_action(user_id,payment_attributes=wrong_data)
+
+        self.assertTrue('bad or missing data' in e.exception.message)
+
+        mock_query.assert_called_once_with(payment_attributes=user_data)
         mock_db.commit.assert_not_called()
 
 class TestInterfaceFunctional(unittest.TestCase):
