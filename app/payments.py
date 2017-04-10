@@ -3,9 +3,9 @@ import re
 from threading import Lock
 from flask import jsonify, request, make_response, url_for
 from flask_api import status    # HTTP Status Codes
-
 from app import app
-from app.db.interface import PaymentService
+from app.db.interface import PaymentService,PaymentNotFoundError
+
 from app.error_handlers import DataValidationError
 
 # Instantiate persistence service to be used in CRUD methods
@@ -135,6 +135,7 @@ def get_payments(id):
         result['error'] = result['error'].format(id)
         rc = HTTP_404_NOT_FOUND
 
+
     return make_response(jsonify(result), rc)
 
 ######################################################################
@@ -142,25 +143,18 @@ def get_payments(id):
 ######################################################################
 @app.route('/payments/<int:id>', methods=['PUT'])
 def update_payments(id):
-    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
-    if len(index) > 0:
+    try:
         if not request.is_json:
-            return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
-        payload = request.get_json()
-        if is_valid(payload):
-            payments[index[0]] = {'id' : id, 'nickname' : payload['nickname'], 'type' : payload['type'],
-                                  'default' : payments[index[0]]['default'],
-                                  'charge-history' : payments[index[0]]['charge-history'],
-                                  'detail' : payload['detail']}
-            message = payments[index[0]]
-            rc = HTTP_200_OK
-        else:
-            message = { 'error' : 'Payments data was not valid' }
-            rc = HTTP_400_BAD_REQUEST
-    else:
-        message = { 'error' : 'Payments %s was not found' % id }
+            raise DataValidationError('Invalid payment: Content Type is not json')
+        data = request.get_json(silent=True)
+        message = payment_service.update_payment(id,payment_replacement=data)
+        rc = HTTP_200_OK
+    except PaymentNotFoundError as e:
+        message = e.message
         rc = HTTP_404_NOT_FOUND
-
+    except DataValidationError as e:
+        message = e.message
+        rc = HTTP_400_BAD_REQUEST
     return make_response(jsonify(message), rc)
 
 ######################################################################
@@ -168,29 +162,20 @@ def update_payments(id):
 ######################################################################
 @app.route('/payments/<int:id>', methods=['PATCH'])
 def update_partial_payments(id):
-    index = [i for i, payment in enumerate(payments) if payment['id'] == id]
-    if len(index) > 0:
+    try:
         if not request.is_json:
-                return make_response(CONTENT_ERR_MSG, HTTP_400_BAD_REQUEST)
-        payload = request.get_json()
-        if is_valid_patch(payload):
-            target_payment = payments[index[0]]
-            # for now, can only update partially with nickname, type and detail
-            payload_nickname = target_payment['nickname'] if 'nickname' not in payload else payload['nickname']
-            payload_type = target_payment['type'] if 'type' not in payload else payload['type']
-            payload_detail = target_payment['detail'] if 'detail' not in payload else payload['detail']
-            payments[index[0]] = {'id' : id, 'nickname' : payload_nickname, 'default' : target_payment['default'],
-                'charge-history' : target_payment['charge-history'], 'type' : payload_type, 'detail' : payload_detail}
-            message = payments[index[0]]
-            rc = HTTP_200_OK
-        else:
-            message = { 'error' : 'Payments data was not valid' }
-            rc = HTTP_400_BAD_REQUEST
-    else:
-        message = { 'error' : 'Payments %s was not found' % id }
+            raise DataValidationError('Invalid payment: Content Type is not json')
+        data = request.get_json(silent=True)
+        message = payment_service.update_payment(id,payment_attributes=data)
+        rc = HTTP_200_OK
+    except PaymentNotFoundError as e:
+        message = e.message
         rc = HTTP_404_NOT_FOUND
-
+    except DataValidationError as e:
+        message = e.message
+        rc = HTTP_400_BAD_REQUEST
     return make_response(jsonify(message), rc)
+
 
 ######################################################################
 # DELETE A PAYMENT
@@ -203,7 +188,6 @@ def delete_payments(id):
 ######################################################################
 # CHARGE PAYMENT (ACTION)
 ######################################################################
-
 @app.route('/payments/<int:user_id>/charge', methods=['PATCH'])
 def charge_payment(user_id):
     try:

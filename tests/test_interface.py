@@ -2,18 +2,19 @@
 # python -m unittest discover
 # nosetests -v --rednose --nologcapture
 
-
 import unittest
 import mock
+
 
 from app import payments
 from app.db import app_db
 from app.db.models import Payment, Detail
-from app.db.interface import PaymentService, PaymentServiceQueryError
+from app.db.interface import PaymentService, PaymentServiceQueryError, PaymentNotFoundError
 from app.error_handlers import DataValidationError
 
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
              'expires' : '01/2019', 'card_type' : 'Mastercard'}
+
 
 DC_DETAIL = {'user_name' : 'Jeremy Jenkins', 'card_number' : '4444333322221111',
              'expires' : '02/2020', 'card_type' : 'Visa'}
@@ -34,6 +35,15 @@ BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal',
 
 BAD_DATA2 = {"nicknam3" : "my paypal", "user_id" : 1, "payment_type" : "paypal",
              "details" : {"user_name" : "John Jameson", "user_email" : "jj@aol.com"}}
+# for put updates
+PUT_CREDIT = {'nickname' : 'favcredit', 'user_id' : 1, 'payment_type' : 'credit',
+    'details' : CC_DETAIL}
+PUT_CREDIT_RETURN = {'nickname' : 'favcredit', 'user_id' : 1, 'payment_type' : 'credit',
+    'details' : CC_DETAIL, 'is_default' : False, 'charge_history' : 0.0, 'payment_id' : 1}
+# for patch updates
+PATCH_CREDIT = { 'nickname' : 'boringcredit'}
+PATCH_RETURN = {'nickname' : 'boringcredit', 'user_id' : 1, 'payment_type' : 'credit',
+    'details' : CC_DETAIL, 'is_default' : False, 'charge_history' : 0.0, 'payment_id' : 1}
 
 PP_RETURN = dict(PAYPAL, is_default=False, charge_history=0.0, payment_id=3)
 PP_RETURN['details']['is_linked'] = True
@@ -58,6 +68,7 @@ class TestInterface(unittest.TestCase):
         payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
         app_db.create_all()  # make our sqlalchemy tables
 
+
         ''' seed data '''
         p = Payment()
         p.deserialize(CREDIT)
@@ -66,6 +77,7 @@ class TestInterface(unittest.TestCase):
 
         self.ps = PaymentService()
         self.app = payments.app.test_client()
+
 
     def tearDown(self):
         app_db.session.remove()
@@ -333,9 +345,11 @@ class TestInterface(unittest.TestCase):
         mock_db.add.assert_called_once()
         mock_db.commit.assert_called_once()
 
+
         self.assertTrue(type(payment), type({}))
         self.assertEqual(CC_RETURN, payment)
         self.assertEqual(CC_DETAIL, payment['details'])
+
 
     @mock.patch.object(Payment, 'deserialize')
     @mock.patch.object(Payment, 'serialize', return_value=PP_RETURN)
@@ -359,6 +373,7 @@ class TestInterface(unittest.TestCase):
         # this is a long mock - note that the method call chaining matches that of the method call
         # on self.db in _query_payments
 
+
         # set the return value of ...filter_by() to a new mock whose all property is a function that
         # returns [DC_RETURN]; this is done so that when payment_query.all() is called, [DC_RETURN] is returned
         mock_db.query(Payment).filter_by.return_value = mock.MagicMock(all=lambda: [DC_RETURN])
@@ -368,6 +383,7 @@ class TestInterface(unittest.TestCase):
         mock_db.query(Payment).filter_by.assert_called_once_with(**QUERY_ATTRIBUTES)
         mock_remove.assert_called_once()
         self.assertEqual(result, [DC_RETURN])
+
 
     @mock.patch.object(app_db, 'session')
     def test_interface_query_payments_error(self, mock_db):
@@ -386,7 +402,7 @@ class TestInterface(unittest.TestCase):
         payment_after_deletion = mock_db.query(Payment).get(1)
         self.assertTrue(payment_after_deletion.is_removed)
         #TODO - next sprint : do get, check count, should be one less
-
+    
     @mock.patch.object(app_db, 'session')
     def test_interface_delete_payment_with_invalid_id(self, mock_db):
         invalid_id = 28462
@@ -398,6 +414,71 @@ class TestInterface(unittest.TestCase):
         payment_after_deletion = mock_db.query(Payment).get(invalid_id)
         self.assertNotEqual(payment_after_deletion.id,invalid_id)
         #TODO - next sprint : do get, check count, should be same
+
+#Test cases for update interface method
+#valid PUT data
+    @mock.patch.object(PaymentService,'is_valid_put',return_value = True)
+    @mock.patch.object(app_db, 'session')
+    @mock.patch('app.db.models.Payment')
+    def test_interface_update_with_valid_put_data(self,mock_P,mock_db,mock_isvalid):
+        mock_db.query(Payment).get.return_value = mock_P
+        mock_P.serialize.return_value = PUT_CREDIT_RETURN
+        resp = self.ps.update_payment(1,payment_replacement = PUT_CREDIT)
+        mock_P.serialize.assert_called()
+        mock_isvalid.assert_called_once()
+        mock_P.deserialize_put.assert_called_once()
+        mock_db.commit.assert_called_once()
+    
+#none put and patch inputs
+    @mock.patch.object(app_db, 'session')
+    def test_interface_update_with_vaild_id_invalidargs(self, mock_db):
+        with self.assertRaises(DataValidationError):
+            result = self.ps.update_payment(111,None,None)
+        mock_db.commit.assert_not_called()
+    
+#update a non existing (payment id not found or is removed = true) payment
+    @mock.patch.object(app_db, 'session')
+    def test_interface_update_with_invalid_id(self, mock_db):
+        mock_db.query(Payment).get.return_value = None
+        with self.assertRaises(PaymentNotFoundError):
+            result = self.ps.update_payment(111,payment_replacement = PUT_CREDIT)
+        mock_db.query(Payment).get.assert_called_with(111)
+        mock_db.commit.assert_not_called()
+
+#updating with a false is_valid update input
+    @mock.patch.object(PaymentService,'is_valid_put',return_value = False)
+    @mock.patch.object(app_db, 'session')
+    @mock.patch('app.db.models.Payment')
+    def test_interface_update_with_invalid_input(self,mock_P, mock_db,mock_isvalid):
+        mock_db.query(Payment).get.return_value = mock_P
+        with self.assertRaises(DataValidationError):
+            result = self.ps.update_payment(111,payment_replacement=PUT_CREDIT_RETURN)
+        mock_isvalid.assert_called_once()
+        mock_P.deserialize_put.assert_not_called()
+        mock_db.commit.assert_not_called()
+
+#patch with valid data
+    @mock.patch.object(app_db, 'session')
+    @mock.patch('app.db.models.Payment')
+    def test_interface_update_with_valid_patch_data(self,mock_P, mock_db):
+        mock_db.query(Payment).get.return_value = mock_P
+        resp = self.ps.update_payment(1,payment_attributes = {'nickname' : 'favourite'})
+        mock_db.query(Payment).get.assert_called_with(1)
+        mock_P.serialize.assert_called()
+        mock_P.deserialize_put.assert_called_once()
+        mock_db.commit.assert_called_once()
+
+# patch with unupdatable fields
+    @mock.patch.object(app_db, 'session')
+    @mock.patch('app.db.models.Payment')
+    def test_interface_update_with_invalid_patch_data(self,mock_P, mock_db):
+        mock_db.query(Payment).get.return_value = mock_P
+        with self.assertRaises(DataValidationError):
+            resp = self.ps.update_payment(1,payment_attributes = {'is_default' : 'True'})
+        mock_db.query(Payment).get.assert_called_with(1)
+        mock_P.serialize.assert_called_once()
+        mock_P.deserialize_put.assert_not_called()
+        mock_db.commit.assert_not_called()
 
     # set-default action test cases
     @mock.patch.object(app_db, 'session')
@@ -674,7 +755,6 @@ class TestInterface(unittest.TestCase):
 
         mock_query.assert_called_once_with(payment_attributes=user_data)
         mock_db.commit.assert_not_called()
-
 
 class TestInterfaceFunctional(unittest.TestCase):
     """

@@ -5,9 +5,11 @@
 import unittest, json, mock
 from mock import patch
 from app import payments
-from app.db.interface import PaymentService
-from flask_api import status    # HTTP Status Codes
+from app.db.interface import PaymentService, PaymentNotFoundError
+from flask_api import status   # HTTP Status Codes
+from flask import make_response,jsonify
 from app.error_handlers import DataValidationError
+from mock import patch
 
 CC_DETAIL = {'user_name' : 'Jimmy Jones', 'card_number' : '1111222233334444',
              'expires' : '01/2019', 'card_type' : 'Mastercard'}
@@ -25,7 +27,16 @@ DEBIT = {'nickname' : 'my debit', 'user_id' : 1, 'payment_type' : 'debit',
 
 PAYPAL = {'nickname' : 'my paypal', 'user_id' : 1, 'payment_type' : 'paypal',
           'details' : PP_DETAIL}
-
+# for put updates
+PUT_CREDIT = {'nickname' : 'favcredit', 'user_id' : 1, 'payment_type' : 'credit',
+    'details' : CC_DETAIL}
+PUT_CREDIT_RETURN = {'nickname' : 'favcredit', 'user_id' : 1, 'payment_type' : 'credit',
+    'details' : CC_DETAIL, 'is_default' : False, 'charge_history' : 0.0, 'payment_id' : 1}
+# for patch updates
+PATCH_CREDIT = { 'nickname' : 'boringcredit'}
+PATCH_RETURN = {'nickname' : 'boringcredit', 'user_id' : 1, 'payment_type' : 'credit',
+    'details' : CC_DETAIL, 'is_default' : False, 'charge_history' : 0.0, 'payment_id' : 1}
+#note 'nickname' is spelled wrong
 BAD_DATA = {'bad key' : 'my paypal', 'user_id' : 2, 'payment_type' : 'paypal',
             'details' : PP_DETAIL}
 
@@ -241,7 +252,6 @@ class TestPaymentsCRUD(unittest.TestCase):
     @mock.patch.object(PaymentService, 'add_payment', side_effect=DataValidationError)
     def test_crud_create_garbage(self, mock_ps_add):
         garbage = 'a@$*&@#sdassdc3r 3284723X43&^@!#@*#'
-
         resp = self.app.post('/payments', data=garbage, content_type='application/json')
         mock_ps_add.assert_called_with(None)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
@@ -441,3 +451,79 @@ class TestPaymentsCRUD(unittest.TestCase):
         resp = self.app.get('/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertTrue('Welcome to payments!' in resp.data)
+#test cases for update payments - put and patch
+# passing correct data to put
+    @mock.patch.object(PaymentService, 'update_payment', return_value=PUT_CREDIT_RETURN, autospec=True)
+    def test_crud_update_put(self,mock_ps_update):
+        data = json.dumps(PUT_CREDIT)
+        resp = self.app.put('/payments/1', data=data, content_type='application/json')
+        mock_ps_update.assert_called_with(mock.ANY,1,payment_replacement=PUT_CREDIT)
+        self.assertEqual( resp.status_code, status.HTTP_200_OK )
+        new_json = json.loads(resp.data)
+        self.assertEqual (new_json['nickname'], 'favcredit')
+
+# passing correct data to patch
+    @mock.patch.object(PaymentService, 'update_payment', return_value=PATCH_RETURN, autospec=True)
+    def test_crud_update_patch(self,mock_ps_update):
+        data = json.dumps(PATCH_CREDIT)
+        resp = self.app.patch('/payments/1', data=data, content_type='application/json')
+        mock_ps_update.assert_called_with(mock.ANY,1,payment_attributes=PATCH_CREDIT)
+        self.assertEqual( resp.status_code, status.HTTP_200_OK )
+        new_json = json.loads(resp.data)
+        self.assertEqual (new_json['nickname'], 'boringcredit')
+
+# passing text data to put
+    def test_crud_update_put_with_text_data(self):
+        resp = self.app.put('/payments/1', data="hello", content_type='text/plain')
+        self.assertEqual( resp.status_code, status.HTTP_400_BAD_REQUEST )
+        self.assertTrue('not json' in resp.data)
+
+# passing text data to patch
+    def test_crud_update_patch_with_text_data(self):
+        resp = self.app.patch('/payments/1', data="hello", content_type='text/plain')
+        self.assertEqual( resp.status_code, status.HTTP_400_BAD_REQUEST )
+        self.assertTrue('not json' in resp.data)
+
+# passing no data to put
+    def test_crud_update_put_with_no_data(self):
+        resp = self.app.put('/payments/1', data=None, content_type='application/json')
+        self.assertEqual( resp.status_code, status.HTTP_400_BAD_REQUEST )
+        self.assertTrue('no data' in resp.data)
+
+# passing no data to patch
+    def test_crud_update_patch_with_no_data(self):
+        resp = self.app.patch('/payments/1', data=None, content_type='application/json')
+        self.assertEqual( resp.status_code, status.HTTP_400_BAD_REQUEST )
+        self.assertTrue('no data' in resp.data)
+
+# passing garbage data to put
+#@mock.patch.object(PaymentService, 'update_payment',side_effect=DataValidationError, autospec=True)
+    def test_crud_update_put_garbage(self):
+        garbage = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#"
+        resp = self.app.put('/payments/1',data = garbage, content_type='application/json')
+        self.assertTrue('bad or no data' in resp.data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+# passing garbage data to patch
+    def test_crud_update_patch_garbage(self):
+        garbage = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#"
+        resp = self.app.patch('/payments/1',data = garbage, content_type='application/json')
+        self.assertTrue('bad or no data' in resp.data)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+# passing a non existing payment id to PATCH
+    @mock.patch.object(PaymentService, 'update_payment', side_effect=PaymentNotFoundError('Invalid payment: Payment ID not found'), autospec = True)
+    def test_crud_update_id_not_found_patch(self,mock_ps_update):
+        credit = json.dumps({'nickname' : 'mycredit'})
+        resp = self.app.patch('payments/778',data = credit,content_type='application/json')
+        mock_ps_update.assert_called_with(mock.ANY,778,payment_attributes={'nickname' : 'mycredit'})
+        self.assertTrue('Invalid payment: Payment ID not found' in resp.data)
+        self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)
+# passing a non existing payment id to PUT
+    @mock.patch.object(PaymentService, 'update_payment', side_effect=PaymentNotFoundError('Invalid payment: Payment ID not found'), autospec = True)
+    def test_crud_update_id_not_found_put(self,mock_ps_update):
+        credit = json.dumps(CC_RETURN)
+        resp = self.app.put('payments/778',data = credit,content_type='application/json')
+        mock_ps_update.assert_called_with(mock.ANY,778,payment_replacement=CC_RETURN)
+        self.assertTrue('Invalid payment: Payment ID not found' in resp.data)
+        self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)

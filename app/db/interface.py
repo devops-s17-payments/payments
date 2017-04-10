@@ -1,4 +1,8 @@
 # -*- coding:utf-8 -*-
+
+
+from sqlalchemy import exc
+
 from app.db.models import Payment, Detail
 from app.error_handlers import DataValidationError
 from app.db import app_db
@@ -10,7 +14,8 @@ class PaymentService(object):
     Serves as an interface which takes requests from the front-end
     and runs the corresponding actions in the database.
     """
-
+    UPDATABLE_PAYMENT_FIELDS = [ 'nickname','payment_type','defaults']
+    NONUPDATABLE_PAYMENT_RREQUEST_FIELDS = [ 'is_default','is_removed','charge_history']
     def __init__(self):
         """
         Initialize connection to database here.
@@ -25,6 +30,7 @@ class PaymentService(object):
         :param payment_data: <dict> a validated JSON payload that describes a new Payment object
         """
         p = Payment()
+
         try:
             p.deserialize(payment_data)
         except DataValidationError as e:
@@ -32,7 +38,6 @@ class PaymentService(object):
         self.db.session.add(p)
         self.db.session.commit()
         return p.serialize()
-
     def remove_payment(self, payment_id=None, payment_attributes=None):
         """
         Accepts an id or a variable number of keyword arguments (in payment_attributes)
@@ -72,8 +77,27 @@ class PaymentService(object):
         :param payment_replacement: <dict> a complete payload that describes a new payload which replaces the old one
         :param payment_attributes: <dict> a collection of new payment attribute values that will overwrite old ones
         """
-
-        raise NotImplementedError()
+        if not payment_replacement and not payment_attributes:
+            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+        payment = self.db.session.query(Payment).get(payment_id)
+        if payment == None or payment.is_removed == True :
+            raise PaymentNotFoundError('Invalid payment: Payment ID not found')
+        if payment_replacement:
+            # TODO 	: test cases for validity in next sprint
+            if not self.is_valid_put(payment.user_id,payment_replacement):
+                raise DataValidationError('Invalid payment: body of request contained bad or no data')
+            payment.deserialize_put(payment_replacement)
+        elif payment_attributes: #patch
+            existing_payment = payment.serialize()
+            for key in payment_attributes:
+                if key in self.UPDATABLE_PAYMENT_FIELDS:
+                    existing_payment[key] = payment_attributes[key]
+                else:
+                    raise DataValidationError('Invalid payment: body of request contains invalid/un-updatable fields')
+            payment.deserialize_put(existing_payment)
+        self.db.session.commit()
+        return_object = payment.serialize()
+        return return_object
 
     def get_payments(self, payment_ids=None, payment_attributes=None):
         """
@@ -119,6 +143,7 @@ class PaymentService(object):
         Returns all payment items that fulfill the attributes used to
         filter from all payment items.
 
+
         Note: this method assumes that the attributes are safe and have been validated.
         Also, the attributes passed in *must* be part of the Payment schema, since the
         query below is for the Payment model.  Later on we should have a parameter that
@@ -128,6 +153,7 @@ class PaymentService(object):
         :return: <list[Payment]> a list of the Payment items returned by the query
         """
         try:
+
             payment_query = self.db.session.query(Payment).filter_by(**payment_attributes)
             payments = payment_query.all()
             payments = self._remove_soft_deletes(payments)
@@ -135,6 +161,34 @@ class PaymentService(object):
 
         except exc.SQLAlchemyError:
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
+
+# UTILITY FUNCTIONS
+    def is_valid_put(self,existing_user_id,new_data):
+        valid = False
+        valid_detail = False
+        try:
+            for key in self.NONUPDATABLE_PAYMENT_RREQUEST_FIELDS :
+                if key in new_data:
+                   raise DataValidationError('Invalid payment: body of request contained bad or no data')
+            if existing_user_id != new_data['user_id']:
+                raise DataValidationError('Invalid payment: Changes to user_id field not allowed')
+            type = data['payment_type']
+            detail = data['details']
+            if bool(re.search(r'\d', detail['user_name'])) == False:
+                valid = True
+            if type == 'credit' or type == 'debit':
+                card_number = detail['card_number']
+                expires_date = detail['expires']
+                if bool(re.match('^[0-9]+$', card_number)) and (len(card_number) == 16):
+                    datetime.strptime(expires_date, '%m/%Y')
+                    valid_detail = True
+            elif data['is_linked'] != None and type == 'paypal':
+                valid_detail = True
+        except KeyError as e:
+            raise DataValidationError('Invalid payment: missing ' + e.args[0])
+        except TypeError as e:
+            raise DataValidationError('Invalid payment: body of request contained bad or no data')
+        return valid & valid_detail
 
     def _remove_soft_deletes(self, payments):
         """
@@ -220,8 +274,12 @@ class PaymentService(object):
         else:
             return False
 
+class PaymentNotFoundError(Exception):
+    """ Exception when payment is not found """
+
 class PaymentServiceException(Exception):
     """ Generic exception class for PaymentService. """
 
 class PaymentServiceQueryError(Exception):
     """ Raised when an internal query fails. """
+
