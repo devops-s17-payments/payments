@@ -67,7 +67,7 @@ Vagrant.configure(2) do |config|
     echo "colorscheme desert" > ~/.vimrc
 
     # Add DB connect string as environment variable
-    echo "export LOCAL_DB=postgresql://payments:payments@localhost:5432/dev" > /home/vagrant/.profile
+    echo "export LOCAL_DB=postgresql://payments:payments@localhost:5432/dev" >> /home/vagrant/.profile
 
     cat <<-EOF | su - postgres -c psql
     -- Create the database user:
