@@ -7,8 +7,10 @@ import json
 # G I V E N #
 #############
 
-@given('the following payments')
-def step_impl(context):
+@given('the following "{url}"')
+def step_impl(context, url):
+    ''' need this blank post otherwise first live post goes to dev instead of test db '''
+    context.app.post(url, data=None, content_type='application/json')
     for row in context.table:
         details = {
             'user_name' : row['user_name'],
@@ -18,18 +20,14 @@ def step_impl(context):
             'card_type' : row['card_type'],
             'expires' : row['expires'],
         }
-        public_data = {
+        payment = {
             'nickname' : row['nickname'],
             'user_id' : row['user_id'],
             'payment_type' : row['payment_type'],
             'details' : details
         }
-        private_data = {
-            'is_default' : row['is_default'],
-            'is_removed' : row['is_removed'],
-            'charge_history' : row['charge_history'],
-        }
-        context.ps.load_sample(public_data, private_data)
+
+        context.app.post(url, data=json.dumps(payment), content_type='application/json')
 
 @given('a new credit card')
 def step_impl(context):
@@ -103,9 +101,8 @@ def step_impl(context, url, id):
 def step_impl(context, url, id):
     target = url + '/' + id
     data = json.loads(context.resp.data)
-    assert type(data['details']) == type({})
-    assert data['details']['card_type'] == 'Visa'
-    context.resp = context.app.put(target, data=data, content_type='application/json')
+    assert data['user_id'] == id
+    context.resp = context.app.put(target, data=context.resp.data, content_type='application/json')
     assert context.resp.status_code == status.HTTP_200_OK
 
 ###########

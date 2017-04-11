@@ -171,8 +171,8 @@ class PaymentService(object):
             for key in self.NONUPDATABLE_PAYMENT_RREQUEST_FIELDS :
                 if key in data:
                    raise DataValidationError('Invalid payment: body of request contained bad or no data')
-            if existing_user_id != data['user_id']:
-                raise DataValidationError('Invalid payment: Changes to user_id field not allowed')
+            #if existing_user_id != data['user_id']:
+            #    raise DataValidationError('Invalid payment: Changes to user_id field not allowed')
             type = data['payment_type']
             detail = data['details']
             if bool(re.search(r'\d', detail['user_name'])) == False:
@@ -274,15 +274,6 @@ class PaymentService(object):
             return True
         else:
             return False
-
-    def load_sample(self, public, private):
-        p = Payment()
-        p.deserialize(public)
-        p.is_default = private['is_default']
-        p.is_removed = private['is_removed']
-        p.charge_history = private['charge_history'] 
-        app_db.session.add(p)
-        app_db.session.commit()
 
 
 class PaymentNotFoundError(Exception):
