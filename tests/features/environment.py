@@ -1,5 +1,6 @@
 from app import payments
 from app.db import app_db
+from app.db.interface import PaymentService
 
 def before_all(context):
 
@@ -9,12 +10,18 @@ def before_all(context):
     '''
     payments.app.debug = True
     payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
-    app_db.drop_all()    # clean up the last tests
-    app_db.create_all()  # make our sqlalchemy tables
+    app_db.drop_all()
+    app_db.create_all()
     app_db.session.commit()
     
     context.app = payments.app.test_client()
-    context.server = payments
+    context.ps = PaymentService()
+
+
+def after_scenario(context, scenario):
+    app_db.drop_all()
+    app_db.create_all()
+    app_db.session.commit()
 
 def after_all(context):
     app_db.drop_all()

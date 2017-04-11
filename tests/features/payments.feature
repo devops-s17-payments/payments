@@ -22,7 +22,7 @@ Scenario: Add a new payment
     Then I should see "my credit"
     Then I should see "my debit"
     Then I should see "my paypal"
-    Given a new credit card:
+    Given a new credit card
         | nickname   | user_id | payment_type | user_name   | expires | card_type | card_number      |
         | new credit | 1       | credit       | Jimmy Jones | 07/2017 | Visa      | 3333222244441111 |
     When I add a new payment to "payments"
@@ -32,10 +32,20 @@ Scenario: Add a new payment
     Then I should see "my debit"
     Then I should see "my paypal"
 
-Scenario: Update a payment
+Scenario: Update a payment (PATCH)
     When I get "payments" with id "1"
     Then I should see a payment with id "1" and "nickname" = "my credit"
-    When I change "nickname" to "my new card"
-    And I update "payments" with id "1"
+    When I change "nickname" to "new credit"
+    And I patch "payments" with id "1"
     When I get "payments" with id "1"
-    Then I should see a payment with id "1" and "nickname" = "my new card"
+    Then I should see a payment with id "1" and "nickname" = "new credit"
+
+Scenario: Update a payment (PUT)
+    When I get "payments" with id "1"
+    Then I should see a payment with id "1" and "nickname" = "my credit"
+    Given an updated credit card
+        | nickname  | user_id | payment_type | user_name   | expires | card_type | card_number      |
+        | ca$hmoney | 1       | credit       | Jimmy Jones | 08/2018 | Visa      | 4444333322221111 |
+    When I put "payments" with id "1"
+    And I get "payments" with id "1"
+    Then I should see a payment with id "1" and "nickname" = "ca$hmoney"

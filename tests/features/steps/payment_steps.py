@@ -29,9 +29,26 @@ def step_impl(context):
             'is_removed' : row['is_removed'],
             'charge_history' : row['charge_history'],
         }
-        PaymentService.load_sample(public_data, private_data)
+        context.ps.load_sample(public_data, private_data)
 
 @given('a new credit card')
+def step_impl(context):
+    for row in context.table:
+        details = {
+            'user_name' : row['user_name'],
+            'card_number' : row['card_number'],
+            'card_type' : row['card_type'],
+            'expires' : row['expires'],
+        }
+        payment = {
+            'nickname' : row['nickname'],
+            'user_id' : row['user_id'],
+            'payment_type' : row['payment_type'],
+            'details' : details
+        }
+    context.resp.data = json.dumps(payment)
+
+@given('an updated credit card')
 def step_impl(context):
     for row in context.table:
         details = {
@@ -76,10 +93,19 @@ def step_impl(context, url):
 def step_impl(context, attribute, value):
     context.resp.data = json.dumps({attribute : value})
 
-@when('I update "{url}" with id "{id}"')
+@when('I patch "{url}" with id "{id}"')
 def step_impl(context, url, id):
     target = url + '/' + id
     context.resp = context.app.patch(target, data=context.resp.data, content_type='application/json')
+    assert context.resp.status_code == status.HTTP_200_OK
+
+@when('I put "{url}" with id "{id}"')
+def step_impl(context, url, id):
+    target = url + '/' + id
+    data = json.loads(context.resp.data)
+    assert type(data['details']) == type({})
+    assert data['details']['card_type'] == 'Visa'
+    context.resp = context.app.put(target, data=data, content_type='application/json')
     assert context.resp.status_code == status.HTTP_200_OK
 
 ###########

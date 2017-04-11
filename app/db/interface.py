@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
-
+import re
+from datetime import datetime
 from sqlalchemy import exc
 
 from app.db.models import Payment, Detail
@@ -163,14 +164,14 @@ class PaymentService(object):
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
 
 # UTILITY FUNCTIONS
-    def is_valid_put(self,existing_user_id,new_data):
+    def is_valid_put(self,existing_user_id,data):
         valid = False
         valid_detail = False
         try:
             for key in self.NONUPDATABLE_PAYMENT_RREQUEST_FIELDS :
-                if key in new_data:
+                if key in data:
                    raise DataValidationError('Invalid payment: body of request contained bad or no data')
-            if existing_user_id != new_data['user_id']:
+            if existing_user_id != data['user_id']:
                 raise DataValidationError('Invalid payment: Changes to user_id field not allowed')
             type = data['payment_type']
             detail = data['details']
@@ -274,8 +275,7 @@ class PaymentService(object):
         else:
             return False
 
-    @staticmethod
-    def load_sample(public, private):
+    def load_sample(self, public, private):
         p = Payment()
         p.deserialize(public)
         p.is_default = private['is_default']
