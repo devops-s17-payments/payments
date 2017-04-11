@@ -62,8 +62,19 @@ Vagrant.configure(2) do |config|
     # Install app dependencies
     cd /vagrant
     sudo pip install -r requirements.txt
+    
     # Make vi look nice
     echo "colorscheme desert" > ~/.vimrc
+
+    # Add DB connect string as environment variable
+    EXISTS=`grep LOCAL_DB /home/vagrant/.profile | wc -l | awk '{ print $1 }'`
+    if [[ $EXISTS -eq 0 ]]; then
+      STR=$'\nexport LOCAL_DB=postgresql://payments:payments@localhost:5432/dev'
+      echo $STR >> /home/vagrant/.profile
+      echo "Adding DB connection string..."
+    else
+      echo "LOCAL_DB exists!"
+    fi
 
     cat <<-EOF | su - postgres -c psql
     -- Create the database user:
@@ -84,6 +95,7 @@ Vagrant.configure(2) do |config|
       TEMPLATE=template0;
 	EOF
   SHELL
+
 
   ######################################################################
   # Add PostgreSQL docker container
