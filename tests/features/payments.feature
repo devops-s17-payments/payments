@@ -32,3 +32,10 @@ Scenario: Add a new payment
     Then I should see "my debit"
     Then I should see "my paypal"
 
+Scenario: Update a payment
+    When I get "payments" with id "1"
+    Then I should see a payment with id "1" and "nickname" = "my credit"
+    When I change "nickname" to "my new card"
+    And I update "payments" with id "1"
+    When I get "payments" with id "1"
+    Then I should see a payment with id "1" and "nickname" = "my new card"
