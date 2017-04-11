@@ -18,16 +18,17 @@ Scenario: The server is running
     Then I should not see "Not Found"
 
 Scenario: Add a new payment
-    When I visit "/payments"
+    When I visit "payments"
     Then I should see "my credit"
     Then I should see "my debit"
     Then I should see "my paypal"
     Given a new credit card:
         | nickname   | user_id | payment_type | user_name   | expires | card_type | card_number      |
         | new credit | 1       | credit       | Jimmy Jones | 07/2017 | Visa      | 3333222244441111 |
-    When I add a new payment to "/payments"
-    And I visit "/payments"
+    When I add a new payment to "payments"
+    And I visit "payments"
     Then I should see "new credit"
     Then I should see "my credit"
     Then I should see "my debit"
     Then I should see "my paypal"
+
