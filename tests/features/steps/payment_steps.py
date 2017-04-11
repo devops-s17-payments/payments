@@ -3,6 +3,7 @@ from flask_api import status
 from app.db.interface import PaymentService
 import json
 
+
 #############
 # G I V E N #
 #############
@@ -82,6 +83,7 @@ def step_impl(context, url, id):
 def step_impl(context):
     context.resp = context.app.get('/')
 
+'''
 @when(u'I add a new payment to "{url}"')
 def step_impl(context, url):
     context.resp = context.app.post(url, data=context.resp.data, content_type='application/json')
@@ -119,6 +121,15 @@ def step_impl(context, u_id, action, url, p_id):
     context.resp = context.app.patch(target, data=data, content_type='application/json')
     assert context.resp.status_code == status.HTTP_200_OK
     assert 'Payment with id: 1 set as default' in context.resp.data
+	context.resp = context.app.post(url, data=context.resp.data, content_type='application/json')
+	assert context.resp.status_code == status.HTTP_201_CREATED
+'''
+
+
+@when('I make a delete request to "{url}"')
+def step_impl(context, url):
+    context.resp = context.app.delete(url)
+    assert context.resp.status_code == status.HTTP_204_NO_CONTENT
 
 ###########
 # T H E N #
@@ -144,6 +155,11 @@ def step_impl(context, u_id, p_id):
     assert payments[0]['is_default'] == True
     assert payments[0]['payment_id'] == int(p_id)
     assert payments[0]['user_id'] == int(u_id)
+
+@then('I should see "{message}" when making a get request to "{url}"')
+def step_impl(context, message, url):
+    new_response = context.app.get(url)
+    assert new_response.resp.status_code == status.HTTP_404_NOT_FOUND
 
 
 '''

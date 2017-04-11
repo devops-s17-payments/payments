@@ -55,3 +55,7 @@ Scenario: Set default payment
     And user with id "1" performs "set-default" on "payments" with id "1"
     When I get "payments" with id "1"
     Then user with id "1" should see payment with id "1" set as default
+
+Scenario: Delete an existing payment
+    When I make a delete request to "/payments/1"
+    Then I should see "Not Found" when making a get request "/payments/1"
