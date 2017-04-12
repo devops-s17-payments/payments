@@ -129,7 +129,11 @@ def step_impl(context, u_id, action, url, p_id):
 @when('I make a delete request to "{url}"')
 def step_impl(context, url):
     context.resp = context.app.delete(url)
-    assert context.resp.status_code == status.HTTP_204_NO_CONTENT
+
+
+@when('I attempt to retrieve the deleted item "{url}"')
+def step_impl(context, url):
+    context.resp = context.app.get(url)
 
 ###########
 # T H E N #
@@ -156,10 +160,16 @@ def step_impl(context, u_id, p_id):
     assert payments[0]['payment_id'] == int(p_id)
     assert payments[0]['user_id'] == int(u_id)
 
-@then('I should see "{message}" when making a get request to "{url}"')
-def step_impl(context, message, url):
-    new_response = context.app.get(url)
-    assert new_response.resp.status_code == status.HTTP_404_NOT_FOUND
+@then('I should be returned nothing')
+def step_impl(context):
+    assert context.resp.status_code == status.HTTP_204_NO_CONTENT
+    assert context.resp.data == ''
+
+
+@then('I should see a {http_code} response')
+def step_impl(context, http_code):
+    desired_http_code = getattr(status, http_code)
+    assert context.resp.status_code == desired_http_code
 
 
 '''

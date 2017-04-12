@@ -59,3 +59,6 @@ Scenario: Set default payment
 Scenario: Delete an existing payment
     When I make a delete request to "/payments/1"
     Then I should see "Not Found" when making a get request "/payments/1"
+    Then I should be returned nothing
+    When I attempt to retrieve the deleted item "/payments/1"
+    Then I should see a HTTP_404_NOT_FOUND response
