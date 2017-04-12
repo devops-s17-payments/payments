@@ -128,10 +128,10 @@ class PaymentService(object):
         else:
             payments = self.db.session.query(Payment).all()
 
-        if payments:
-            payments = self._remove_soft_deletes(payments)
-        else:
-            raise DataValidationError
+        payments = self._remove_soft_deletes(payments)
+
+        if not payments:
+            raise PaymentNotFoundError
 
         return [payment.serialize() for payment in payments]
 
