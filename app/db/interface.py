@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 
+import re
 
 from sqlalchemy import exc
 
@@ -172,8 +173,8 @@ class PaymentService(object):
                    raise DataValidationError('Invalid payment: body of request contained bad or no data')
             if existing_user_id != new_data['user_id']:
                 raise DataValidationError('Invalid payment: Changes to user_id field not allowed')
-            type = data['payment_type']
-            detail = data['details']
+            type = new_data['payment_type']
+            detail = new_data['details']
             if bool(re.search(r'\d', detail['user_name'])) == False:
                 valid = True
             if type == 'credit' or type == 'debit':
@@ -182,7 +183,7 @@ class PaymentService(object):
                 if bool(re.match('^[0-9]+$', card_number)) and (len(card_number) == 16):
                     datetime.strptime(expires_date, '%m/%Y')
                     valid_detail = True
-            elif data['is_linked'] != None and type == 'paypal':
+            elif new_data['is_linked'] != None and type == 'paypal':
                 valid_detail = True
         except KeyError as e:
             raise DataValidationError('Invalid payment: missing ' + e.args[0])
