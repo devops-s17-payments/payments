@@ -135,6 +135,12 @@ def step_impl(context, url):
 def step_impl(context, url):
     context.resp = context.app.get(url)
 
+
+@when('I try to delete a non-existent payment at "{url}"')
+def step_impl(context, url):
+    context.resp = context.app.delete(url)
+
+
 ###########
 # T H E N #
 ###########
@@ -171,6 +177,11 @@ def step_impl(context, http_code):
     desired_http_code = getattr(status, http_code)
     assert context.resp.status_code == desired_http_code
 
+
+@then('I should be returned a {http_code} response')
+def step_impl(context, http_code):
+    desired_http_code = getattr(status, http_code)
+    assert context.resp.status_code == desired_http_code
 
 '''
 
