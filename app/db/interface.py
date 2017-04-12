@@ -1,14 +1,11 @@
 # -*- coding:utf-8 -*-
 
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import exc
-
+from app.db import app_db
 from app.db.models import Payment, Detail
 from app.error_handlers import DataValidationError
-from app.db import app_db
-from sqlalchemy import exc
-from datetime import datetime, timedelta
 
 class PaymentService(object):
     """
@@ -118,14 +115,7 @@ class PaymentService(object):
         """
         if payment_ids != None:
             payments = self.db.session.query(Payment).filter(Payment.id.in_(payment_ids)).all()
-            """
-            #### will come back to this new implementation ###
-            try:
-                id_dict = [{'payment_id': id} for id in payment_ids]
-                payments = [self._query_payments(payment_attributes=val)[0] for key, val in id_dict.iteritems()]
-            except PaymentServiceQueryError as e:
-                raise DataValidationError(e.message)
-            """
+
         elif payment_attributes != None:
             try:
                 payments = self._query_payments(payment_attributes)
@@ -135,7 +125,10 @@ class PaymentService(object):
         else:
             payments = self.db.session.query(Payment).all()
 
-        payments = self._remove_soft_deletes(payments)
+        if payments:
+            payments = self._remove_soft_deletes(payments)
+        else:
+            raise DataValidationError
 
         return [payment.serialize() for payment in payments]
 
