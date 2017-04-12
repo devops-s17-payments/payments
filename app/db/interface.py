@@ -117,14 +117,7 @@ class PaymentService(object):
         """
         if payment_ids != None:
             payments = self.db.session.query(Payment).filter(Payment.id.in_(payment_ids)).all()
-            """
-            #### will come back to this new implementation ###
-            try:
-                id_dict = [{'payment_id': id} for id in payment_ids]
-                payments = [self._query_payments(payment_attributes=val)[0] for key, val in id_dict.iteritems()]
-            except PaymentServiceQueryError as e:
-                raise DataValidationError(e.message)
-            """
+
         elif payment_attributes != None:
             try:
                 payments = self._query_payments(payment_attributes)
@@ -134,7 +127,10 @@ class PaymentService(object):
         else:
             payments = self.db.session.query(Payment).all()
 
-        payments = self._remove_soft_deletes(payments)
+        if payments:
+            payments = self._remove_soft_deletes(payments)
+        else:
+            raise DataValidationError
 
         return [payment.serialize() for payment in payments]
 
