@@ -164,7 +164,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         # return payments that have a specific attribute
         specific_attribute = 'payment_type'
         specific_attribute_value = 'paypal'
-        attribute_params = {'payment_type': ['paypal']}
+        attribute_params = {'payment_type': 'paypal'}
         paypal_payment = SAMPLE_PAYMENTS[1]
 
         with patch.object(PaymentService, 'get_payments', return_value=paypal_payment) as mocked_service:
