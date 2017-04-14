@@ -105,6 +105,21 @@ def step_impl(context, url, id):
     context.resp = context.app.put(target, data=context.resp.data, content_type='application/json')
     assert context.resp.status_code == status.HTTP_200_OK
 
+@when('user with id "{id}" has existing "{url}"')
+def step_impl(context, id, url):
+    target = url + '?user_id=' + id
+    context.resp = context.app.get(target)
+    assert context.resp.status_code == status.HTTP_200_OK
+    assert len(context.resp.data) > 0
+
+@when('user with id "{u_id}" performs "{action}" on "{url}" with id "{p_id}"')
+def step_impl(context, u_id, action, url, p_id):
+    target = url + '/' + u_id + '/' + action
+    data = json.dumps({'payment_id' : int(p_id)})
+    context.resp = context.app.patch(target, data=data, content_type='application/json')
+    assert context.resp.status_code == status.HTTP_200_OK
+    assert 'Payment with id: 1 set as default' in context.resp.data
+
 ###########
 # T H E N #
 ###########
@@ -122,6 +137,14 @@ def step_impl(context, id, attribute, value):
 @then('I should not see "{message}"')
 def step_impl(context, message):
     assert message not in context.resp.data
+
+@then('user with id "{u_id}" should see payment with id "{p_id}" set as default')
+def step_impl(context, u_id, p_id):
+    payments = json.loads(context.resp.data)
+    assert payments[0]['is_default'] == True
+    assert payments[0]['payment_id'] == int(p_id)
+    assert payments[0]['user_id'] == int(u_id)
+
 
 '''
 

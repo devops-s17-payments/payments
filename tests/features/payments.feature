@@ -49,3 +49,9 @@ Scenario: Update a payment (PUT)
     Then I should see a payment with id "1" and "nickname" = "cashmoney"
     When I visit "payments"
     Then I should not see "my credit"
+
+Scenario: Set default payment
+    When user with id "1" has existing "payments"
+    And user with id "1" performs "set-default" on "payments" with id "1"
+    When I get "payments" with id "1"
+    Then user with id "1" should see payment with id "1" set as default
