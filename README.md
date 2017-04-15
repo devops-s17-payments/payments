@@ -1,4 +1,6 @@
-#Welcome to Payments!
+## Welcome to Payments!
+
+[![Build Status](https://travis-ci.org/devops-s17-payments/payments.svg?branch=HOTFIX-db-init)](https://travis-ci.org/devops-s17-payments/payments)
 
 **Current payment options include:**
 * Credit Card
