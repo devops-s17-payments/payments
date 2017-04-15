@@ -6,18 +6,18 @@ python:
 install: "pip install -r requirements.txt"
 
 addons:
-  postgresql: "9.4"
+  postgresql: "9.3"
 
 services: postgresql
 
 # command to run tests
 before_script:
   - export LOCAL_DB='postgresql://payments:payments@localhost:5432/dev'
-  - psql -c "CREATE USER payments WITH PASSWORD 'payments';" -U postgres
-  - psql -c 'create database payments;' -U postgres
-  - CREATE DATABASE dev WITH OWNER=payments LC_COLLATE='en_US.utf8' LC_CTYPE='en_US.utf8' ENCODING='UTF8' TEMPLATE=template0;
-  - CREATE DATABASE test WITH OWNER=payments LC_COLLATE='en_US.utf8' LC_CTYPE='en_US.utf8' ENCODING='UTF8' TEMPLATE=template0;
-  
+  - sudo su - postgres
+  - psql -c "CREATE USER payments WITH PASSWORD 'payments';"
+  - psql -c "CREATE DATABASE dev WITH OWNER=payments LC_COLLATE='en_US.utf8' LC_CTYPE='en_US.utf8' ENCODING='UTF8' TEMPLATE=template0;"
+  - psql -c "CREATE DATABASE test WITH OWNER=payments LC_COLLATE='en_US.utf8' LC_CTYPE='en_US.utf8' ENCODING='UTF8' TEMPLATE=template0;"
+
 script:
   - nosetests -v --rednose --nologcapture
   - behave
