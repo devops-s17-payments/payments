@@ -60,6 +60,8 @@ def list_payments():
             # this cast allows us to make a simple dictionary where each query param is a key and the
             # value is a list that contains the value(s) of that query parameter
             request_args = dict(request_args)
+            for key in request_args:
+                request_args[key] = request_args[key][0]
             results = payment_service.get_payments(payment_attributes=request_args)
 
         else:

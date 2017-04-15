@@ -89,9 +89,8 @@ class TestInterface(unittest.TestCase):
         id = [99]
 
         mock_db.query(Payment).filter.return_value.all.return_value = []
-        with self.assertRaises(DataValidationError) as e:
+        with self.assertRaises(PaymentNotFoundError):
             result = self.ps.get_payments(payment_ids=id)
-            self.assertTrue('id 99 could not be found' in e)
         mock_db.query(Payment).filter.assert_called_once()
         mock_P.serialize.assert_not_called()
 
@@ -196,9 +195,8 @@ class TestInterface(unittest.TestCase):
     def test_interface_get_missing_payment(self):
         id = [99]
 
-        with self.assertRaises(DataValidationError) as e:
+        with self.assertRaises(PaymentNotFoundError):
             result = self.ps.get_payments(payment_ids=id)
-            self.assertTrue('id 99 could not be found' in e)
 
     def test_interface_get_three_consec_payment(self):
         ids = [1,2,3]
@@ -435,8 +433,8 @@ class TestInterface(unittest.TestCase):
         self.assertIsNotNone(deleted_payment)
         self.assertTrue(deleted_payment.is_removed)
 
-        current_payments = self.ps.get_payments()
-        self.assertEqual(len(current_payments),0)
+        with self.assertRaises(PaymentNotFoundError):
+            current_payments = self.ps.get_payments()
 
     def test_interface_delete_payment_with_invalid_id(self):
         #setUp has one item in the DB
