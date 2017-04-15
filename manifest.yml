@@ -7,3 +7,6 @@ applications:
   host: nyu-devops-sp17-payments
   disk_quota: 1024M
   buildpack: python_buildpack
+  services:
+  - ElephantSQL-test
+  - ElephantSQL-dev
