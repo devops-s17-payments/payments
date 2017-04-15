@@ -12,23 +12,19 @@ Background:
 
 Scenario: The server is running
     When I visit the "home page"
-    Then I should see "Welcome to payments"
+    Then I should see "Welcome to payments" with status code "200"
     Then I should not see "Not Found"
 
 Scenario: Add a new payment
     When I visit "payments"
-    Then I should see "my credit"
-    Then I should see "my debit"
-    Then I should see "my paypal"
+    Then I should see "3" existing payments
     Given a new credit card
         | nickname   | user_id | payment_type | user_name   | expires | card_type | card_number      |
         | new credit | 1       | credit       | Jimmy Jones | 07/2017 | Visa      | 3333222244441111 |
     When I add a new payment to "payments"
     And I visit "payments"
-    Then I should see "new credit"
-    Then I should see "my credit"
-    Then I should see "my debit"
-    Then I should see "my paypal"
+    Then I should see "4" existing payments
+    And I should see "new credit"
 
 Scenario: Update a payment (PATCH)
     When I get "payments" with id "1"
@@ -49,6 +45,24 @@ Scenario: Update a payment (PUT)
     Then I should see a payment with id "1" and "nickname" = "cashmoney"
     When I visit "payments"
     Then I should not see "my credit"
+
+Scenario: Update a payment with bad or no data (PATCH)
+    When I get "payments" with id "1"
+    Then I should see a payment with id "1" and "nickname" = "my credit"
+    When I change "nicknam3" to "new credit", but misspell the attribute
+    And I patch "payments" with id "1"
+    Then I should see "body of request contains invalid/un-updatable fields"
+    When I patch "payments" with id "1" with no data
+    Then I should see "body of request contained bad or no data" with status code "400"
+
+Scenario: Update a payment with illegal data (PUT)
+    When I get "payments" with id "1"
+    Then I should see a payment with id "1" and "nickname" = "my credit"
+    Given an updated credit card with illegal data
+        | nickname  | user_id | payment_type | user_name   | expires | card_type | card_number      | is_removed |
+        | cashmoney | 1       | credit       | Jimmy Jones | 08/2018 | Visa      | 4444333322221111 | True       |
+    When I put "payments" with id "1"
+    Then I should see "body of request contained bad or no data" with status code "400"
 
 Scenario: Set default payment
     When user with id "1" has existing "payments"
