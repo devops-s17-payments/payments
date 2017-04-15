@@ -1,4 +1,8 @@
-#Welcome to Payments!
+## Welcome to Payments!
+
+[![Build Status](https://travis-ci.org/devops-s17-payments/payments.svg?branch=master)](https://travis-ci.org/devops-s17-payments/payments)
+
+[![Codecov](https://img.shields.io/codecov/c/github/devops-s17-payments/payments.svg)]()
 
 **Current payment options include:**
 * Credit Card
