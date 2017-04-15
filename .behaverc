@@ -1,2 +1,5 @@
 [behave]
 paths=tests/features
+
+[behave.userdata]
+db = postgresql://payments:payments@localhost:5432/test

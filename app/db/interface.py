@@ -1,14 +1,11 @@
 # -*- coding:utf-8 -*-
 
 import re
-
+from datetime import datetime, timedelta
 from sqlalchemy import exc
-
+from app.db import app_db
 from app.db.models import Payment, Detail
 from app.error_handlers import DataValidationError
-from app.db import app_db
-from sqlalchemy import exc
-from datetime import datetime, timedelta
 
 class PaymentService(object):
     """
@@ -129,7 +126,7 @@ class PaymentService(object):
             payments = self.db.session.query(Payment).all()
 
         payments = self._remove_soft_deletes(payments)
-
+        
         if not payments:
             raise PaymentNotFoundError
 
@@ -160,15 +157,15 @@ class PaymentService(object):
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
 
 # UTILITY FUNCTIONS
-    def is_valid_put(self,existing_user_id,new_data):
+    def is_valid_put(self, existing_user_id, new_data):
         valid = False
         valid_detail = False
         try:
             for key in self.NONUPDATABLE_PAYMENT_RREQUEST_FIELDS :
                 if key in new_data:
                    raise DataValidationError('Invalid payment: body of request contained bad or no data')
-            if existing_user_id != new_data['user_id']:
-                raise DataValidationError('Invalid payment: Changes to user_id field not allowed')
+            #if existing_user_id != data['user_id']:
+            #    raise DataValidationError('Invalid payment: Changes to user_id field not allowed')
             type = new_data['payment_type']
             detail = new_data['details']
             if bool(re.search(r'\d', detail['user_name'])) == False:
@@ -270,16 +267,6 @@ class PaymentService(object):
             return True
         else:
             return False
-
-    @staticmethod
-    def load_sample(public, private):
-        p = Payment()
-        p.deserialize(public)
-        p.is_default = private['is_default']
-        p.is_removed = private['is_removed']
-        p.charge_history = private['charge_history'] 
-        app_db.session.add(p)
-        app_db.session.commit()
 
 
 class PaymentNotFoundError(Exception):
