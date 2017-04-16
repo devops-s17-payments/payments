@@ -7,3 +7,11 @@ applications:
   host: nyu-devops-sp17-payments
   disk_quota: 1024M
   buildpack: python_buildpack
+- path: .
+  memory: 64M
+  instances: 1
+  domain: mybluemix.net
+  name: nyu-devops-sp17-payments-dev
+  host: nyu-devops-sp17-payments-dev
+  disk_quota: 1024M
+  buildpack: python_buildpack
