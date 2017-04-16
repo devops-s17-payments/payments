@@ -1,7 +1,7 @@
 ## Welcome to Payments!
 
 [![Build Status](https://travis-ci.org/devops-s17-payments/payments.svg?branch=master)](https://travis-ci.org/devops-s17-payments/payments)
-[![codecov.io](https://codecov.io/github/devops-s17-payments/payments/coverage.svg?branch=master)](https://codecov.io/github/devops-s17-payments/payments)
+[![codecov](https://codecov.io/gh/devops-s17-payments/payments/branch/master/graph/badge.svg)](https://codecov.io/gh/devops-s17-payments/payments)
 
 **Current payment options include:**
 * Credit Card
