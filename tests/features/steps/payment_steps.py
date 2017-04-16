@@ -139,8 +139,9 @@ def step_impl(context, id):
     context.resp = context.app.get(url)
 
 
-@when('I try to delete a non-existent payment')
-def step_impl(context, url):
+@when('I try to delete a non-existent payment with id {id}')
+def step_impl(context, id):
+    url = '/payments/{}'.format(id)
     context.resp = context.app.delete(url)
 
 
@@ -169,16 +170,19 @@ def step_impl(context, u_id, p_id):
     assert payments[0]['payment_id'] == int(p_id)
     assert payments[0]['user_id'] == int(u_id)
 
-@then('I should be returned nothing')
-def step_impl(context):
+@then('I should be returned nothing for payment {id}')
+def step_impl(context, id):
     assert context.resp.status_code == status.HTTP_204_NO_CONTENT
     assert context.resp.data == ''
 
 
-@then('the server should tell me it was not found')
-def step_impl(context):
+@then('the server should tell me payment {id} was not found')
+def step_impl(context, id):
+    expected_response = payments.NOT_FOUND_ERROR_BODY
+    expected_response['error'].format(id)
+    actual_response = json.loads(context.resp.data)
     assert context.resp.status_code == status.HTTP_404_NOT_FOUND
-    assert context.resp.data == payments.NOT_FOUND_ERROR_BODY
+    assert actual_response == expected_response
 
 '''
 

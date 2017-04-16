@@ -58,8 +58,8 @@ Scenario: Set default payment
 
 Scenario: Delete an existing payment
     When I try to delete payment 1
-    Then I should be returned nothing
+    Then I should be returned nothing for payment 1
     When I attempt to retrieve the deleted payment 1
-    Then the server should tell me it was not found
-    When I try to delete a non-existent payment
-    Then I should be returned nothing
+    Then the server should tell me payment 1 was not found
+    When I try to delete a non-existent payment with id 100
+    Then I should be returned nothing for payment 100
