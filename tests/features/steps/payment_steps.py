@@ -182,5 +182,4 @@ def step_impl(context, u_id, p_id):
 @then(u'I should see "{count}" existing payments')
 def step_impl(context, count):
     assert len(json.loads(context.resp.data)) == int(count)
-    #assert (int(count) == len(json.loads(context.resp.data)))
     assert context.resp.status_code == 200
