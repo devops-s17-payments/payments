@@ -140,6 +140,13 @@ def step_impl(context, id):
     context.resp = context.app.delete(url)
 
 
+@when('user with id "{id}" chooses to buy something for ${dollars}')
+def step_impl(context, id, dollars):
+    url = '/payments/{}/charge'.format(id)
+    data = json.dumps({'amount': float(dollars)})
+    context.resp = context.app.patch(url, data=data, content_type='application/json')
+
+
 ###########
 # T H E N #
 ###########
@@ -177,6 +184,15 @@ def step_impl(context, id):
     expected_response['error'].format(id)
     actual_response = json.loads(context.resp.data)
     assert context.resp.status_code == status.HTTP_404_NOT_FOUND
+    assert actual_response == expected_response
+
+
+@then('user with id "{id}" should be notified of the charge for ${dollars}')
+def step_impl(context, id, dollars):
+    expected_response = {
+        'success': 'Default payment method for user_id: %s has been charged $%.2f' % ((id), float(dollars))}
+    actual_response = json.loads(context.resp.data)
+    assert context.resp.status_code == status.HTTP_200_OK
     assert actual_response == expected_response
 
 '''

@@ -63,3 +63,9 @@ Scenario: Delete an existing payment
     Then the server should tell me payment 1 was not found
     When I try to delete a non-existent payment with id 100
     Then I should be returned nothing for payment 100
+
+Scenario: Charge a payment
+    When user with id "1" has existing "payments"
+    And user with id "1" performs "set-default" on "payments" with id "1"
+    And user with id "1" chooses to buy something for $50
+    Then user with id "1" should be notified of the charge for $50
