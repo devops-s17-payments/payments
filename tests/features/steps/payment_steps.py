@@ -84,7 +84,6 @@ def step_impl(context, url, id):
 def step_impl(context):
     context.resp = context.app.get('/')
 
-'''
 @when(u'I add a new payment to "{url}"')
 def step_impl(context, url):
     context.resp = context.app.post(url, data=context.resp.data, content_type='application/json')
@@ -122,10 +121,8 @@ def step_impl(context, u_id, action, url, p_id):
     context.resp = context.app.patch(target, data=data, content_type='application/json')
     assert context.resp.status_code == status.HTTP_200_OK
     assert 'Payment with id: 1 set as default' in context.resp.data
-	context.resp = context.app.post(url, data=context.resp.data, content_type='application/json')
-	assert context.resp.status_code == status.HTTP_201_CREATED
-'''
-
+    context.resp = context.app.post(url, data=context.resp.data, content_type='application/json')
+    assert context.resp.status_code == status.HTTP_201_CREATED
 
 @when('I try to delete payment {id}')
 def step_impl(context, id):
