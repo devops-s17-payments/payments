@@ -148,7 +148,6 @@ def step_impl(context, u_id, action, url, p_id):
     assert context.resp.status_code == status.HTTP_200_OK
     assert 'Payment with id: 1 set as default' in context.resp.data
 
-
 @when('I try to delete payment {id}')
 def step_impl(context, id):
     url = '/payments/{}'.format(id)
