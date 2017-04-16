@@ -1,4 +1,4 @@
-#Welcome to Payments!
+## Welcome to Payments!
 
 **Current payment options include:**
 * Credit Card
