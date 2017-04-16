@@ -1,6 +1,7 @@
 from behave import given, when, then
 from flask_api import status
 from app.db.interface import PaymentService
+from app import payments
 import json
 
 
@@ -126,17 +127,19 @@ def step_impl(context, u_id, action, url, p_id):
 '''
 
 
-@when('I make a delete request to "{url}"')
-def step_impl(context, url):
+@when('I try to delete payment {id}')
+def step_impl(context, id):
+    url = '/payments/{}'.format(id)
     context.resp = context.app.delete(url)
 
 
-@when('I attempt to retrieve the deleted item "{url}"')
-def step_impl(context, url):
+@when('I attempt to retrieve the deleted payment {id}')
+def step_impl(context, id):
+    url = '/payments/{}'.format(id)
     context.resp = context.app.get(url)
 
 
-@when('I try to delete a non-existent payment at "{url}"')
+@when('I try to delete a non-existent payment')
 def step_impl(context, url):
     context.resp = context.app.delete(url)
 
@@ -172,16 +175,10 @@ def step_impl(context):
     assert context.resp.data == ''
 
 
-@then('I should see a {http_code} response')
-def step_impl(context, http_code):
-    desired_http_code = getattr(status, http_code)
-    assert context.resp.status_code == desired_http_code
-
-
-@then('I should be returned a {http_code} response')
-def step_impl(context, http_code):
-    desired_http_code = getattr(status, http_code)
-    assert context.resp.status_code == desired_http_code
+@then('the server should tell me it was not found')
+def step_impl(context):
+    assert context.resp.status_code == status.HTTP_404_NOT_FOUND
+    assert context.resp.data == payments.NOT_FOUND_ERROR_BODY
 
 '''
 

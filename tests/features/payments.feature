@@ -57,9 +57,9 @@ Scenario: Set default payment
     Then user with id "1" should see payment with id "1" set as default
 
 Scenario: Delete an existing payment
-    When I make a delete request to "/payments/1"
+    When I try to delete payment 1
     Then I should be returned nothing
-    When I attempt to retrieve the deleted item "/payments/1"
-    Then I should see a HTTP_404_NOT_FOUND response
-    When I try to delete a non-existent payment at "/payments/100"
-    Then I should be returned a HTTP_204_NO_CONTENT response
+    When I attempt to retrieve the deleted payment 1
+    Then the server should tell me it was not found
+    When I try to delete a non-existent payment
+    Then I should be returned nothing
