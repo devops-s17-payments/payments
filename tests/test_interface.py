@@ -903,12 +903,6 @@ class TestInterface(unittest.TestCase):
         result = self.ps.is_valid(good)
         self.assertTrue(result)
 
-    def test_interface_util_is_valid_bad_link(self):
-        bad = copy.deepcopy(PAYPAL)
-        bad['details']['is_linked'] = False
-        result = self.ps.is_valid(bad)
-        self.assertFalse(result)
-
 class TestInterfaceFunctional(unittest.TestCase):
     """
     A class for doing more functional tests involving the interface.py classes.

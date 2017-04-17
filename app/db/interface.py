@@ -27,12 +27,14 @@ class PaymentService(object):
 
         :param payment_data: <dict> a validated JSON payload that describes a new Payment object
         """
+
         p = Payment()
 
         try:
             p.deserialize(payment_data)
         except DataValidationError as e:
             raise DataValidationError(e.message)
+
         self.db.session.add(p)
         self.db.session.commit()
         return p.serialize()
@@ -194,9 +196,7 @@ class PaymentService(object):
                 user_email = new_payment['details']['user_email']
                 
                 if bool(re.match('^[\W\w]+@[\W\w]+\.[A-Za-z]{2,3}$', user_email)):
-                    
-                    if new_payment['details']['is_linked']:
-                        valid = True
+                    valid = True
 
         return valid
 
