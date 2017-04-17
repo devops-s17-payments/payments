@@ -172,13 +172,12 @@ def step_impl(context, id):
 
 @then('I should see "{message}" with status code "{code}"')
 def step_impl(context, message, code):
-    print(context.resp.status_code)
+    print(context.resp.data)
     assert message in context.resp.data
     assert context.resp.status_code == int(code)
 
 @then('I should see "{message}"')
 def step_impl(context, message):
-    print(context.resp.data)
     assert message in context.resp.data
 
 @then('I should see a payment with id "{id}" and "{attribute}" = "{value}"')
