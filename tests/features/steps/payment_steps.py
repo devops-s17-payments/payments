@@ -172,7 +172,6 @@ def step_impl(context, id):
 
 @then('I should see "{message}" with status code "{code}"')
 def step_impl(context, message, code):
-    print(context.resp.data)
     assert message in context.resp.data
     assert context.resp.status_code == int(code)
 

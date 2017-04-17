@@ -84,7 +84,7 @@ class PaymentService(object):
             raise PaymentNotFoundError('Invalid payment: Payment ID not found')
         if payment_replacement:
             # TODO 	: test cases for validity in next sprint
-            if not self.is_valid(payment_replacement):
+            if not self.is_valid(payment_replacement, payment.user_id):
                 raise DataValidationError('Invalid payment: body of request contained bad or no data')
             payment.deserialize(payment_replacement)
         elif payment_attributes: #patch
@@ -165,7 +165,7 @@ class PaymentService(object):
     def is_valid(self, new_payment, user_id=None):
         valid = False
 
-        if new_payment['user_id'] != user_id:
+        if user_id and int(new_payment['user_id']) != user_id:
             raise DataValidationError('Error: You cannot modify the field: user_id')
 
         for key in self.NONUPDATABLE_PAYMENT_FIELDS :

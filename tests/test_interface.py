@@ -849,6 +849,14 @@ class TestInterface(unittest.TestCase):
             result = self.ps.is_valid(illegal)
         self.assertTrue('cannot modify the field: is_removed' in e.exception.message)
 
+    def test_interface_util_is_valid_illegal_update(self):
+        illegal = copy.deepcopy(CREDIT)
+        user_id = illegal['user_id']
+        illegal['user_id'] = 99
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.is_valid(illegal, user_id)
+        self.assertTrue('cannot modify the field: user_id' in e.exception.message)
+
     def test_interface_util_is_valid_good_expires(self):
         good = copy.deepcopy(CREDIT)
         good['details']['expires'] = '02/2020'
