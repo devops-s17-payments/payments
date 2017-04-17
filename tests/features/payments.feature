@@ -5,7 +5,7 @@ Feature: The payments API
 
 Background:
     Given the following "payments"
-        | nickname   | user_id | payment_type | user_name    | expires | card_type  | card_number      | user_email | is_linked | 
+        | nickname   | user_id | payment_type | user_name    | expires | card_type  | card_number      | user_email | is_linked |
         | my credit  | 1       | credit       | Jimmy Jones  | 08/2018 | Visa       | 4444333322221111 | None       | None      |
         | my debit   | 2       | debit        | Jenny Joples | 12/2020 | Mastercard | 1111222233334444 | None       | None      |
         | my paypal  | 1       | paypal       | Jimmy Jones  | None    | None       | None             | jj@aol.com | True      |
@@ -77,3 +77,10 @@ Scenario: Delete an existing payment
     Then the server should tell me payment 1 was not found
     When I try to delete a non-existent payment with id 100
     Then I should be returned nothing for payment 100
+
+Scenario: Query payments (Single Query)
+    When I query payments with a valid query "payment_type" = "credit"
+    Then I should see "1" existing payments
+    And I should see a payment with id "1" and "nickname" = "my credit"
+    When I query payments with a bad query "nickname" = "amex"
+    Then I should see an error message saying "Requested resource(s) could not be found" with status code "404"

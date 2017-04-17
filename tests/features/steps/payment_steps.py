@@ -165,6 +165,18 @@ def step_impl(context, id):
     url = '/payments/{}'.format(id)
     context.resp = context.app.delete(url)
 
+@when('I query payments with a valid query "{attribute}" = "{value}"')
+def step_impl(context, attribute, value):
+    url = '/payments?{}={}'.format(attribute,value)
+    context.resp = context.app.get(url)
+    assert context.resp.status_code == status.HTTP_200_OK
+
+@when('I query payments with a bad query "{attribute}" = "{value}"')
+def step_impl(context, attribute, value):
+    url = '/payments?{}={}'.format(attribute,value)
+    context.resp = context.app.get(url)
+    assert context.resp.status_code == status.HTTP_404_NOT_FOUND
+
 
 ###########
 # T H E N #
@@ -172,13 +184,11 @@ def step_impl(context, id):
 
 @then('I should see "{message}" with status code "{code}"')
 def step_impl(context, message, code):
-    print(context.resp.status_code)
     assert message in context.resp.data
     assert context.resp.status_code == int(code)
 
 @then('I should see "{message}"')
 def step_impl(context, message):
-    print(context.resp.data)
     assert message in context.resp.data
 
 @then('I should see a payment with id "{id}" and "{attribute}" = "{value}"')
@@ -216,3 +226,8 @@ def step_impl(context, id):
 def step_impl(context, count):
     assert len(json.loads(context.resp.data)) == int(count)
     assert context.resp.status_code == 200
+
+@then('I should see an error message saying "{error_msg}" with status code "{status_code}"')
+def step_impl(context,error_msg,status_code):
+    assert error_msg in json.loads(context.resp.data)['error']
+    assert context.resp.status_code == int(status_code)
