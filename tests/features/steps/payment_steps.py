@@ -212,7 +212,7 @@ def step_impl(context, id):
 @then('the server should tell me payment {id} was not found')
 def step_impl(context, id):
     expected_response = payments.NOT_FOUND_ERROR_BODY
-    expected_response['error'].format(id)
+    expected_response['error'] = expected_response['error'].format(id)
     actual_response = json.loads(context.resp.data)
     assert context.resp.status_code == status.HTTP_404_NOT_FOUND
     assert actual_response == expected_response
