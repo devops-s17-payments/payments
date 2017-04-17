@@ -162,8 +162,11 @@ class PaymentService(object):
 ## UTILITY FUNCTIONS ##
 #######################
 
-    def is_valid(self, new_payment):
+    def is_valid(self, new_payment, user_id=None):
         valid = False
+
+        if new_payment['user_id'] != user_id:
+            raise DataValidationError('Error: You cannot modify the field: user_id')
 
         for key in self.NONUPDATABLE_PAYMENT_FIELDS :
             if key in new_payment:
