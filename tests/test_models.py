@@ -174,26 +174,3 @@ class TestModels(unittest.TestCase):
         mock_detail_serial.assert_called_once()
         payment['payment_id'] = 2
         self.assertEqual(payment, DC_RETURN)
-    
-    def test_payment_deserialize_put(self):
-        p = Payment()
-        p.deserialize(PUT_CREDIT)
-        p.deserialize_put(PUT_CREDIT_IP)
-        self.assertEqual(p.nickname, 'favcredit')
-        self.assertEqual(p.user_id, 1)
-        self.assertEqual(p.payment_type, 'credit')
-        self.assertEqual(p.details.serialize(), CC_DETAIL)
-        self.assertEqual(p.is_default, False)
-        self.assertEqual(p.is_removed, False)
-        self.assertEqual(p.charge_history, 0.0)
-    
-    def test_detail_deserialize_put_paypal(self):
-        p = Payment()
-        p.deserialize_put(PP_RETURN)
-        self.assertEqual(p.details.serialize(), PP_DETAIL)
-    
-    def test_payment_deserialize_bad_data(self):
-        p = Payment();
-        self.assertRaises(DataValidationError, p.deserialize_put, BAD_DATA)
-        self.assertRaises(DataValidationError, p.deserialize_put, BAD_DATA2)
-        self.assertRaises(DataValidationError, p.deserialize_put, 'as@Q#$*)&2r923rz3ru3892')

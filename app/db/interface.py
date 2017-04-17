@@ -12,8 +12,8 @@ class PaymentService(object):
     Serves as an interface which takes requests from the front-end
     and runs the corresponding actions in the database.
     """
-    UPDATABLE_PAYMENT_FIELDS = [ 'nickname','payment_type','defaults']
-    NONUPDATABLE_PAYMENT_RREQUEST_FIELDS = [ 'is_default','is_removed','charge_history']
+    UPDATABLE_PAYMENT_FIELDS = [ 'nickname','payment_type','details']
+    NONUPDATABLE_PAYMENT_FIELDS = [ 'is_default','is_removed','charge_history']
     def __init__(self):
         """
         Initialize connection to database here.
@@ -82,9 +82,9 @@ class PaymentService(object):
             raise PaymentNotFoundError('Invalid payment: Payment ID not found')
         if payment_replacement:
             # TODO 	: test cases for validity in next sprint
-            if not self.is_valid_put(payment.user_id,payment_replacement):
+            if not self.is_valid(payment_replacement):
                 raise DataValidationError('Invalid payment: body of request contained bad or no data')
-            payment.deserialize_put(payment_replacement)
+            payment.deserialize(payment_replacement)
         elif payment_attributes: #patch
             existing_payment = payment.serialize()
             for key in payment_attributes:
@@ -92,7 +92,7 @@ class PaymentService(object):
                     existing_payment[key] = payment_attributes[key]
                 else:
                     raise DataValidationError('Invalid payment: body of request contains invalid/un-updatable fields')
-            payment.deserialize_put(existing_payment)
+            payment.deserialize(existing_payment)
         self.db.session.commit()
         return_object = payment.serialize()
         return return_object
@@ -157,32 +157,39 @@ class PaymentService(object):
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
 
 # UTILITY FUNCTIONS
-    def is_valid_put(self, existing_user_id, new_data):
+    def is_valid(self, new_payment):
         valid = False
-        valid_detail = False
-        try:
-            for key in self.NONUPDATABLE_PAYMENT_RREQUEST_FIELDS :
-                if key in new_data:
-                   raise DataValidationError('Invalid payment: body of request contained bad or no data')
-            #if existing_user_id != data['user_id']:
-            #    raise DataValidationError('Invalid payment: Changes to user_id field not allowed')
-            type = new_data['payment_type']
-            detail = new_data['details']
-            if bool(re.search(r'\d', detail['user_name'])) == False:
-                valid = True
-            if type == 'credit' or type == 'debit':
-                card_number = detail['card_number']
-                expires_date = detail['expires']
-                if bool(re.match('^[0-9]+$', card_number)) and (len(card_number) == 16):
-                    datetime.strptime(expires_date, '%m/%Y')
-                    valid_detail = True
-            elif new_data['is_linked'] != None and type == 'paypal':
-                valid_detail = True
-        except KeyError as e:
-            raise DataValidationError('Invalid payment: missing ' + e.args[0])
-        except TypeError as e:
-            raise DataValidationError('Invalid payment: body of request contained bad or no data')
-        return valid & valid_detail
+
+        for key in self.NONUPDATABLE_PAYMENT_FIELDS :
+            if key in new_payment:
+               raise DataValidationError('Error: You cannot modify the field: %s' % key)
+
+        payment_type = new_payment['payment_type']
+        user_name = new_payment['details']['user_name']
+
+        if bool(re.match("^[A-Za-z\-' ]{0,50}$", user_name)):
+            print user_name
+            if payment_type == 'credit' or payment_type == 'debit':
+                card_number = new_payment['details']['card_number']
+                card_type = new_payment['details']['card_type']
+                expires = new_payment['details']['expires']
+                if bool(re.match('^[0-9]{16}$', card_number)):
+                    if bool(re.match("^[A-Za-z ]{0,10}$", card_type)):
+                        if bool(re.match('^[0-9]{2}/[0-9]{4}$', expires)):
+                            month = int(expires[:2])
+                            year = int(expires[3:])
+                            if year > datetime.now().year:
+                                valid = True
+                            elif year == datetime.now().year and month >= datetime.now().month:
+                                valid = True
+
+            elif payment_type == 'paypal':
+                user_email = new_payment['details']['user_email']
+                if bool(re.match('^[\W\w]+@[\W\w]+\.[A-Za-z]{2,3}$', user_email)):
+                    if new_payment['details']['is_linked']:
+                        valid = True
+
+        return valid
 
     def _remove_soft_deletes(self, payments):
         """
