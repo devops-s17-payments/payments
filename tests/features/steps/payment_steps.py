@@ -98,6 +98,12 @@ def step_impl(context, url, id):
     context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_200_OK
 
+@when('I retrieve "{url}" with non-existent id "{id}"')
+def step_impl(context, url, id):
+    target = url + '/' + id
+    context.resp = context.app.get(target)
+    assert context.resp.status_code == status.HTTP_404_NOT_FOUND
+
 @when('I visit the "home page"')
 def step_impl(context):
     context.resp = context.app.get('/')
@@ -172,7 +178,6 @@ def step_impl(context, id):
 
 @then('I should see "{message}" with status code "{code}"')
 def step_impl(context, message, code):
-    print(context.resp.status_code)
     assert message in context.resp.data
     assert context.resp.status_code == int(code)
 
