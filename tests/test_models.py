@@ -150,12 +150,6 @@ class TestModels(unittest.TestCase):
             addr = payment.self_url()
             self.assertTrue('/payments/1' in addr)
 
-    def test_payment_deserialize_bad_data(self):
-        p = Payment();
-        self.assertRaises(DataValidationError, p.deserialize, BAD_DATA)
-        self.assertRaises(DataValidationError, p.deserialize, BAD_DATA2)
-        self.assertRaises(DataValidationError, p.deserialize, 'as@Q#$*)&2r923rz3ru3892')
-
     def test_detail_deserialize_bad_card(self):
         d = Detail()
         self.assertRaises(DataValidationError, d.deserialize_card, BAD_DETAIL)
