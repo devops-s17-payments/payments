@@ -130,7 +130,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         id = 0
         with patch.object(PaymentService, 'get_payments', side_effect=Exception) as mocked_service:
             error_response = payments.NOT_FOUND_ERROR_BODY
-            error_response['error'].format(id)
+            error_response['error'] = error_response['error'].format(id)
             response = self.app.get('/payments/{}'.format(id))
 
             self.assertEqual(response.status_code, payments.HTTP_404_NOT_FOUND)
