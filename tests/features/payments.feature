@@ -89,3 +89,21 @@ Scenario: List all payments
     When I try to delete payment 3
     When I list all "payments" when no payments exist
     Then I should see "Requested resource(s) could not be found" with status code "404"
+
+Scenario: Use two query parameters to list payments
+    When I query "payments" with "nickname" = "my credit" and "payment_type" = "credit"
+    Then I should see "1" existing payments
+    And I should see a payment with "nickname" = "my credit" and "payment_type" = "credit"
+    When I query "payments" with "ids" = "1" and "ids" = "2"
+    Then I should see "2" existing payments
+    And I should see payment "1" with id "1" and "nickname" = "my credit"
+    And I should see payment "2" with id "2" and "nickname" = "my debit"
+    When I query "payments" with "ids" = "1" and "payment_type" = "debit"
+    Then I should see "1" existing payments
+    And I should see a payment with id "1" and "nickname" = "my credit"
+    And I should not see "debit"
+    When I query "payments" with bad query inputs "nickname" = "my express card" and "payment_type" = "American Express"
+    Then I should see "Requested resource(s) could not be found" with status code "404"
+
+
+
