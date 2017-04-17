@@ -77,3 +77,15 @@ Scenario: Delete an existing payment
     Then the server should tell me payment 1 was not found
     When I try to delete a non-existent payment with id 100
     Then I should be returned nothing for payment 100
+
+Scenario: List all payments
+    When I list all "payments"
+    Then I should see "3" existing payments
+    And I should see payment "1" with id "1" and "nickname" = "my credit"
+    And I should see payment "2" with id "2" and "nickname" = "my debit"
+    And I should see payment "3" with id "3" and "nickname" = "my paypal"
+    When I try to delete payment 1
+    When I try to delete payment 2
+    When I try to delete payment 3
+    When I list all "payments" when no payments exist
+    Then I should see "Requested resource(s) could not be found" with status code "404"

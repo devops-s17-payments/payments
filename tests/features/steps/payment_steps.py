@@ -165,6 +165,14 @@ def step_impl(context, id):
     url = '/payments/{}'.format(id)
     context.resp = context.app.delete(url)
 
+@when('I list all "{url}"')
+def step_impl(context, url):
+    context.resp = context.app.get(url)
+    assert context.resp.status_code == status.HTTP_200_OK
+
+@when('I list all "{url}" when no payments exist')
+def step_impl(context, url):
+    context.resp = context.app.get(url)
 
 ###########
 # T H E N #
@@ -216,3 +224,10 @@ def step_impl(context, id):
 def step_impl(context, count):
     assert len(json.loads(context.resp.data)) == int(count)
     assert context.resp.status_code == 200
+
+@then('I should see payment "{index}" with id "{id}" and "{attribute}" = "{value}"')
+def step_impl(context,index, id, attribute, value):
+    payments = json.loads(context.resp.data)
+    assert payments[int(index)-1][attribute] == value
+    assert payments[int(index)-1]['payment_id'] == int(id)
+
