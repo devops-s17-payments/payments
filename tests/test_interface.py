@@ -842,6 +842,22 @@ class TestInterface(unittest.TestCase):
         result = self.ps.is_valid(bad)
         self.assertFalse(result)
 
+    def test_interface_util_is_valid_illegal_update(self):
+        illegal = copy.deepcopy(CREDIT)
+        illegal['is_removed'] = True
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.is_valid(illegal)
+        self.assertTrue('cannot modify the field: is_removed' in e.exception.message)
+
+    def test_interface_util_is_valid_good_expires(self):
+        good = copy.deepcopy(CREDIT)
+        good['details']['expires'] = '02/2020'
+        result = self.ps.is_valid(good)
+        self.assertTrue(result)
+        good['details']['expires'] = '11/2017'  #this test will fail in december 2017
+        result = self.ps.is_valid(good)
+        self.assertTrue(result)
+
     def test_interface_util_is_valid_bad_expires(self):
         bad = copy.deepcopy(CREDIT)
         bad['details']['expires'] = 'whatever'
@@ -925,9 +941,6 @@ class TestInterfaceFunctional(unittest.TestCase):
         result = self.ps._query_payments(QUERY_ATTRIBUTES)
         # in this case, PP_RETURN was the third item added, so its id should be 3, not 2
         PP_RETURN['payment_id'] = 3
-        print result[0].serialize()
-        print '---'
-        print PP_RETURN
         # should only be one result, so get the only element of the list
         assert result[0].serialize() == PP_RETURN
 

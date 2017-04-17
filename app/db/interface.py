@@ -156,7 +156,10 @@ class PaymentService(object):
         except exc.SQLAlchemyError:
             raise PaymentServiceQueryError('Could not retrieve payment items due to query error with given attributes')
 
-# UTILITY FUNCTIONS
+#######################
+## UTILITY FUNCTIONS ##
+#######################
+
     def is_valid(self, new_payment):
         valid = False
 
@@ -168,16 +171,20 @@ class PaymentService(object):
         user_name = new_payment['details']['user_name']
 
         if bool(re.match("^[A-Za-z\-' ]{0,50}$", user_name)):
-            print user_name
+            
             if payment_type == 'credit' or payment_type == 'debit':
                 card_number = new_payment['details']['card_number']
                 card_type = new_payment['details']['card_type']
                 expires = new_payment['details']['expires']
+                
                 if bool(re.match('^[0-9]{16}$', card_number)):
+                    
                     if bool(re.match("^[A-Za-z ]{0,10}$", card_type)):
+                        
                         if bool(re.match('^[0-9]{2}/[0-9]{4}$', expires)):
                             month = int(expires[:2])
                             year = int(expires[3:])
+                            
                             if year > datetime.now().year:
                                 valid = True
                             elif year == datetime.now().year and month >= datetime.now().month:
@@ -185,7 +192,9 @@ class PaymentService(object):
 
             elif payment_type == 'paypal':
                 user_email = new_payment['details']['user_email']
+                
                 if bool(re.match('^[\W\w]+@[\W\w]+\.[A-Za-z]{2,3}$', user_email)):
+                    
                     if new_payment['details']['is_linked']:
                         valid = True
 
