@@ -9,8 +9,9 @@ def before_all(context):
         refactor will be another issue
     '''
     payments.app.debug = True
-    test_db = context.config.userdata.get("db")
-    payments.app.config['SQLALCHEMY_DATABASE_URI'] = test_db
+    if not payments.app.config['TESTING']: #then use local test db
+        test_db = context.config.userdata.get("db")
+        payments.app.config['SQLALCHEMY_DATABASE_URI'] = test_db
     app_db.drop_all()
     app_db.create_all()
     app_db.session.commit()

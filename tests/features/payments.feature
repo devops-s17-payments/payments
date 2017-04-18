@@ -69,3 +69,11 @@ Scenario: Set default payment
     And user with id "1" performs "set-default" on "payments" with id "1"
     When I get "payments" with id "1"
     Then user with id "1" should see payment with id "1" set as default
+
+Scenario: Delete an existing payment
+    When I try to delete payment 1
+    Then I should be returned nothing for payment 1
+    When I attempt to retrieve the deleted payment 1
+    Then the server should tell me payment 1 was not found
+    When I try to delete a non-existent payment with id 100
+    Then I should be returned nothing for payment 100

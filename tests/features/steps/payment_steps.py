@@ -1,7 +1,9 @@
 from behave import given, when, then
 from flask_api import status
 from app.db.interface import PaymentService
+from app import payments
 import json
+
 
 #############
 # G I V E N #
@@ -146,6 +148,24 @@ def step_impl(context, u_id, action, url, p_id):
     assert context.resp.status_code == status.HTTP_200_OK
     assert 'Payment with id: 1 set as default' in context.resp.data
 
+@when('I try to delete payment {id}')
+def step_impl(context, id):
+    url = '/payments/{}'.format(id)
+    context.resp = context.app.delete(url)
+
+
+@when('I attempt to retrieve the deleted payment {id}')
+def step_impl(context, id):
+    url = '/payments/{}'.format(id)
+    context.resp = context.app.get(url)
+
+
+@when('I try to delete a non-existent payment with id {id}')
+def step_impl(context, id):
+    url = '/payments/{}'.format(id)
+    context.resp = context.app.delete(url)
+
+
 ###########
 # T H E N #
 ###########
@@ -178,9 +198,21 @@ def step_impl(context, u_id, p_id):
     assert payments[0]['payment_id'] == int(p_id)
     assert payments[0]['user_id'] == int(u_id)
 
+@then('I should be returned nothing for payment {id}')
+def step_impl(context, id):
+    assert context.resp.status_code == status.HTTP_204_NO_CONTENT
+    assert context.resp.data == ''
+
+
+@then('the server should tell me payment {id} was not found')
+def step_impl(context, id):
+    expected_response = payments.NOT_FOUND_ERROR_BODY
+    expected_response['error'].format(id)
+    actual_response = json.loads(context.resp.data)
+    assert context.resp.status_code == status.HTTP_404_NOT_FOUND
+    assert actual_response == expected_response
 
 @then(u'I should see "{count}" existing payments')
 def step_impl(context, count):
     assert len(json.loads(context.resp.data)) == int(count)
-    #assert (int(count) == len(json.loads(context.resp.data)))
     assert context.resp.status_code == 200
