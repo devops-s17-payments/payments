@@ -62,7 +62,7 @@ Scenario: Update a payment with illegal data (PUT)
         | nickname  | user_id | payment_type | user_name   | expires | card_type | card_number      | is_removed |
         | cashmoney | 1       | credit       | Jimmy Jones | 08/2018 | Visa      | 4444333322221111 | True       |
     When I put "payments" with id "1"
-    Then I should see "body of request contained bad or no data" with status code "400"
+    Then I should see "You cannot modify the field: is_removed" with status code "400"
 
 Scenario: Set default payment
     When user with id "1" has existing "payments"
