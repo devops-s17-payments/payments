@@ -84,3 +84,9 @@ Scenario: Read a payment
     And I should not see "Requested resource(s) could not be found"
     When I retrieve "payments" with non-existent id "100"
     Then I should see "Payment with id 100 could not be found" with status code "404"
+
+Scenario: Charge a payment
+    When user with id "1" has existing "payments"
+    And user with id "1" performs "set-default" on "payments" with id "1"
+    And user with id "1" chooses to buy something for $50
+    Then user with id "1" should be notified of the charge for $50
