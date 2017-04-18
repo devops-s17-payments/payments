@@ -1,0 +1,28 @@
+language: python
+python:
+  - "2.7"
+
+# command to install dependencies
+install: "pip install -r requirements.txt"
+
+addons:
+  postgresql: "9.3"
+
+services: postgresql
+
+# command to run tests
+before_script:
+  - export LOCAL_DB='postgresql://payments:payments@localhost:5432/dev'
+  - psql -U postgres -c "CREATE USER payments WITH PASSWORD 'payments';"
+  - psql -U postgres -c "CREATE DATABASE dev WITH OWNER=payments LC_COLLATE='en_US.utf8' LC_CTYPE='en_US.utf8' ENCODING='UTF8' TEMPLATE=template0;"
+  - psql -U postgres -c "CREATE DATABASE test WITH OWNER=payments LC_COLLATE='en_US.utf8' LC_CTYPE='en_US.utf8' ENCODING='UTF8' TEMPLATE=template0;"
+
+script:
+  - nosetests -v --rednose --nologcapture
+  - behave
+  - coverage run --omit "home/travis/virtualenv/*" -m unittest discover
+
+after_success:
+  - codecov
+
+

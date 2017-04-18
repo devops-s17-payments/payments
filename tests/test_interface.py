@@ -335,7 +335,7 @@ class TestInterface(unittest.TestCase):
 
     @mock.patch.object(Payment, 'deserialize')
     @mock.patch.object(Payment, 'serialize', return_value=CC_RETURN)
-    @mock.patch.object(app_db, 'session', autospec=True)
+    @mock.patch.object(app_db, 'session')
     def test_interface_add_card_mock(self, mock_db, mock_serial, mock_deserial):
         payment = self.ps.add_payment(CREDIT)
         mock_serial.assert_called_once_with()
