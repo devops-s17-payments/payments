@@ -450,21 +450,21 @@ class TestPaymentsCRUD(unittest.TestCase):
         self.assertTrue('Welcome to payments!' in resp.data)
 #test cases for update payments - put and patch
 # passing correct data to put
-    @mock.patch.object(PaymentService, 'update_payment', return_value=PUT_CREDIT_RETURN, autospec=True)
+    @mock.patch.object(PaymentService, 'update_payment', return_value=PUT_CREDIT_RETURN)
     def test_crud_update_put(self,mock_ps_update):
         data = json.dumps(PUT_CREDIT)
         resp = self.app.put('/payments/1', data=data, content_type='application/json')
-        mock_ps_update.assert_called_with(mock.ANY,1,payment_replacement=PUT_CREDIT)
+        mock_ps_update.assert_called_with(1,payment_replacement=PUT_CREDIT)
         self.assertEqual( resp.status_code, status.HTTP_200_OK )
         new_json = json.loads(resp.data)
         self.assertEqual (new_json['nickname'], 'favcredit')
 
 # passing correct data to patch
-    @mock.patch.object(PaymentService, 'update_payment', return_value=PATCH_RETURN, autospec=True)
+    @mock.patch.object(PaymentService, 'update_payment', return_value=PATCH_RETURN)
     def test_crud_update_patch(self,mock_ps_update):
         data = json.dumps(PATCH_CREDIT)
         resp = self.app.patch('/payments/1', data=data, content_type='application/json')
-        mock_ps_update.assert_called_with(mock.ANY,1,payment_attributes=PATCH_CREDIT)
+        mock_ps_update.assert_called_with(1,payment_attributes=PATCH_CREDIT)
         self.assertEqual( resp.status_code, status.HTTP_200_OK )
         new_json = json.loads(resp.data)
         self.assertEqual (new_json['nickname'], 'boringcredit')
@@ -494,7 +494,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         self.assertTrue('no data' in resp.data)
 
 # passing garbage data to put
-#@mock.patch.object(PaymentService, 'update_payment',side_effect=DataValidationError, autospec=True)
+#@mock.patch.object(PaymentService, 'update_payment',side_effect=DataValidationError)
     def test_crud_update_put_garbage(self):
         garbage = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#"
         resp = self.app.put('/payments/1',data = garbage, content_type='application/json')
