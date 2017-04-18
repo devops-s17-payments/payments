@@ -62,7 +62,7 @@ Scenario: Update a payment with illegal data (PUT)
         | nickname  | user_id | payment_type | user_name   | expires | card_type | card_number      | is_removed |
         | cashmoney | 1       | credit       | Jimmy Jones | 08/2018 | Visa      | 4444333322221111 | True       |
     When I put "payments" with id "1"
-    Then I should see "body of request contained bad or no data" with status code "400"
+    Then I should see "You cannot modify the field: is_removed" with status code "400"
 
 Scenario: Set default payment
     When user with id "1" has existing "payments"
@@ -77,7 +77,7 @@ Scenario: Delete an existing payment
     Then the server should tell me payment 1 was not found
     When I try to delete a non-existent payment with id 100
     Then I should be returned nothing for payment 100
-
+    
 Scenario: List all payments
     When I list all "payments"
     Then I should see "3" existing payments
@@ -105,5 +105,9 @@ Scenario: Use two query parameters to list payments
     When I query "payments" with bad query inputs "nickname" = "my express card" and "payment_type" = "American Express"
     Then I should see "Requested resource(s) could not be found" with status code "404"
 
-
-
+Scenario: Charge a payment
+    When user with id "1" has existing "payments"
+    And user with id "1" performs "set-default" on "payments" with id "1"
+    And user with id "1" chooses to buy something for $50
+    Then user with id "1" should be notified of the charge for $50
+    
