@@ -98,6 +98,20 @@ def step_impl(context, url, id):
     context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_200_OK
 
+@when('I query "{url}" with "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
+def step_impl(context, url, attribute1,value1,attribute2,value2):
+    query_string = '{}={}&{}={}'.format(attribute1, value1, attribute2,value2)
+    target = url + '?'+ query_string
+    context.resp = context.app.get(target)
+    assert context.resp.status_code == status.HTTP_200_OK
+
+@when('I query "{url}" with bad query inputs "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
+def step_impl(context, url, attribute1,value1,attribute2,value2):
+    query_string = '{}={}&{}={}'.format(attribute1, value1, attribute2,value2)
+    target = url + '?'+ query_string
+    context.resp = context.app.get(target)
+    assert context.resp.status_code == status.HTTP_404_NOT_FOUND
+
 @when('I visit the "home page"')
 def step_impl(context):
     context.resp = context.app.get('/')
@@ -165,6 +179,14 @@ def step_impl(context, id):
     url = '/payments/{}'.format(id)
     context.resp = context.app.delete(url)
 
+@when('I list all "{url}"')
+def step_impl(context, url):
+    context.resp = context.app.get(url)
+    assert context.resp.status_code == status.HTTP_200_OK
+
+@when('I list all "{url}" when no payments exist')
+def step_impl(context, url):
+    context.resp = context.app.get(url)
 
 @when('user with id "{id}" chooses to buy something for ${dollars}')
 def step_impl(context, id, dollars):
@@ -208,7 +230,6 @@ def step_impl(context, id):
     assert context.resp.status_code == status.HTTP_204_NO_CONTENT
     assert context.resp.data == ''
 
-
 @then('the server should tell me payment {id} was not found')
 def step_impl(context, id):
     expected_response = payments.NOT_FOUND_ERROR_BODY
@@ -229,3 +250,15 @@ def step_impl(context, id, dollars):
 def step_impl(context, count):
     assert len(json.loads(context.resp.data)) == int(count)
     assert context.resp.status_code == 200
+
+@then('I should see payment "{index}" with id "{id}" and "{attribute}" = "{value}"')
+def step_impl(context,index, id, attribute, value):
+    payments = json.loads(context.resp.data)
+    assert payments[int(index)-1][attribute] == value
+    assert payments[int(index)-1]['payment_id'] == int(id)
+
+@then('I should see a payment with "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
+def step_impl(context,attribute1, value1,attribute2,value2):
+    payments = json.loads(context.resp.data)
+    assert payments[0][attribute1] == value1
+    assert payments[0][attribute2] == value2
