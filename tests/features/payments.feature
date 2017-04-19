@@ -77,6 +77,13 @@ Scenario: Delete an existing payment
     Then the server should tell me payment 1 was not found
     When I try to delete a non-existent payment with id 100
     Then I should be returned nothing for payment 100
+
+Scenario: Query payments (Single Query)
+    When I query payments with a valid query "payment_type" = "credit"
+    Then I should see "1" existing payments
+    And I should see a payment with id "1" and "nickname" = "my credit"
+    When I query payments with a bad query "nickname" = "amex"
+    Then I should see an error message saying "Requested resource(s) could not be found" with status code "404"
     
 Scenario: List all payments
     When I list all "payments"
