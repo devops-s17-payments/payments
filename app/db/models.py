@@ -59,23 +59,6 @@ class Payment(app_db.Model):
         except TypeError as e:
             raise DataValidationError('Invalid payment: body of request contained bad or no data')
 
-    def deserialize_put(self, data):
-        try:
-            self.user_id = data['user_id']
-            self.nickname = data['nickname']
-            self.payment_type = data['payment_type']
-            details = data['details']
-            d = Detail()
-            if (self.payment_type == 'credit' or self.payment_type == 'debit'):
-                d.deserialize_card(details)
-            else:
-                d.deserialize_paypal(details)
-            self.details = d
-        except KeyError as e:
-            raise DataValidationError('Invalid payment: missing ' + e.args[0])
-        except TypeError as e:
-            raise DataValidationError('Invalid payment: body of request contained bad or no data')
-
 class Detail(app_db.Model):
     __tablename__ = 'detail'
     id = app_db.Column(app_db.Integer, primary_key=True)
