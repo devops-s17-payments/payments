@@ -98,6 +98,12 @@ def step_impl(context, url, id):
     context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_200_OK
 
+@when('I retrieve "{url}" with non-existent id "{id}"')
+def step_impl(context, url, id):
+    target = url + '/' + id
+    context.resp = context.app.get(target)
+    assert context.resp.status_code == status.HTTP_404_NOT_FOUND
+
 @when('I query "{url}" with "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
 def step_impl(context, url, attribute1,value1,attribute2,value2):
     query_string = '{}={}&{}={}'.format(attribute1, value1, attribute2,value2)
@@ -233,7 +239,7 @@ def step_impl(context, id):
 @then('the server should tell me payment {id} was not found')
 def step_impl(context, id):
     expected_response = payments.NOT_FOUND_ERROR_BODY
-    expected_response['error'].format(id)
+    expected_response['error'] = expected_response['error'].format(id)
     actual_response = json.loads(context.resp.data)
     assert context.resp.status_code == status.HTTP_404_NOT_FOUND
     assert actual_response == expected_response
