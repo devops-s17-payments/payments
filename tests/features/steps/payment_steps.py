@@ -98,6 +98,20 @@ def step_impl(context, url, id):
     context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_200_OK
 
+@when('I query "{url}" with "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
+def step_impl(context, url, attribute1,value1,attribute2,value2):
+    query_string = '{}={}&{}={}'.format(attribute1, value1, attribute2,value2)
+    target = url + '?'+ query_string
+    context.resp = context.app.get(target)
+    assert context.resp.status_code == status.HTTP_200_OK
+
+@when('I query "{url}" with bad query inputs "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
+def step_impl(context, url, attribute1,value1,attribute2,value2):
+    query_string = '{}={}&{}={}'.format(attribute1, value1, attribute2,value2)
+    target = url + '?'+ query_string
+    context.resp = context.app.get(target)
+    assert context.resp.status_code == status.HTTP_404_NOT_FOUND
+
 @when('I visit the "home page"')
 def step_impl(context):
     context.resp = context.app.get('/')
@@ -153,7 +167,6 @@ def step_impl(context, id):
     url = '/payments/{}'.format(id)
     context.resp = context.app.delete(url)
 
-
 @when('I attempt to retrieve the deleted payment {id}')
 def step_impl(context, id):
     url = '/payments/{}'.format(id)
@@ -177,6 +190,20 @@ def step_impl(context, attribute, value):
     context.resp = context.app.get(url)
     assert context.resp.status_code == status.HTTP_404_NOT_FOUND
 
+@when('I list all "{url}"')
+def step_impl(context, url):
+    context.resp = context.app.get(url)
+    assert context.resp.status_code == status.HTTP_200_OK
+
+@when('I list all "{url}" when no payments exist')
+def step_impl(context, url):
+    context.resp = context.app.get(url)
+
+@when('user with id "{id}" chooses to buy something for ${dollars}')
+def step_impl(context, id, dollars):
+    url = '/payments/{}/charge'.format(id)
+    data = json.dumps({'amount': float(dollars)})
+    context.resp = context.app.patch(url, data=data, content_type='application/json')
 
 ###########
 # T H E N #
@@ -213,13 +240,20 @@ def step_impl(context, id):
     assert context.resp.status_code == status.HTTP_204_NO_CONTENT
     assert context.resp.data == ''
 
-
 @then('the server should tell me payment {id} was not found')
 def step_impl(context, id):
     expected_response = payments.NOT_FOUND_ERROR_BODY
     expected_response['error'].format(id)
     actual_response = json.loads(context.resp.data)
     assert context.resp.status_code == status.HTTP_404_NOT_FOUND
+    assert actual_response == expected_response
+
+@then('user with id "{id}" should be notified of the charge for ${dollars}')
+def step_impl(context, id, dollars):
+    expected_response = {
+        'success': 'Default payment method for user_id: %s has been charged $%.2f' % ((id), float(dollars))}
+    actual_response = json.loads(context.resp.data)
+    assert context.resp.status_code == status.HTTP_200_OK
     assert actual_response == expected_response
 
 @then(u'I should see "{count}" existing payments')
@@ -231,3 +265,15 @@ def step_impl(context, count):
 def step_impl(context,error_msg,status_code):
     assert error_msg in json.loads(context.resp.data)['error']
     assert context.resp.status_code == int(status_code)
+
+@then('I should see payment "{index}" with id "{id}" and "{attribute}" = "{value}"')
+def step_impl(context,index, id, attribute, value):
+    payments = json.loads(context.resp.data)
+    assert payments[int(index)-1][attribute] == value
+    assert payments[int(index)-1]['payment_id'] == int(id)
+
+@then('I should see a payment with "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
+def step_impl(context,attribute1, value1,attribute2,value2):
+    payments = json.loads(context.resp.data)
+    assert payments[0][attribute1] == value1
+    assert payments[0][attribute2] == value2

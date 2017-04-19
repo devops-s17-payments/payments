@@ -62,7 +62,7 @@ Scenario: Update a payment with illegal data (PUT)
         | nickname  | user_id | payment_type | user_name   | expires | card_type | card_number      | is_removed |
         | cashmoney | 1       | credit       | Jimmy Jones | 08/2018 | Visa      | 4444333322221111 | True       |
     When I put "payments" with id "1"
-    Then I should see "body of request contained bad or no data" with status code "400"
+    Then I should see "You cannot modify the field: is_removed" with status code "400"
 
 Scenario: Set default payment
     When user with id "1" has existing "payments"
@@ -84,3 +84,36 @@ Scenario: Query payments (Single Query)
     And I should see a payment with id "1" and "nickname" = "my credit"
     When I query payments with a bad query "nickname" = "amex"
     Then I should see an error message saying "Requested resource(s) could not be found" with status code "404"
+    
+Scenario: List all payments
+    When I list all "payments"
+    Then I should see "3" existing payments
+    And I should see payment "1" with id "1" and "nickname" = "my credit"
+    And I should see payment "2" with id "2" and "nickname" = "my debit"
+    And I should see payment "3" with id "3" and "nickname" = "my paypal"
+    When I try to delete payment 1
+    When I try to delete payment 2
+    When I try to delete payment 3
+    When I list all "payments" when no payments exist
+    Then I should see "Requested resource(s) could not be found" with status code "404"
+
+Scenario: Use two query parameters to list payments
+    When I query "payments" with "nickname" = "my credit" and "payment_type" = "credit"
+    Then I should see "1" existing payments
+    And I should see a payment with "nickname" = "my credit" and "payment_type" = "credit"
+    When I query "payments" with "ids" = "1" and "ids" = "2"
+    Then I should see "2" existing payments
+    And I should see payment "1" with id "1" and "nickname" = "my credit"
+    And I should see payment "2" with id "2" and "nickname" = "my debit"
+    When I query "payments" with "ids" = "1" and "payment_type" = "debit"
+    Then I should see "1" existing payments
+    And I should see a payment with id "1" and "nickname" = "my credit"
+    And I should not see "debit"
+    When I query "payments" with bad query inputs "nickname" = "my express card" and "payment_type" = "American Express"
+    Then I should see "Requested resource(s) could not be found" with status code "404"
+
+Scenario: Charge a payment
+    When user with id "1" has existing "payments"
+    And user with id "1" performs "set-default" on "payments" with id "1"
+    And user with id "1" chooses to buy something for $50
+    Then user with id "1" should be notified of the charge for $50

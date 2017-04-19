@@ -450,21 +450,21 @@ class TestPaymentsCRUD(unittest.TestCase):
         self.assertTrue('Welcome to payments!' in resp.data)
 #test cases for update payments - put and patch
 # passing correct data to put
-    @mock.patch.object(PaymentService, 'update_payment', return_value=PUT_CREDIT_RETURN, autospec=True)
+    @mock.patch.object(PaymentService, 'update_payment', return_value=PUT_CREDIT_RETURN)
     def test_crud_update_put(self,mock_ps_update):
         data = json.dumps(PUT_CREDIT)
         resp = self.app.put('/payments/1', data=data, content_type='application/json')
-        mock_ps_update.assert_called_with(mock.ANY,1,payment_replacement=PUT_CREDIT)
+        mock_ps_update.assert_called_with(1,payment_replacement=PUT_CREDIT)
         self.assertEqual( resp.status_code, status.HTTP_200_OK )
         new_json = json.loads(resp.data)
         self.assertEqual (new_json['nickname'], 'favcredit')
 
 # passing correct data to patch
-    @mock.patch.object(PaymentService, 'update_payment', return_value=PATCH_RETURN, autospec=True)
+    @mock.patch.object(PaymentService, 'update_payment', return_value=PATCH_RETURN)
     def test_crud_update_patch(self,mock_ps_update):
         data = json.dumps(PATCH_CREDIT)
         resp = self.app.patch('/payments/1', data=data, content_type='application/json')
-        mock_ps_update.assert_called_with(mock.ANY,1,payment_attributes=PATCH_CREDIT)
+        mock_ps_update.assert_called_with(1,payment_attributes=PATCH_CREDIT)
         self.assertEqual( resp.status_code, status.HTTP_200_OK )
         new_json = json.loads(resp.data)
         self.assertEqual (new_json['nickname'], 'boringcredit')
@@ -494,7 +494,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         self.assertTrue('no data' in resp.data)
 
 # passing garbage data to put
-#@mock.patch.object(PaymentService, 'update_payment',side_effect=DataValidationError, autospec=True)
+#@mock.patch.object(PaymentService, 'update_payment',side_effect=DataValidationError)
     def test_crud_update_put_garbage(self):
         garbage = "a@$*&@#sdassdc3r 3284723X43&^@!#@*#"
         resp = self.app.put('/payments/1',data = garbage, content_type='application/json')
@@ -509,18 +509,18 @@ class TestPaymentsCRUD(unittest.TestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
 # passing a non existing payment id to PATCH
-    @mock.patch.object(PaymentService, 'update_payment', side_effect=PaymentNotFoundError('Invalid payment: Payment ID not found'), autospec = True)
+    @mock.patch.object(PaymentService, 'update_payment', side_effect=PaymentNotFoundError('Invalid payment: Payment ID not found'))
     def test_crud_update_id_not_found_patch(self,mock_ps_update):
         credit = json.dumps({'nickname' : 'mycredit'})
         resp = self.app.patch('payments/778',data = credit,content_type='application/json')
-        mock_ps_update.assert_called_with(mock.ANY,778,payment_attributes={'nickname' : 'mycredit'})
+        mock_ps_update.assert_called_with(778,payment_attributes={'nickname' : 'mycredit'})
         self.assertTrue('Invalid payment: Payment ID not found' in resp.data)
         self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)
 # passing a non existing payment id to PUT
-    @mock.patch.object(PaymentService, 'update_payment', side_effect=PaymentNotFoundError('Invalid payment: Payment ID not found'), autospec = True)
+    @mock.patch.object(PaymentService, 'update_payment', side_effect=PaymentNotFoundError('Invalid payment: Payment ID not found'))
     def test_crud_update_id_not_found_put(self,mock_ps_update):
         credit = json.dumps(CC_RETURN)
         resp = self.app.put('payments/778',data = credit,content_type='application/json')
-        mock_ps_update.assert_called_with(mock.ANY,778,payment_replacement=CC_RETURN)
+        mock_ps_update.assert_called_with(778,payment_replacement=CC_RETURN)
         self.assertTrue('Invalid payment: Payment ID not found' in resp.data)
         self.assertTrue(resp.status_code, status.HTTP_404_NOT_FOUND)

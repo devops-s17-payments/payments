@@ -2,9 +2,7 @@
 # python -m unittest discover
 # nosetests -v --rednose --nologcapture
 
-import unittest
-import mock
-
+import unittest, mock, copy
 
 from app import payments
 from app.db import app_db
@@ -335,7 +333,7 @@ class TestInterface(unittest.TestCase):
 
     @mock.patch.object(Payment, 'deserialize')
     @mock.patch.object(Payment, 'serialize', return_value=CC_RETURN)
-    @mock.patch.object(app_db, 'session', autospec=True)
+    @mock.patch.object(app_db, 'session')
     def test_interface_add_card_mock(self, mock_db, mock_serial, mock_deserial):
         payment = self.ps.add_payment(CREDIT)
         mock_serial.assert_called_once_with()
@@ -455,7 +453,7 @@ class TestInterface(unittest.TestCase):
 
 #Test cases for update interface method
 #valid PUT data
-    @mock.patch.object(PaymentService,'is_valid_put',return_value = True)
+    @mock.patch.object(PaymentService,'is_valid',return_value = True)
     @mock.patch.object(app_db, 'session')
     @mock.patch('app.db.models.Payment')
     def test_interface_update_with_valid_put_data(self,mock_P,mock_db,mock_isvalid):
@@ -464,7 +462,7 @@ class TestInterface(unittest.TestCase):
         resp = self.ps.update_payment(1,payment_replacement = PUT_CREDIT)
         mock_P.serialize.assert_called()
         mock_isvalid.assert_called_once()
-        mock_P.deserialize_put.assert_called_once()
+        mock_P.deserialize.assert_called_once()
         mock_db.commit.assert_called_once()
 
 #none put and patch inputs
@@ -484,7 +482,7 @@ class TestInterface(unittest.TestCase):
         mock_db.commit.assert_not_called()
 
 #updating with a false is_valid update input
-    @mock.patch.object(PaymentService,'is_valid_put',return_value = False)
+    @mock.patch.object(PaymentService,'is_valid',return_value = False)
     @mock.patch.object(app_db, 'session')
     @mock.patch('app.db.models.Payment')
     def test_interface_update_with_invalid_input(self,mock_P, mock_db,mock_isvalid):
@@ -492,7 +490,7 @@ class TestInterface(unittest.TestCase):
         with self.assertRaises(DataValidationError):
             result = self.ps.update_payment(111,payment_replacement=PUT_CREDIT_RETURN)
         mock_isvalid.assert_called_once()
-        mock_P.deserialize_put.assert_not_called()
+        mock_P.deserialize.assert_not_called()
         mock_db.commit.assert_not_called()
 
 #patch with valid data
@@ -503,7 +501,7 @@ class TestInterface(unittest.TestCase):
         resp = self.ps.update_payment(1,payment_attributes = {'nickname' : 'favourite'})
         mock_db.query(Payment).get.assert_called_with(1)
         mock_P.serialize.assert_called()
-        mock_P.deserialize_put.assert_called_once()
+        mock_P.deserialize.assert_called_once()
         mock_db.commit.assert_called_once()
 
 # patch with unupdatable fields
@@ -515,7 +513,7 @@ class TestInterface(unittest.TestCase):
             resp = self.ps.update_payment(1,payment_attributes = {'is_default' : 'True'})
         mock_db.query(Payment).get.assert_called_with(1)
         mock_P.serialize.assert_called_once()
-        mock_P.deserialize_put.assert_not_called()
+        mock_P.deserialize.assert_not_called()
         mock_db.commit.assert_not_called()
 
     # set-default action test cases
@@ -793,6 +791,125 @@ class TestInterface(unittest.TestCase):
 
         mock_query.assert_called_once_with(payment_attributes=user_data)
         mock_db.commit.assert_not_called()
+
+    def test_interface_util_is_valid(self):
+        result = self.ps.is_valid(CREDIT)
+        self.assertTrue(result)
+        result = self.ps.is_valid(DEBIT)
+        self.assertTrue(result)
+        result = self.ps.is_valid(PAYPAL)
+        self.assertTrue(result)
+
+    def test_interface_util_is_valid_bad_pay_type(self):
+        bad = copy.deepcopy(CREDIT)
+        bad['payment_type'] = 'whatever'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+        bad['details']['card_type'] = 'whatever'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+
+    def test_interface_util_is_valid_bad_card_type(self):
+        bad = copy.deepcopy(CREDIT)
+        bad['details']['card_type'] = 'Mast3rcard'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+
+    def test_interface_util_is_valid_bad_username(self):
+        bad = copy.deepcopy(CREDIT)
+        bad['details']['user_name'] = 'Jo3n Jo3ns0n'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+
+    def test_interface_util_is_valid_good_username(self):
+        good = copy.deepcopy(CREDIT)
+        good['details']['user_name'] = "Connor O'Shea"
+        result = self.ps.is_valid(good)
+        self.assertTrue(result)
+        good['details']['user_name'] = "Jeremiah De-Silva"
+        result = self.ps.is_valid(good)
+        self.assertTrue(result)
+
+    def test_interface_util_is_valid_bad_card_number(self):
+        bad = copy.deepcopy(CREDIT)
+        bad['details']['card_number'] = '123456781234567' #short 1 digit
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+        bad['details']['card_number'] = '12345678123456781' #long 1 digit
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+        bad['details']['card_number'] = 'abc'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+
+    def test_interface_util_is_valid_illegal_update(self):
+        illegal = copy.deepcopy(CREDIT)
+        illegal['is_removed'] = True
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.is_valid(illegal)
+        self.assertTrue('cannot modify the field: is_removed' in e.exception.message)
+
+    def test_interface_util_is_valid_illegal_update(self):
+        illegal = copy.deepcopy(CREDIT)
+        user_id = illegal['user_id']
+        illegal['user_id'] = 99
+        with self.assertRaises(DataValidationError) as e:
+            result = self.ps.is_valid(illegal, user_id)
+        self.assertTrue('cannot modify the field: user_id' in e.exception.message)
+
+    def test_interface_util_is_valid_good_expires(self):
+        good = copy.deepcopy(CREDIT)
+        good['details']['expires'] = '02/2020'
+        result = self.ps.is_valid(good)
+        self.assertTrue(result)
+        good['details']['expires'] = '11/2017'  #this test will fail in december 2017
+        result = self.ps.is_valid(good)
+        self.assertTrue(result)
+
+    def test_interface_util_is_valid_bad_expires(self):
+        bad = copy.deepcopy(CREDIT)
+        bad['details']['expires'] = 'whatever'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+        bad['details']['expires'] = '2017/07'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+        bad['details']['expires'] = '2017/07'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+        bad['details']['expires'] = '01/2010'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+        bad['details']['expires'] = '03/2017'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+
+    def test_interface_util_is_valid_bad_email(self):
+        bad = copy.deepcopy(PAYPAL)
+        bad['details']['user_email'] = 'whatever'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+        bad['details']['user_email'] = 'hello@com'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+        bad['details']['user_email'] = 'hello.com'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+        bad['details']['user_email'] = '@hello.com'
+        result = self.ps.is_valid(bad)
+        self.assertFalse(result)
+
+    def test_interface_util_is_valid_good_email(self):
+        good = copy.deepcopy(PAYPAL)
+        good['details']['user_email'] = 'hello@yahoo.com'
+        result = self.ps.is_valid(good)
+        self.assertTrue(result)
+        good['details']['user_email'] = 'hello@hotmail.eu'
+        result = self.ps.is_valid(good)
+        self.assertTrue(result)
+        good['details']['user_email'] = 'HG@%795@97QDY@DDHFA8)&8675QEHASD)@(*0923hd).com'
+        result = self.ps.is_valid(good)
+        self.assertTrue(result)
 
 class TestInterfaceFunctional(unittest.TestCase):
     """
