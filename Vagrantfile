@@ -5,6 +5,13 @@
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
+
+unless Vagrant.has_plugin?("vagrant-docker-compose")
+  system("vagrant plugin install vagrant-docker-compose")
+  puts "Dependencies installed, please try the command again."
+  exit
+end
+
 Vagrant.configure(2) do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
@@ -100,16 +107,16 @@ Vagrant.configure(2) do |config|
   ######################################################################
   # Add PostgreSQL docker container
   ######################################################################
-  #config.vm.provision "shell", inline: <<-SHELL
-  #  # Prepare PostgreSQL data share
-  #  sudo mkdir -p /var/lib/postgresql/data
-  #  sudo chown vagrant:vagrant /var/lib/postgresql/data
-  #SHELL
-  # Add PostgreSQL docker container
-  #config.vm.provision "docker" do |d|
-  #  d.pull_images "postgres"
-  #  d.run "postgres",
-  #    args: "-d --name postgres -p 5432:5432 -v /var/lib/postgresql/data:/var/lib/postgresql/data"
-  #end
+  config.vm.provision "shell", inline: <<-SHELL
+    # Prepare PostgreSQL data share
+    sudo mkdir -p /var/lib/postgresql/data
+    sudo chown vagrant:vagrant /var/lib/postgresql/data
+  SHELL
+   Add PostgreSQL docker container
+  config.vm.provision "docker" do |d|
+    d.pull_images "postgres"
+    d.run "postgres",
+      args: "-d --name postgres -p 5432:5432 -v /var/lib/postgresql/data:/var/lib/postgresql/data"
+  end
 
 end
