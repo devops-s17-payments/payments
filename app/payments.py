@@ -81,7 +81,64 @@ def list_payments():
 ######################################################################
 @app.route('/payments', methods=['POST'])
 def create_payment():
-    """ if get_json fails, no exception raised. returns None """
+    """
+    Creates a Payment
+    This endpoint will create a Payment based the data in the body that is posted
+    ---
+    tags:
+      - Pets
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          id: data
+          required:
+            - nickname
+            - payment_type
+            - user_id
+            - details
+          properties:
+            name:
+              type: string
+              description: your nickname of this Payment
+            payment_type:
+              type: string
+              description: type of Payment (credit, debit, paypal)
+            user_id:
+                type: integer
+                description: User foreign key
+            details:
+                type: dictionary
+                description: details about your Payment (card_type, card_number, etc)
+    responses:
+      201:
+        description: Payment created
+        schema:
+          id: Payment
+          properties:
+            id:
+              type: integer
+              description: unique id assigned internally by service
+            nickname:
+              type: string
+              description: your Payment's nickname
+            payment_type:
+              type: string
+              description: type of Payment (credit, debit, paypal)
+            user_id:
+                type: integer
+                description: User foreign key
+            details:
+                type: dictionary
+                description: details about your Payment (card_type, card_number, etc)
+      400:
+        description: Bad Request (the posted data was not valid)
+    """
     data = request.get_json(silent=True)
     try:
         payment = payment_service.add_payment(data)
