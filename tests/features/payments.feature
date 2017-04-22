@@ -12,7 +12,7 @@ Background:
 
 Scenario: The server is running
     When I visit the "home page"
-    Then I should see "Welcome to payments" with status code "200"
+    Then I should see "Payments REST API Service" with status code "200"
     Then I should not see "Not Found"
 
 Scenario: Add a new payment
