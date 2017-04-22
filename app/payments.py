@@ -294,6 +294,22 @@ def update_partial_payments(id):
 ######################################################################
 @app.route('/payments/<int:id>', methods=['DELETE'])
 def delete_payments(id):
+    """
+    Delete a Payment
+    This endpoint will 'soft-delete' a Payment associated with <id> in route
+    ---
+    tags:
+      - Payment
+    parameters:
+      - name: id
+        in: path
+        description: ID of payment to soft delete
+        type: integer
+        required: true
+    responses:
+      204:
+        description: Payment deleted
+    """
     payment_service.remove_payment(payment_id=id)
     return '', HTTP_204_NO_CONTENT
 
