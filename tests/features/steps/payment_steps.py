@@ -117,6 +117,13 @@ def step_impl(context, attribute, value):
 def step_impl(context, url, id):
     target = url + '/' + id
     context.resp = context.app.patch(target, data=context.data, content_type='application/json')
+    assert context.resp.status_code == status.HTTP_200_OK
+
+@when('I patch "{url}" with id "{id}" with bad data')
+def step_impl(context, url, id):
+    target = url + '/' + id
+    context.resp = context.app.patch(target, data=context.data, content_type='application/json')
+    assert context.resp.status_code == status.HTTP_400_BAD_REQUEST
 
 @when('I patch "{url}" with id "{id}" with no data')
 def step_impl(context, url, id):
@@ -130,6 +137,15 @@ def step_impl(context, url, id):
     data = json.loads(context.data)
     assert data['user_id'] == id
     context.resp = context.app.put(target, data=context.data, content_type='application/json')
+    assert context.resp.status_code == status.HTTP_200_OK
+
+@when('I put "{url}" with id "{id}" with illegal data')
+def step_impl(context, url, id):
+    target = url + '/' + id
+    data = json.loads(context.data)
+    assert data['user_id'] == id
+    context.resp = context.app.put(target, data=context.data, content_type='application/json')
+    assert context.resp.status_code == status.HTTP_400_BAD_REQUEST
 
 @when('user with id "{id}" has existing "{url}"')
 def step_impl(context, id, url):
@@ -150,6 +166,7 @@ def step_impl(context, u_id, action, url, p_id):
 def step_impl(context, id):
     url = '/payments/{}'.format(id)
     context.resp = context.app.delete(url)
+    assert context.resp.status_code == status.HTTP_204_NO_CONTENT
 
 @when('I attempt to retrieve the deleted payment {id}')
 def step_impl(context, id):
@@ -193,11 +210,6 @@ def step_impl(context, id, dollars):
 # T H E N #
 ###########
 
-@then('I should see "{message}" with status code "{code}"')
-def step_impl(context, message, code):
-    assert message in context.resp.data
-    assert context.resp.status_code == int(code)
-
 @then('I should see "{message}"')
 def step_impl(context, message):
     assert message in context.resp.data
@@ -205,7 +217,6 @@ def step_impl(context, message):
 @then('I should see a payment with id "{id}" and "{attribute}" = "{value}"')
 def step_impl(context, id, attribute, value):
     payments = json.loads(context.resp.data)
-    print(payments[0][attribute])
     assert payments[0][attribute] == value
     assert payments[0]['payment_id'] == int(id)
 
@@ -246,10 +257,9 @@ def step_impl(context, count):
     assert len(json.loads(context.resp.data)) == int(count)
     assert context.resp.status_code == 200
 
-@then('I should see an error message saying "{error_msg}" with status code "{status_code}"')
-def step_impl(context,error_msg,status_code):
+@then('I should see an error message saying "{error_msg}"')
+def step_impl(context,error_msg):
     assert error_msg in json.loads(context.resp.data)['error']
-    assert context.resp.status_code == int(status_code)
 
 @then('I should see payment "{index}" with id "{id}" and "{attribute}" = "{value}"')
 def step_impl(context,index, id, attribute, value):

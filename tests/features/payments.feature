@@ -5,7 +5,7 @@ Feature: The payments API
 
 Scenario: The server is running
     When I visit the "home page"
-    Then I should see "Welcome to payments" with status code "200"
+    Then I should see "Welcome to payments"
     Then I should not see "Not Found"
 
 Scenario: Add a new payment
@@ -41,10 +41,10 @@ Scenario: Update a payment with bad or no data (PATCH)
     When I get "payments" with id "1"
     Then I should see a payment with id "1" and "nickname" = "cashmoney"
     When I change "nicknam3" to "new credit", but misspell the attribute
-    And I patch "payments" with id "1"
+    And I patch "payments" with id "1" with bad data
     Then I should see "body of request contains invalid/un-updatable fields"
     When I patch "payments" with id "1" with no data
-    Then I should see "body of request contained bad or no data" with status code "400"
+    Then I should see "body of request contained bad or no data"
 
 Scenario: Update a payment with illegal data (PUT)
     When I get "payments" with id "1"
@@ -52,8 +52,8 @@ Scenario: Update a payment with illegal data (PUT)
     Given an updated credit card with illegal data
         | nickname  | user_id | payment_type | user_name   | expires | card_type | card_number      | is_removed |
         | cashmoney | 1       | credit       | Jimmy Jones | 08/2018 | Visa      | 4444333322221111 | True       |
-    When I put "payments" with id "1"
-    Then I should see "You cannot modify the field: is_removed" with status code "400"
+    When I put "payments" with id "1" with illegal data
+    Then I should see "You cannot modify the field: is_removed"
 
 Scenario: Set default payment
     When user with id "1" has existing "payments"
@@ -66,7 +66,7 @@ Scenario: Query payments (Single Query)
     Then I should see "1" existing payments
     And I should see a payment with id "1" and "nickname" = "cashmoney"
     When I query payments with a bad query "nickname" = "amex"
-    Then I should see an error message saying "Requested resource(s) could not be found" with status code "404"
+    Then I should see an error message saying "Requested resource(s) could not be found"
     
 Scenario: List all payments
     When I list all "payments"
@@ -78,14 +78,14 @@ Scenario: Read a payment
     Then I should see a payment with id "1" and "nickname" = "cashmoney"
     And I should not see "Requested resource(s) could not be found"
     When I retrieve "payments" with non-existent id "100"
-    Then I should see "Payment with id 100 could not be found" with status code "404"
+    Then I should see "Payment with id 100 could not be found"
 
 Scenario: Use two query parameters to list payments
     When I query "payments" with "nickname" = "cashmoney" and "payment_type" = "credit"
     Then I should see "1" existing payments
     And I should see a payment with "nickname" = "cashmoney" and "payment_type" = "credit"
     When I query "payments" with bad query inputs "nickname" = "bad card" and "payment_type" = "bad type"
-    Then I should see "Requested resource(s) could not be found" with status code "404"
+    Then I should see "Requested resource(s) could not be found"
 
 Scenario: Charge a payment
     When user with id "1" has existing "payments"
@@ -103,4 +103,4 @@ Scenario: Delete an existing payment
 
 Scenario: List all payments when empty
     When I list all "payments" when no payments exist
-    Then I should see "Requested resource(s) could not be found" with status code "404"
+    Then I should see "Requested resource(s) could not be found"
