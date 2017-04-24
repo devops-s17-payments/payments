@@ -64,7 +64,7 @@ def list_payments():
 @app.route('/payments', methods=['POST'])
 def create_payment():
     """
-    Creates a Payment
+    Create a Payment
     This endpoint will create a Payment based on json request data
     ---
     tags:
@@ -185,6 +185,40 @@ def create_payment():
 ######################################################################
 @app.route('/payments/<int:user_id>/set-default', methods=['PATCH'])
 def set_default(user_id):
+    """
+      Set a default payment method for the specified user
+      This endpoint will set a default payment for user specified in route and payment specified in json request data
+      ---
+      tags:
+        - Payment
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: user_id
+          in: path
+          description: user id foreign key
+          type: integer
+          required: true
+        - in: body
+          name: body
+          required: true
+          schema:
+            id: data
+            required:
+              - payment_id
+            properties:
+              payment_id:
+                type: integer
+                description: the id of the payment method being set as default
+                example: 1
+      responses:
+        200:
+          description: payment with specified id (in body) for specified user (in route) is now the default payment method for purchases
+        400:
+          description: Bad Request (bad data and/or no payment exists with specified id)
+      """
     try:
         if not request.data:
             raise DataValidationError('Invalid request: body of request contained no data')
@@ -205,9 +239,6 @@ def set_default(user_id):
     except KeyError as e:
         message = {'error' : 'Invalid request: body of request does not have the payment_id'}
         rc = status.HTTP_400_BAD_REQUEST
-    #except PaymentNotFoundError as e:
-    #    message = {'error' : e.message}
-    #    rc = status.HTTP_404_NOT_FOUND
 
     return make_response(jsonify(message), rc)
 
@@ -273,7 +304,7 @@ def update_partial_payments(id):
 def delete_payments(id):
     """
     Delete a Payment
-    This endpoint will 'soft-delete' a Payment associated with <id> in route
+    This endpoint will 'soft-delete' a Payment associated with the ID in route
     ---
     tags:
       - Payment
@@ -295,6 +326,40 @@ def delete_payments(id):
 ######################################################################
 @app.route('/payments/<int:user_id>/charge', methods=['PATCH'])
 def charge_payment(user_id):
+    """
+    Charge the specified user's default payment
+    This endpoint will charge a user's default payment method an amount passed via json request data
+    ---
+    tags:
+      - Payment
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: user_id
+        in: path
+        description: user id foreign key
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          id: data
+          required:
+            - amount
+          properties:
+            amount:
+              type: float
+              description: the dollar amount to be charged to the default payment method
+              example: 19.99
+    responses:
+      200:
+        description: Default payment has been charged the specified amount
+      400:
+        description: Bad Request (bad data and/or no default payment method set)
+    """
     try:
         if not request.data:
             raise DataValidationError('Invalid request: body of request contained no data')
