@@ -122,7 +122,7 @@ class TestPaymentsCRUD(unittest.TestCase):
             # when doing the assertion methods on a mocked object, make *very* sure that the method
             # is one of the actual methods; otherwise the assertion will be meaningless
             mocked_service.assert_called_once_with(payment_ids=[id])
-            self.assertEqual(response.status_code, payments.HTTP_200_OK)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(json.loads(response.data), SAMPLE_PAYMENT)
 
     def test_get_payments_not_found(self):
@@ -133,7 +133,7 @@ class TestPaymentsCRUD(unittest.TestCase):
             error_response['error'] = error_response['error'].format(id)
             response = self.app.get('/payments/{}'.format(id))
 
-            self.assertEqual(response.status_code, payments.HTTP_404_NOT_FOUND)
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
             self.assertEqual(json.loads(response.data), error_response)
 
     def test_list_payments_all(self):
@@ -142,7 +142,7 @@ class TestPaymentsCRUD(unittest.TestCase):
             response = self.app.get('/payments')
 
             mocked_service.assert_called_once_with()
-            self.assertEqual(response.status_code, payments.HTTP_200_OK)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(json.loads(response.data), SAMPLE_PAYMENTS)
 
     def test_list_payments_by_ids(self):
@@ -157,7 +157,7 @@ class TestPaymentsCRUD(unittest.TestCase):
             response = self.app.get('/payments?{}'.format(ids_query_string))
 
             mocked_service.assert_called_once_with(payment_ids=ids)
-            self.assertEqual(response.status_code, payments.HTTP_200_OK)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(json.loads(response.data), payments_to_return)
 
     def test_list_payments_by_attribute(self):
@@ -171,7 +171,7 @@ class TestPaymentsCRUD(unittest.TestCase):
             response = self.app.get('/payments?{}={}'.format(specific_attribute, specific_attribute_value))
 
             mocked_service.assert_called_once_with(payment_attributes=attribute_params)
-            self.assertEqual(response.status_code, payments.HTTP_200_OK)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(json.loads(response.data), paypal_payment)
 
     def test_list_payments_not_found(self):
@@ -179,7 +179,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         with patch.object(PaymentService, 'get_payments', side_effect=Exception) as mocked_service:
             response = self.app.get('/payments')
 
-            self.assertEqual(response.status_code, payments.HTTP_404_NOT_FOUND)
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
             self.assertEqual(json.loads(response.data), payments.GENERAL_NOT_FOUND_ERROR)
 
     def test_list_payments_with_ids_and_other_params(self):
@@ -196,7 +196,7 @@ class TestPaymentsCRUD(unittest.TestCase):
 
             # important - we should call the get_payments method with payment_ids, *not* payment_attributes
             mocked_service.assert_called_once_with(payment_ids=ids)
-            self.assertEqual(response.status_code, payments.HTTP_200_OK)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(json.loads(response.data), payments_to_return)
 
     @mock.patch.object(PaymentService, 'add_payment', return_value=CC_RETURN)
