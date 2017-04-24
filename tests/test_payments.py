@@ -447,7 +447,7 @@ class TestPaymentsCRUD(unittest.TestCase):
     def test_index(self):
         resp = self.app.get('/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertTrue('Welcome to payments!' in resp.data)
+        self.assertTrue('Payments REST API Service' in resp.data)
 #test cases for update payments - put and patch
 # passing correct data to put
     @mock.patch.object(PaymentService, 'update_payment', return_value=PUT_CREDIT_RETURN)
