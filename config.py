@@ -17,3 +17,17 @@ else:
     sys.exit(1)
 
 SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+SWAGGER = {
+    "swagger_version": "2.0",
+    "specs":
+    [
+        {
+            "version": "1.0.0",
+            "title": "DevOps Payments API",
+            "description": "This is the payments API for the DevOps e-Commerce Application",
+            "endpoint": 'v1_spec',
+            "route": '/v1/spec'
+        }
+    ]
+}
