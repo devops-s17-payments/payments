@@ -1,8 +1,5 @@
-#import logging
-import re
-from threading import Lock
 from flask import jsonify, request, make_response, url_for
-from flask_api import status    # HTTP Status Codes
+from flask_api import status
 from app import app
 from app.db.interface import PaymentService,PaymentNotFoundError
 
@@ -10,24 +7,6 @@ from app.error_handlers import DataValidationError
 
 # Instantiate persistence service to be used in CRUD methods
 payment_service = PaymentService()
-
-# placeholder to be removed during refactoring of CRUD methods
-payments = []
-# Lock for thread-safe counter increment
-lock = Lock()
-
-# Status Codes
-# will be replaced eventually
-HTTP_200_OK = 200
-HTTP_201_CREATED = 201
-HTTP_204_NO_CONTENT = 204
-HTTP_400_BAD_REQUEST = 400
-HTTP_404_NOT_FOUND = 404
-HTTP_409_CONFLICT = 409
-
-# Error Messages
-# this will move to error_handlers during refactor
-CONTENT_ERR_MSG = "If you see this, something needs to be refactored in payments.py"
 
 # Error bodies
 NOT_FOUND_ERROR_BODY = {'error': 'Payment with id {} could not be found'}
@@ -71,13 +50,13 @@ def list_payments():
             # if no request args are present, simply return all payments
             results = payment_service.get_payments()
 
-        return make_response(jsonify(results), HTTP_200_OK)
+        return make_response(jsonify(results), status.HTTP_200_OK)
 
     except Exception:
         # we will want to make more specific exception handling later in order to differentiate
         # the case in which it's a 404 and the case where it's a 400 - we'll assume for now that
         # the client makes good requests for resources that may or may not exist
-        return make_response(jsonify(GENERAL_NOT_FOUND_ERROR), HTTP_404_NOT_FOUND)
+        return make_response(jsonify(GENERAL_NOT_FOUND_ERROR), status.HTTP_404_NOT_FOUND)
 
 ######################################################################
 # CREATE PAYMENT
@@ -216,10 +195,10 @@ def set_default(user_id):
             resp = payment_service.perform_payment_action(user_id,payment_attributes=data)
             if resp == True:
                 message = { 'success' : 'Payment with id: %s set as default for user with user_id: %s.' % (data['payment_id'], str(user_id)) }
-                rc = HTTP_200_OK
+                rc = status.HTTP_200_OK
             else:
                 message = { 'error' : 'No Payment with id: %s was found for user with user_id: %s.' % (data['payment_id'], str(user_id)) }
-                rc = HTTP_404_NOT_FOUND
+                rc = status.HTTP_404_NOT_FOUND
     except DataValidationError as e:
         message = {'error' : e.message}
         rc = status.HTTP_400_BAD_REQUEST
@@ -239,13 +218,11 @@ def set_default(user_id):
 def get_payments(id):
     try:
         result = payment_service.get_payments(payment_ids=[id])
-        rc = HTTP_200_OK
+        rc = status.HTTP_200_OK
     except Exception:
         message = 'Payment with id {} could not be found'.format(id)
         result = {'error': message }
-        # place the id into the {} in the error message string
-        #result['error'] = result['error'].format(id)
-        rc = HTTP_404_NOT_FOUND
+        rc = status.HTTP_404_NOT_FOUND
 
 
     return make_response(jsonify(result), rc)
@@ -260,13 +237,13 @@ def update_payments(id):
             raise DataValidationError('Invalid payment: Content Type is not json')
         data = request.get_json(silent=True)
         message = payment_service.update_payment(id,payment_replacement=data)
-        rc = HTTP_200_OK
+        rc = status.HTTP_200_OK
     except PaymentNotFoundError as e:
         message = e.message
-        rc = HTTP_404_NOT_FOUND
+        rc = status.HTTP_404_NOT_FOUND
     except DataValidationError as e:
         message = e.message
-        rc = HTTP_400_BAD_REQUEST
+        rc = status.HTTP_400_BAD_REQUEST
     return make_response(jsonify(message), rc)
 
 ######################################################################
@@ -279,13 +256,13 @@ def update_partial_payments(id):
             raise DataValidationError('Invalid payment: Content Type is not json')
         data = request.get_json(silent=True)
         message = payment_service.update_payment(id,payment_attributes=data)
-        rc = HTTP_200_OK
+        rc = status.HTTP_200_OK
     except PaymentNotFoundError as e:
         message = e.message
-        rc = HTTP_404_NOT_FOUND
+        rc = status.HTTP_404_NOT_FOUND
     except DataValidationError as e:
         message = e.message
-        rc = HTTP_400_BAD_REQUEST
+        rc = status.HTTP_400_BAD_REQUEST
     return make_response(jsonify(message), rc)
 
 
@@ -311,7 +288,7 @@ def delete_payments(id):
         description: Payment deleted
     """
     payment_service.remove_payment(payment_id=id)
-    return '', HTTP_204_NO_CONTENT
+    return '', status.HTTP_204_NO_CONTENT
 
 ######################################################################
 # CHARGE PAYMENT (ACTION)
@@ -331,14 +308,11 @@ def charge_payment(user_id):
                 resp = payment_service.perform_payment_action(user_id,payment_attributes=data)
                 if resp == True:
                     message = {'success' : 'Default payment method for user_id: %s has been charged $%.2f' % (str(user_id), data['amount'])}
-                    rc = HTTP_200_OK
+                    rc = status.HTTP_200_OK
     except DataValidationError as e:
         message = {'error' : e.message}
-        rc = HTTP_400_BAD_REQUEST
+        rc = status.HTTP_400_BAD_REQUEST
     except KeyError as e:
         message = {'error' : 'Invalid request: body of request does not have the amount to be charged'}
         rc = status.HTTP_400_BAD_REQUEST
-    #except PaymentNotFoundError as e:
-    #    message = {'error' : e.message}
-    #    rc = status.HTTP_404_NOT_FOUND
     return make_response(jsonify(message), rc)
