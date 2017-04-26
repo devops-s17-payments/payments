@@ -3,99 +3,42 @@
 [![Build Status](https://travis-ci.org/devops-s17-payments/payments.svg?branch=master)](https://travis-ci.org/devops-s17-payments/payments)
 [![codecov](https://codecov.io/gh/devops-s17-payments/payments/branch/master/graph/badge.svg)](https://codecov.io/gh/devops-s17-payments/payments)
 
-**Current payment options include:**
-* Credit Card
-* Debit Card
-* Paypal
 
-**Payment Method**
+Check us out on Bluemix!
+
+http://nyu-devops-sp17-payments.mybluemix.net/payments"
+
+API Documentation thanks to [Flasgger](https://github.com/rochacbruno/flasgger "Flasgger")
+
+http://nyu-devops-sp17-payments.mybluemix.net/payments"
+
+
+### How to use this repository ###
+
+First, you need some tools. Download [VirtualBox](https://www.virtualbox.org/ "VirtualBox") and [Vagrant](https://www.vagrantup.com/ "Vagrant")
 ```
-{
-    "charge-history": 0.0,
-    "default": false,
-    "detail": {
-        "expires": "08/2018",
-        "name": "Jane Jenkins",
-        "number": "9876543212345678",
-        "type": "Visa"
-    },
-    "id": 2,
-    "nickname": "my-debit",
-    "type": "debit"
-
-}
+git clone https://github.com/devops-s17-payments/payments
+cd payments
+vagrant up
+vagrant ssh
+cd /vagrant
 ```
 
-**How to use this API**
+### Run some tests! ###
 
-**CREATE** a payment method:
- * POST /payments
- * Accepts JSON in request body in following format:
- 
-```
- {
-    "detail":
-    {
-        "expires": "08/2018",
-        "name": "Jane Jenkins",
-        "number": "9876543212345678",
-        "type": "Visa"
-    },
-    "nickname": "my-debit",
-    "type": "debit"
-}
-```
+Unit Tests: `nosetests -v --rednose --nologcapture`
 
-**RETRIEVE** a payment method:
- * GET /payments/{id}
+Integration Tests: `behave`
 
-**UPDATE** a payment method:
- * PUT /payments/{id}
- * Accepts JSON in request body. Need to provide entire object as with CREATE.
+### Check out the coverage! ###
 
-```
- {
-    "detail":
-    {
-        "expires": "08/2018",
-        "name": "Jane Jenkins",
-        "number": "9876543212345678",
-        "type": "Visa"
-    },
-    "nickname": "my-new-debit",
-    "type": "debit"
-}
-```
+`coverage run --omit "/usr/*" -m unittest discover`
 
-**UPDATE** a payment method:
- * PATCH /payments/{id}
- * Accepts JSON in request body. Only need to provide those attributes being changed:
+`coverage report -m`
 
-```
-{
-    "nickname": "updated-debit",
-}
-```
+### Run the app locally! ###
 
-**DELETE** a payment method:
- * DELETE /payments/{id}
+`python run.py`
 
-**LIST** all payment methods:
-* GET /payments
+Then visit `localhost:5000`
 
-**QUERY** payments:
-* GET /payments?{key}={value}
-* Example: To return all credit card payment methods: /payments?type=credit
-
-**SET** default payment:
-* PUT /payments/{id}/set-default  (this should be a PATCH, will be updated)
-
-**CHARGE** default payment:
-* PUT /payments/charge (this should be a PATCH, will be updated)
-* Accepts JSON in request body in the following format:
-
-```
-{
-    "amount" : 19.99
-}
-```
