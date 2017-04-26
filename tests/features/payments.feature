@@ -5,7 +5,7 @@ Feature: The payments API
 
 Scenario: The server is running
     When I visit the "home page"
-    Then I should see "Welcome to payments"
+    Then I should see "Payments REST API Service"
     Then I should not see "Not Found"
 
 Scenario: Add a new payment
