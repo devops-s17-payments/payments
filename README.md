@@ -6,11 +6,11 @@
 
 Check us out on Bluemix!
 
-http://nyu-devops-sp17-payments.mybluemix.net/payments"
+http://nyu-devops-sp17-payments.mybluemix.net
 
 API Documentation thanks to [Flasgger](https://github.com/rochacbruno/flasgger "Flasgger")
 
-http://nyu-devops-sp17-payments.mybluemix.net/payments"
+http://nyu-devops-sp17-payments.mybluemix.net/apidocs/index.html
 
 
 ### How to use this repository ###
