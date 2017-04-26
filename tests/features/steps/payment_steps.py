@@ -76,20 +76,20 @@ def step_impl(context, url, id):
     context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_200_OK
 
-@when('I retrieve "{url}" with non-existent id "{id}"')
+@when('I try to retrieve "{url}" with non-existent id "{id}"')
 def step_impl(context, url, id):
     target = url + '/' + id
     context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_404_NOT_FOUND
 
-@when('I query "{url}" with "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
+@when('I query my "{url}" with "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
 def step_impl(context, url, attribute1,value1,attribute2,value2):
     query_string = '{}={}&{}={}'.format(attribute1, value1, attribute2,value2)
     target = url + '?'+ query_string
     context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_200_OK
 
-@when('I query "{url}" with bad query inputs "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
+@when('I query my "{url}" with bad query inputs "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
 def step_impl(context, url, attribute1,value1,attribute2,value2):
     query_string = '{}={}&{}={}'.format(attribute1, value1, attribute2,value2)
     target = url + '?'+ query_string
@@ -113,25 +113,25 @@ def step_impl(context, attribute, value):
 def step_impl(context, attribute, value):
     context.data = json.dumps({attribute : value})
 
-@when('I patch "{url}" with id "{id}"')
+@when('I update "{url}" with id "{id}"')
 def step_impl(context, url, id):
     target = url + '/' + id
     context.resp = context.app.patch(target, data=context.data, content_type='application/json')
     assert context.resp.status_code == status.HTTP_200_OK
 
-@when('I patch "{url}" with id "{id}" with bad data')
+@when('I update "{url}" with id "{id}" with bad data')
 def step_impl(context, url, id):
     target = url + '/' + id
     context.resp = context.app.patch(target, data=context.data, content_type='application/json')
     assert context.resp.status_code == status.HTTP_400_BAD_REQUEST
 
-@when('I patch "{url}" with id "{id}" with no data')
+@when('I update "{url}" with id "{id}" with no data')
 def step_impl(context, url, id):
     target = url + '/' + id
     context.resp = context.app.patch(target, data=None, content_type='application/json')
     assert context.resp.status_code == status.HTTP_400_BAD_REQUEST
 
-@when('I put "{url}" with id "{id}"')
+@when('I replace "{url}" with id "{id}"')
 def step_impl(context, url, id):
     target = url + '/' + id
     data = json.loads(context.data)
@@ -139,7 +139,7 @@ def step_impl(context, url, id):
     context.resp = context.app.put(target, data=context.data, content_type='application/json')
     assert context.resp.status_code == status.HTTP_200_OK
 
-@when('I put "{url}" with id "{id}" with illegal data')
+@when('I replace "{url}" with id "{id}" with illegal data')
 def step_impl(context, url, id):
     target = url + '/' + id
     data = json.loads(context.data)
@@ -179,16 +179,16 @@ def step_impl(context, id):
     url = '/payments/{}'.format(id)
     context.resp = context.app.delete(url)
 
-@when('I query payments with a valid query "{attribute}" = "{value}"')
-def step_impl(context, attribute, value):
-    url = '/payments?{}={}'.format(attribute,value)
-    context.resp = context.app.get(url)
+@when('I query my "{url}" with a valid query "{attribute}" = "{value}"')
+def step_impl(context, url, attribute, value):
+    target = url + '?{}={}'.format(attribute,value)
+    context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_200_OK
 
-@when('I query payments with a bad query "{attribute}" = "{value}"')
-def step_impl(context, attribute, value):
-    url = '/payments?{}={}'.format(attribute,value)
-    context.resp = context.app.get(url)
+@when('I query my "{url}" with a bad query "{attribute}" = "{value}"')
+def step_impl(context, url, attribute, value):
+    target = url + '?{}={}'.format(attribute,value)
+    context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_404_NOT_FOUND
 
 @when('I list all "{url}"')

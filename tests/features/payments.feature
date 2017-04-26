@@ -21,7 +21,7 @@ Scenario: Update a payment (PATCH)
     When I get "payments" with id "1"
     Then I should see a payment with id "1" and "nickname" = "new credit"
     When I change "nickname" to "patched credit"
-    And I patch "payments" with id "1"
+    And I update "payments" with id "1"
     When I get "payments" with id "1"
     Then I should see a payment with id "1" and "nickname" = "patched credit"
 
@@ -31,7 +31,7 @@ Scenario: Update a payment (PUT)
     Given an updated credit card
         | nickname  | user_id | payment_type | user_name   | expires | card_type | card_number      |
         | cashmoney | 1       | credit       | Jimmy Jones | 08/2018 | Visa      | 4444333322221111 |
-    When I put "payments" with id "1"
+    When I replace "payments" with id "1"
     And I get "payments" with id "1"
     Then I should see a payment with id "1" and "nickname" = "cashmoney"
     When I visit "payments"
@@ -41,9 +41,9 @@ Scenario: Update a payment with bad or no data (PATCH)
     When I get "payments" with id "1"
     Then I should see a payment with id "1" and "nickname" = "cashmoney"
     When I change "nicknam3" to "new credit", but misspell the attribute
-    And I patch "payments" with id "1" with bad data
+    And I update "payments" with id "1" with bad data
     Then I should see "body of request contains invalid/un-updatable fields"
-    When I patch "payments" with id "1" with no data
+    When I update "payments" with id "1" with no data
     Then I should see "body of request contained bad or no data"
 
 Scenario: Update a payment with illegal data (PUT)
@@ -52,7 +52,7 @@ Scenario: Update a payment with illegal data (PUT)
     Given an updated credit card with illegal data
         | nickname  | user_id | payment_type | user_name   | expires | card_type | card_number      | is_removed |
         | cashmoney | 1       | credit       | Jimmy Jones | 08/2018 | Visa      | 4444333322221111 | True       |
-    When I put "payments" with id "1" with illegal data
+    When I replace "payments" with id "1" with illegal data
     Then I should see "You cannot modify the field: is_removed"
 
 Scenario: Set default payment
@@ -62,10 +62,10 @@ Scenario: Set default payment
     Then user with id "1" should see payment with id "1" set as default
 
 Scenario: Query payments (Single Query)
-    When I query payments with a valid query "payment_type" = "credit"
+    When I query my "payments" with a valid query "payment_type" = "credit"
     Then I should see "1" existing payments
     And I should see a payment with id "1" and "nickname" = "cashmoney"
-    When I query payments with a bad query "nickname" = "amex"
+    When I query my "payments" with a bad query "nickname" = "amex"
     Then I should see an error message saying "Requested resource(s) could not be found"
     
 Scenario: List all payments
@@ -77,14 +77,14 @@ Scenario: Read a payment
     When I get "payments" with id "1"
     Then I should see a payment with id "1" and "nickname" = "cashmoney"
     And I should not see "Requested resource(s) could not be found"
-    When I retrieve "payments" with non-existent id "100"
+    When I try to retrieve "payments" with non-existent id "100"
     Then I should see "Payment with id 100 could not be found"
 
 Scenario: Use two query parameters to list payments
-    When I query "payments" with "nickname" = "cashmoney" and "payment_type" = "credit"
+    When I query my "payments" with "nickname" = "cashmoney" and "payment_type" = "credit"
     Then I should see "1" existing payments
     And I should see a payment with "nickname" = "cashmoney" and "payment_type" = "credit"
-    When I query "payments" with bad query inputs "nickname" = "bad card" and "payment_type" = "bad type"
+    When I query my "payments" with bad query inputs "nickname" = "bad card" and "payment_type" = "bad type"
     Then I should see "Requested resource(s) could not be found"
 
 Scenario: Charge a payment
