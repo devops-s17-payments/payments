@@ -9,28 +9,6 @@ import json
 # G I V E N #
 #############
 
-@given('the following "{url}"')
-def step_impl(context, url):
-    ''' need this blank post otherwise first live post goes to dev instead of test db '''
-    context.app.post(url, data=None, content_type='application/json')
-    for row in context.table:
-        details = {
-            'user_name' : row['user_name'],
-            'user_email' : row['user_email'],
-            'is_linked' : row['is_linked'],
-            'card_number' : row['card_number'],
-            'card_type' : row['card_type'],
-            'expires' : row['expires'],
-        }
-        payment = {
-            'nickname' : row['nickname'],
-            'user_id' : row['user_id'],
-            'payment_type' : row['payment_type'],
-            'details' : details
-        }
-
-        context.app.post(url, data=json.dumps(payment), content_type='application/json')
-
 @given('a new credit card')
 def step_impl(context):
     for row in context.table:
@@ -46,7 +24,7 @@ def step_impl(context):
             'payment_type' : row['payment_type'],
             'details' : details
         }
-    context.resp.data = json.dumps(payment)
+    context.data = json.dumps(payment)
 
 @given('an updated credit card')
 def step_impl(context):
@@ -63,7 +41,7 @@ def step_impl(context):
             'payment_type' : row['payment_type'],
             'details' : details
         }
-    context.resp.data = json.dumps(payment)
+    context.data = json.dumps(payment)
 
 @given('an updated credit card with illegal data')
 def step_impl(context):
@@ -81,7 +59,7 @@ def step_impl(context):
             'is_removed' : row['is_removed'],
             'details' : details
         }
-    context.resp.data = json.dumps(payment)
+    context.data = json.dumps(payment)
 
 ###########
 # W H E N #
@@ -98,20 +76,20 @@ def step_impl(context, url, id):
     context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_200_OK
 
-@when('I retrieve "{url}" with non-existent id "{id}"')
+@when('I try to retrieve "{url}" with non-existent id "{id}"')
 def step_impl(context, url, id):
     target = url + '/' + id
     context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_404_NOT_FOUND
 
-@when('I query "{url}" with "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
+@when('I query my "{url}" with "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
 def step_impl(context, url, attribute1,value1,attribute2,value2):
     query_string = '{}={}&{}={}'.format(attribute1, value1, attribute2,value2)
     target = url + '?'+ query_string
     context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_200_OK
 
-@when('I query "{url}" with bad query inputs "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
+@when('I query my "{url}" with bad query inputs "{attribute1}" = "{value1}" and "{attribute2}" = "{value2}"')
 def step_impl(context, url, attribute1,value1,attribute2,value2):
     query_string = '{}={}&{}={}'.format(attribute1, value1, attribute2,value2)
     target = url + '?'+ query_string
@@ -124,34 +102,50 @@ def step_impl(context):
 
 @when(u'I add a new payment to "{url}"')
 def step_impl(context, url):
-    context.resp = context.app.post(url, data=context.resp.data, content_type='application/json')
+    context.resp = context.app.post(url, data=context.data, content_type='application/json')
     assert context.resp.status_code == status.HTTP_201_CREATED
 
 @when('I change "{attribute}" to "{value}"')
 def step_impl(context, attribute, value):
-    context.resp.data = json.dumps({attribute : value})
+    context.data = json.dumps({attribute : value})
 
 @when('I change "{attribute}" to "{value}", but misspell the attribute')
 def step_impl(context, attribute, value):
-    context.resp.data = json.dumps({attribute : value})
+    context.data = json.dumps({attribute : value})
 
-@when('I patch "{url}" with id "{id}"')
+@when('I update "{url}" with id "{id}"')
 def step_impl(context, url, id):
     target = url + '/' + id
-    context.resp = context.app.patch(target, data=context.resp.data, content_type='application/json')
+    context.resp = context.app.patch(target, data=context.data, content_type='application/json')
+    assert context.resp.status_code == status.HTTP_200_OK
 
-@when('I patch "{url}" with id "{id}" with no data')
+@when('I update "{url}" with id "{id}" with bad data')
+def step_impl(context, url, id):
+    target = url + '/' + id
+    context.resp = context.app.patch(target, data=context.data, content_type='application/json')
+    assert context.resp.status_code == status.HTTP_400_BAD_REQUEST
+
+@when('I update "{url}" with id "{id}" with no data')
 def step_impl(context, url, id):
     target = url + '/' + id
     context.resp = context.app.patch(target, data=None, content_type='application/json')
     assert context.resp.status_code == status.HTTP_400_BAD_REQUEST
 
-@when('I put "{url}" with id "{id}"')
+@when('I replace "{url}" with id "{id}"')
 def step_impl(context, url, id):
     target = url + '/' + id
-    data = json.loads(context.resp.data)
+    data = json.loads(context.data)
     assert data['user_id'] == id
-    context.resp = context.app.put(target, data=context.resp.data, content_type='application/json')
+    context.resp = context.app.put(target, data=context.data, content_type='application/json')
+    assert context.resp.status_code == status.HTTP_200_OK
+
+@when('I replace "{url}" with id "{id}" with illegal data')
+def step_impl(context, url, id):
+    target = url + '/' + id
+    data = json.loads(context.data)
+    assert data['user_id'] == id
+    context.resp = context.app.put(target, data=context.data, content_type='application/json')
+    assert context.resp.status_code == status.HTTP_400_BAD_REQUEST
 
 @when('user with id "{id}" has existing "{url}"')
 def step_impl(context, id, url):
@@ -172,6 +166,7 @@ def step_impl(context, u_id, action, url, p_id):
 def step_impl(context, id):
     url = '/payments/{}'.format(id)
     context.resp = context.app.delete(url)
+    assert context.resp.status_code == status.HTTP_204_NO_CONTENT
 
 @when('I attempt to retrieve the deleted payment {id}')
 def step_impl(context, id):
@@ -184,16 +179,16 @@ def step_impl(context, id):
     url = '/payments/{}'.format(id)
     context.resp = context.app.delete(url)
 
-@when('I query payments with a valid query "{attribute}" = "{value}"')
-def step_impl(context, attribute, value):
-    url = '/payments?{}={}'.format(attribute,value)
-    context.resp = context.app.get(url)
+@when('I query my "{url}" with a valid query "{attribute}" = "{value}"')
+def step_impl(context, url, attribute, value):
+    target = url + '?{}={}'.format(attribute,value)
+    context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_200_OK
 
-@when('I query payments with a bad query "{attribute}" = "{value}"')
-def step_impl(context, attribute, value):
-    url = '/payments?{}={}'.format(attribute,value)
-    context.resp = context.app.get(url)
+@when('I query my "{url}" with a bad query "{attribute}" = "{value}"')
+def step_impl(context, url, attribute, value):
+    target = url + '?{}={}'.format(attribute,value)
+    context.resp = context.app.get(target)
     assert context.resp.status_code == status.HTTP_404_NOT_FOUND
 
 @when('I list all "{url}"')
@@ -214,11 +209,6 @@ def step_impl(context, id, dollars):
 ###########
 # T H E N #
 ###########
-
-@then('I should see "{message}" with status code "{code}"')
-def step_impl(context, message, code):
-    assert message in context.resp.data
-    assert context.resp.status_code == int(code)
 
 @then('I should see "{message}"')
 def step_impl(context, message):
@@ -267,10 +257,9 @@ def step_impl(context, count):
     assert len(json.loads(context.resp.data)) == int(count)
     assert context.resp.status_code == 200
 
-@then('I should see an error message saying "{error_msg}" with status code "{status_code}"')
-def step_impl(context,error_msg,status_code):
+@then('I should see an error message saying "{error_msg}"')
+def step_impl(context,error_msg):
     assert error_msg in json.loads(context.resp.data)['error']
-    assert context.resp.status_code == int(status_code)
 
 @then('I should see payment "{index}" with id "{id}" and "{attribute}" = "{value}"')
 def step_impl(context,index, id, attribute, value):
