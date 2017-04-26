@@ -1,0 +1,8 @@
+postgre:
+  image: postgres:alpine
+  restart: always
+  hostname: postgres
+  ports:
+    - "5432:5432"
+  volumes:
+    - /var/lib/postgresql/data

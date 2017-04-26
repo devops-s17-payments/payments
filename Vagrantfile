@@ -83,24 +83,24 @@ Vagrant.configure(2) do |config|
       echo "LOCAL_DB exists!"
     fi
 
-    cat <<-EOF | su - postgres -c psql
-    -- Create the database user:
-    CREATE USER payments WITH PASSWORD 'payments';
+    #cat <<-EOF | su - postgres -c psql
+    #-- Create the database user:
+    #CREATE USER payments WITH PASSWORD 'payments';
 
-    -- Create dev db:
-    CREATE DATABASE dev WITH OWNER=payments
-      LC_COLLATE='en_US.utf8'
-      LC_CTYPE='en_US.utf8'
-      ENCODING='UTF8'
-      TEMPLATE=template0;
+    #-- Create dev db:
+    #CREATE DATABASE dev WITH OWNER=payments
+      #LC_COLLATE='en_US.utf8'
+      #LC_CTYPE='en_US.utf8'
+      #ENCODING='UTF8'
+      #TEMPLATE=template0;
 
-    -- Create test db:
-    CREATE DATABASE test WITH OWNER=payments
-      LC_COLLATE='en_US.utf8'
-      LC_CTYPE='en_US.utf8'
-      ENCODING='UTF8'
-      TEMPLATE=template0;
-	EOF
+    #-- Create test db:
+    #CREATE DATABASE test WITH OWNER=payments
+      #LC_COLLATE='en_US.utf8'
+      #LC_CTYPE='en_US.utf8'
+      #ENCODING='UTF8'
+      #TEMPLATE=template0;
+	#EOF
   SHELL
 
 
@@ -112,11 +112,14 @@ Vagrant.configure(2) do |config|
     sudo mkdir -p /var/lib/postgresql/data
     sudo chown vagrant:vagrant /var/lib/postgresql/data
   SHELL
-   Add PostgreSQL docker container
+   # Add PostgreSQL docker container
   config.vm.provision "docker" do |d|
     d.pull_images "postgres"
     d.run "postgres",
-      args: "-d --name postgres -p 5432:5432 -v /var/lib/postgresql/data:/var/lib/postgresql/data"
+      args: "-d --name postgres -p 5432:5432 -v /var/lib/postgresql/data"
   end
+
+  # call docker-compose
+  config.vm.provision :docker_compose
 
 end
