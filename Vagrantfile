@@ -20,7 +20,7 @@ Vagrant.configure(2) do |config|
   # accessing "localhost:8080" will access port 80 on the guest machine.
   # config.vm.network "forwarded_port", guest: 80, host: 8080
   config.vm.network "forwarded_port", guest: 5000, host: 5000 #flask
-  config.vm.network "forwarded_port", guest: 5432, host: 5432 #postgres
+  #config.vm.network "forwarded_port", guest: 5432, host: 5432 #postgres
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -46,25 +46,13 @@ Vagrant.configure(2) do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     sudo apt-get update
-    sudo apt-get install -y git zip tree python-pip python-dev build-essential postgresql postgresql-contrib libpq-dev
+    sudo apt-get install -y git zip tree python-pip python-dev build-essential libpq-dev
     sudo apt-get -y autoremove
 
     # Install the Cloud Foundry CLI
     wget -O cf-cli-installer_6.24.0_x86-64.deb 'https://cli.run.pivotal.io/stable?release=debian64&source=github'
     sudo dpkg -i cf-cli-installer_6.24.0_x86-64.deb
     rm cf-cli-installer_6.24.0_x86-64.deb
-
-    # Install PhantomJS for Selenium browser support
-    sudo apt-get install -y chrpath libssl-dev libxft-dev
-    sudo apt-get -y autoremove
-    # PhantomJS https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
-    cd $HOME
-    export PHANTOM_JS="phantomjs-2.1.1-linux-x86_64"
-    wget https://bitbucket.org/ariya/phantomjs/downloads/$PHANTOM_JS.tar.bz2
-    sudo tar xvjf $PHANTOM_JS.tar.bz2
-    sudo mv $PHANTOM_JS /usr/local/share
-    sudo ln -sf /usr/local/share/$PHANTOM_JS/bin/phantomjs /usr/local/bin
-    rm -f $PHANTOM_JS.tar.bz2
     
     # Install app dependencies
     cd /vagrant
@@ -83,24 +71,6 @@ Vagrant.configure(2) do |config|
       echo "LOCAL_DB exists!"
     fi
 
-    #cat <<-EOF | su - postgres -c psql
-    #-- Create the database user:
-    #CREATE USER payments WITH PASSWORD 'payments';
-
-    #-- Create dev db:
-    #CREATE DATABASE dev WITH OWNER=payments
-      #LC_COLLATE='en_US.utf8'
-      #LC_CTYPE='en_US.utf8'
-      #ENCODING='UTF8'
-      #TEMPLATE=template0;
-
-    #-- Create test db:
-    #CREATE DATABASE test WITH OWNER=payments
-      #LC_COLLATE='en_US.utf8'
-      #LC_CTYPE='en_US.utf8'
-      #ENCODING='UTF8'
-      #TEMPLATE=template0;
-	#EOF
   SHELL
 
 
@@ -112,14 +82,16 @@ Vagrant.configure(2) do |config|
     sudo mkdir -p /var/lib/postgresql/data
     sudo chown vagrant:vagrant /var/lib/postgresql/data
   SHELL
-   # Add PostgreSQL docker container
+  # Add PostgreSQL docker container
+  # Note: the "d" essentially refers to the "docker" CLI command
+  # hence, d.pull_images -> "docker pull <image_name>"
   config.vm.provision "docker" do |d|
     d.pull_images "postgres"
     d.run "postgres",
-      args: "-d --name postgres -p 5432:5432 -v /var/lib/postgresql/data"
+      args: "-d --name payments-database -p 5432:5432 -v /var/lib/postgresql/data"
   end
 
-  # call docker-compose
+  # add docker_compose file
   config.vm.provision :docker_compose
 
 end

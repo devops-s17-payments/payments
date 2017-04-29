@@ -1,7 +1,7 @@
-postgre:
+payments-database:
   image: postgres:alpine
   restart: always
-  hostname: postgres
+  hostname: payments-database
   ports:
     - "5432:5432"
   volumes:
