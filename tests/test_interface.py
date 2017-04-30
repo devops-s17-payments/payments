@@ -3,6 +3,7 @@
 # nosetests -v --rednose --nologcapture
 
 import unittest, mock, copy
+import os
 
 from app import payments
 from app.db import app_db
@@ -63,8 +64,7 @@ class TestInterface(unittest.TestCase):
 
     def setUp(self):
         payments.app.debug = True
-        if not payments.app.config['TESTING']: #then use local test db
-            payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
+        payments.app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('LOCAL_DB')
         app_db.create_all()  # make our sqlalchemy tables
 
 
@@ -919,8 +919,7 @@ class TestInterfaceFunctional(unittest.TestCase):
 
     def setUp(self):
         payments.app.debug = True
-        if not payments.app.config['TESTING']: #then use local test db
-            payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
+        payments.app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('LOCAL_DB')
         app_db.create_all()  # make our sqlalchemy tables
 
         payments_to_add = (CREDIT, DEBIT, PAYPAL)

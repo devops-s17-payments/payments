@@ -82,13 +82,13 @@ Vagrant.configure(2) do |config|
     sudo mkdir -p /var/lib/postgresql/data
     sudo chown vagrant:vagrant /var/lib/postgresql/data
   SHELL
-  # Add PostgreSQL docker container
+  # Add the dev PostgreSQL docker container
   # Note: the "d" essentially refers to the "docker" CLI command
   # hence, d.pull_images -> "docker pull <image_name>"
   config.vm.provision "docker" do |d|
     d.pull_images "postgres"
     d.run "postgres",
-      args: "-d --name payments-database -p 5432:5432 -v /var/lib/postgresql/data"
+      args: "-d --name payments-database -p 5432:5432 -v /var/lib/postgresql/data -e POSTGRES_USER=payments -e POSTGRES_PASSWORD=payments -e POSTGRES_DB=dev"
   end
 
   # add docker_compose file

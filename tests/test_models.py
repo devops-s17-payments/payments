@@ -4,6 +4,8 @@
 
 import unittest
 import mock
+import os
+
 from app import payments
 from app.db import app_db
 from app.db.models import Payment, Detail
@@ -47,8 +49,7 @@ class TestModels(unittest.TestCase):
 
     def setUp(self):
         payments.app.debug = True
-        if not payments.app.config['TESTING']: #then use local test db
-            payments.app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://payments:payments@localhost:5432/test'
+        payments.app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('LOCAL_DB')
         app_db.create_all()  # make our sqlalchemy tables
         
         data = CREDIT
