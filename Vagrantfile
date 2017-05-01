@@ -60,17 +60,6 @@ Vagrant.configure(2) do |config|
     
     # Make vi look nice
     echo "colorscheme desert" > ~/.vimrc
-
-    # Add DB connect string as environment variable
-    EXISTS=`grep LOCAL_DB /home/vagrant/.profile | wc -l | awk '{ print $1 }'`
-    if [[ $EXISTS -eq 0 ]]; then
-      STR=$'\nexport LOCAL_DB=postgresql://payments:payments@localhost:5432/dev'
-      echo $STR >> /home/vagrant/.profile
-      echo "Adding DB connection string..."
-    else
-      echo "LOCAL_DB exists!"
-    fi
-
   SHELL
 
 
@@ -80,11 +69,6 @@ Vagrant.configure(2) do |config|
   # Prepare PostgreSQL provisioning - make needed directories and export env variables
   config.vm.provision "shell", path: "db_provision.sh", 
     env: {"DB_NAME" => ENV["DB_NAME"], "DB_USER" => ENV["DB_USER"], "DB_PASSWORD" => ENV["DB_PASSWORD"]}
-
-  # source the changes made to .profile
-  config.vm.provision "shell", inline: <<-SHELL
-    source /home/vagrant/.profile
-  SHELL
 
   # Add the dev PostgreSQL docker container
   # Note: the "d" essentially refers to the "docker" CLI command
