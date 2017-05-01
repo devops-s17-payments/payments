@@ -1,21 +1,22 @@
 # Start with a Linux micro-container to keep the image tiny
 FROM alpine:3.3
 
-# Install just the Python runtime (no dev)
+# Install python and dependencies
 RUN apk add --update \
-    python \
+	python-dev \
     py-pip \
-    py-gdbm \
     postgresql-dev \ 
-    python-dev \
     gcc \ 
     musl-dev \
  && rm -rf /var/cache/apk/*
- #RUN apk add --no-cache -X http://dl-cdn.alpinelinux.org/alpine/edge/main py-psycopg2
 
 # Expose any ports the app is expecting in the environment
 ENV PORT 5000
 EXPOSE $PORT
+
+# Get connection string from build-args
+ARG URI
+ENV LOCAL_DB=$URI
 
 # Set up a working folder and install the pre-reqs
 WORKDIR /payments
