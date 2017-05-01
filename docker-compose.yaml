@@ -10,3 +10,12 @@ payments-database:
     - POSTGRES_DB=${DB_NAME}
     - POSTGRES_USER=${DB_USER}
     - POSTGRES_PASSWORD=${DB_PASSWORD}
+    
+payments:
+  build: .
+  restart: always
+  hostname: payments
+  ports:
+    - "5000:5000"
+  links:
+    - payments-database
