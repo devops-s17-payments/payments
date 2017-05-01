@@ -79,7 +79,7 @@ Vagrant.configure(2) do |config|
       #args: "-d --name payments-database -p 5432:5432 -v /var/lib/postgresql/data -e POSTGRES_USER=payments -e POSTGRES_PASSWORD=payments -e POSTGRES_DB=dev"
   end
 
-  # add docker_compose file
-  config.vm.provision :docker_compose
-
+  # add docker_compose file and run it
+  config.vm.provision :docker_compose, yml: "/vagrant/docker-compose.yaml", rebuild: true, run: "always",
+    env: {"DB_NAME" => ENV["DB_NAME"], "DB_USER" => ENV["DB_USER"], "DB_PASSWORD" => ENV["DB_PASSWORD"]}
 end
