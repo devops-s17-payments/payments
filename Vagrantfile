@@ -77,18 +77,22 @@ Vagrant.configure(2) do |config|
   ######################################################################
   # Add PostgreSQL docker container
   ######################################################################
+  # Prepare PostgreSQL provisioning - make needed directories and export env variables
+  config.vm.provision "shell", path: "db_provision.sh", 
+    env: {"DB_NAME" => ENV["DB_NAME"], "DB_USER" => ENV["DB_USER"], "DB_PASSWORD" => ENV["DB_PASSWORD"]}
+
+  # source the changes made to .profile
   config.vm.provision "shell", inline: <<-SHELL
-    # Prepare PostgreSQL data share
-    sudo mkdir -p /var/lib/postgresql/data
-    sudo chown vagrant:vagrant /var/lib/postgresql/data
+    source /home/vagrant/.profile
   SHELL
+
   # Add the dev PostgreSQL docker container
   # Note: the "d" essentially refers to the "docker" CLI command
   # hence, d.pull_images -> "docker pull <image_name>"
   config.vm.provision "docker" do |d|
     d.pull_images "postgres"
-    d.run "postgres",
-      args: "-d --name payments-database -p 5432:5432 -v /var/lib/postgresql/data -e POSTGRES_USER=payments -e POSTGRES_PASSWORD=payments -e POSTGRES_DB=dev"
+    #d.run "postgres",
+      #args: "-d --name payments-database -p 5432:5432 -v /var/lib/postgresql/data -e POSTGRES_USER=payments -e POSTGRES_PASSWORD=payments -e POSTGRES_DB=dev"
   end
 
   # add docker_compose file
