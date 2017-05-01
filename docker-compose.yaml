@@ -6,3 +6,12 @@ payments-database:
     - "5432:5432"
   volumes:
     - /var/lib/postgresql/data
+
+payments:
+  build: .
+  restart: always
+  hostname: payments
+  ports:
+    - "5000:5000"
+  links:
+    - payments-database
