@@ -60,38 +60,26 @@ Vagrant.configure(2) do |config|
     
     # Make vi look nice
     echo "colorscheme desert" > ~/.vimrc
-
-    # Add DB connect string as environment variable
-    EXISTS=`grep LOCAL_DB /home/vagrant/.profile | wc -l | awk '{ print $1 }'`
-    if [[ $EXISTS -eq 0 ]]; then
-      STR=$'\nexport LOCAL_DB=postgresql://payments:payments@localhost:5432/dev'
-      echo $STR >> /home/vagrant/.profile
-      echo "Adding DB connection string..."
-    else
-      echo "LOCAL_DB exists!"
-    fi
-
   SHELL
 
 
   ######################################################################
   # Add PostgreSQL docker container
   ######################################################################
-  config.vm.provision "shell", inline: <<-SHELL
-    # Prepare PostgreSQL data share
-    sudo mkdir -p /var/lib/postgresql/data
-    sudo chown vagrant:vagrant /var/lib/postgresql/data
-  SHELL
+  # Prepare PostgreSQL provisioning - make needed directories and export env variables
+  config.vm.provision "shell", path: "db_provision.sh", 
+    env: {"DB_NAME" => ENV["DB_NAME"], "DB_USER" => ENV["DB_USER"], "DB_PASSWORD" => ENV["DB_PASSWORD"]}
+
   # Add the dev PostgreSQL docker container
   # Note: the "d" essentially refers to the "docker" CLI command
   # hence, d.pull_images -> "docker pull <image_name>"
   config.vm.provision "docker" do |d|
     d.pull_images "postgres"
-    d.run "postgres",
-      args: "-d --name payments-database -p 5432:5432 -v /var/lib/postgresql/data -e POSTGRES_USER=payments -e POSTGRES_PASSWORD=payments -e POSTGRES_DB=dev"
+    #d.run "postgres",
+      #args: "-d --name payments-database -p 5432:5432 -v /var/lib/postgresql/data -e POSTGRES_USER=payments -e POSTGRES_PASSWORD=payments -e POSTGRES_DB=dev"
   end
 
-  # add docker_compose file
-  config.vm.provision :docker_compose
-
+  # add docker_compose file and run it
+  config.vm.provision :docker_compose, yml: "/vagrant/docker-compose.yaml", rebuild: true, run: "always",
+    env: {"DB_NAME" => ENV["DB_NAME"], "DB_USER" => ENV["DB_USER"], "DB_PASSWORD" => ENV["DB_PASSWORD"]}
 end
