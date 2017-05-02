@@ -65,8 +65,8 @@ Vagrant.configure(2) do |config|
   ######################################################################
   # Add PostgreSQL docker container
   ######################################################################
-  # Prepare PostgreSQL provisioning - make needed directories and export env variables
-  config.vm.provision "shell", path: "db_provision.sh", 
+  # Prepare PostgreSQL provisioning - make needed directories and export LOCAL_DB env variable
+  config.vm.provision "shell", path: "vagrant_db_provision.sh", 
     env: {"DB_NAME" => ENV["DB_NAME"], "DB_USER" => ENV["DB_USER"], "DB_PASSWORD" => ENV["DB_PASSWORD"]}
 
   # Add the dev PostgreSQL docker container
@@ -79,6 +79,8 @@ Vagrant.configure(2) do |config|
   end
 
   # add docker_compose file and run it
+  # note that this LOCAL_DB will be different from the one exported before into
+  # the vagrant VM's .profile
   config.vm.provision :docker_compose, yml: "/vagrant/docker-compose.yaml", rebuild: true, run: "always",
     env: {
       "DB_NAME" => ENV["DB_NAME"],
