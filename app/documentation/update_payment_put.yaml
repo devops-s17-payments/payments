@@ -80,15 +80,9 @@ responses:
             is_default:
               type: boolean
               description: signifies default payment method for purchases
-              default: false
-            is_removed:
-              type: boolean
-              description: soft delete for removed payments with pending transactions
-              default: false
             charge_history:
               type: float
-              description: history of purchase amounts for specified payment method
-              default: 0.0
+              description: history of purchase amounts for specified payment method  
             details:
               schema:
                 id: details
