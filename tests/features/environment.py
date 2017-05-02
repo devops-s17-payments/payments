@@ -6,7 +6,8 @@ from app.db.interface import PaymentService
 
 def before_all(context):
     payments.app.debug = True
-    payments.app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('LOCAL_DB')
+    if not payments.app.config['TESTING']: #then use local test db
+    	payments.app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('LOCAL_DB')
     app_db.drop_all()
     app_db.create_all()
     app_db.session.commit()
