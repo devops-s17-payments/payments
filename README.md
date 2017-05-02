@@ -73,7 +73,7 @@
 
 ```
 {
-    "nickname": "updated-debit",
+    "nickname": "updated-debit"
 }
 ```
 
