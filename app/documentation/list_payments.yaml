@@ -43,7 +43,6 @@ parameters:
       }
     required: false
     collectionFormat: multi
- #Query by details
 responses:
   200:
     description: An Array of Payments
