@@ -130,7 +130,7 @@ class TestPaymentsCRUD(unittest.TestCase):
         id = 0
         with patch.object(PaymentService, 'get_payments', side_effect=Exception) as mocked_service:
             error_response = payments.NOT_FOUND_ERROR_BODY
-            error_response['error'].format(id)
+            error_response['error'] = error_response['error'].format(id)
             response = self.app.get('/payments/{}'.format(id))
 
             self.assertEqual(response.status_code, payments.HTTP_404_NOT_FOUND)
@@ -447,7 +447,7 @@ class TestPaymentsCRUD(unittest.TestCase):
     def test_index(self):
         resp = self.app.get('/')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertTrue('Welcome to payments!' in resp.data)
+        self.assertTrue('Payments REST API Service' in resp.data)
 #test cases for update payments - put and patch
 # passing correct data to put
     @mock.patch.object(PaymentService, 'update_payment', return_value=PUT_CREDIT_RETURN)

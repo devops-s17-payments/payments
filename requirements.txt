@@ -16,3 +16,5 @@ coverage==4.2
 codecov==2.0.5
 # BDD
 behave==1.2.5
+# Swagger
+flasgger==0.5.14
