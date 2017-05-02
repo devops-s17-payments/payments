@@ -20,7 +20,6 @@ Vagrant.configure(2) do |config|
   # accessing "localhost:8080" will access port 80 on the guest machine.
   # config.vm.network "forwarded_port", guest: 80, host: 8080
   config.vm.network "forwarded_port", guest: 5000, host: 5000 #flask
-  #config.vm.network "forwarded_port", guest: 5432, host: 5432 #postgres
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -81,5 +80,10 @@ Vagrant.configure(2) do |config|
 
   # add docker_compose file and run it
   config.vm.provision :docker_compose, yml: "/vagrant/docker-compose.yaml", rebuild: true, run: "always",
-    env: {"DB_NAME" => ENV["DB_NAME"], "DB_USER" => ENV["DB_USER"], "DB_PASSWORD" => ENV["DB_PASSWORD"]}
+    env: {
+      "DB_NAME" => ENV["DB_NAME"],
+      "DB_USER" => ENV["DB_USER"],
+      "DB_PASSWORD" => ENV["DB_PASSWORD"],
+      "LOCAL_DB" => ENV["LOCAL_DB"]
+    }
 end
