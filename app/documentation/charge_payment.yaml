@@ -1,0 +1,32 @@
+Charge the specified user's default payment
+This endpoint will charge a user's default payment method an amount passed via json request data
+---
+tags:
+  - Payment
+consumes:
+  - application/json
+produces:
+  - application/json
+parameters:
+  - name: user_id
+    in: path
+    description: user id foreign key
+    type: integer
+    required: true
+  - in: body
+    name: body
+    required: true
+    schema:
+      id: data
+      required:
+        - amount
+      properties:
+        amount:
+          type: float
+          description: the dollar amount to be charged to the default payment method
+          example: 19.99
+responses:
+  200:
+    description: Default payment has been charged the specified amount
+  400:
+    description: Bad Request (bad data and/or no default payment method set)

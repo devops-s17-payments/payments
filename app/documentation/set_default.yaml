@@ -1,0 +1,32 @@
+Set a default payment method for the specified user
+This endpoint will set a default payment for user specified in route and payment specified in json request data
+---
+tags:
+  - Payment
+consumes:
+  - application/json
+produces:
+  - application/json
+parameters:
+  - name: user_id
+    in: path
+    description: user id foreign key
+    type: integer
+    required: true
+  - in: body
+    name: body
+    required: true
+    schema:
+      id: data
+      required:
+        - payment_id
+      properties:
+        payment_id:
+          type: integer
+          description: the id of the payment method being set as default
+          example: 1
+responses:
+  200:
+    description: payment with specified id (in body) for specified user (in route) is now the default payment method for purchases
+  400:
+    description: Bad Request (bad data and/or no payment exists with specified id)

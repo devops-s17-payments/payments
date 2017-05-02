@@ -1,0 +1,14 @@
+Delete a Payment
+This endpoint will 'soft-delete' a Payment associated with the ID in route
+---
+tags:
+  - Payment
+parameters:
+  - name: id
+    in: path
+    description: ID of payment to soft delete
+    type: integer
+    required: true
+responses:
+  204:
+    description: Payment deleted
