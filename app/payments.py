@@ -27,6 +27,7 @@ def index():
 # LIST ALL PAYMENTS
 ######################################################################
 @app.route('/payments', methods=['GET'])
+@swag_from('documentation/list_payments.yaml')
 def list_payments():
     request_args = request.args
 
@@ -107,6 +108,7 @@ def set_default(user_id):
 # RETRIEVE A PAYMENT
 ######################################################################
 @app.route('/payments/<int:id>', methods=['GET'])
+@swag_from('documentation/retrieve_payment.yaml')
 def get_payments(id):
     try:
         result = payment_service.get_payments(payment_ids=[id])

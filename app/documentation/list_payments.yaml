@@ -1,63 +1,51 @@
-Update a Payment - Using PATCH
-This endpoint will update a Payment based on json request data
+List or Query Payments
+This endpoint will list all payments or list some payments if query or id parameter is specified
 ---
 tags:
   - Payment
-consumes:
-  - application/json
+description: This Payments endpoint allows you to list all payments or query payments
 produces:
   - application/json
 parameters:
-  - name: id
-    in: path
-    description: ID of payment to update
-    type: integer
-    required: true
-  - in: body
-    name: body
-    required: true
-    schema:
-      id: data
-      properties:
-        nickname:
-          type: string
-          description: user-made nickname for payment method
-          example: my credit
-        payment_type:
-          type: string
-          description: type of payment (credit, debit, paypal)
-          example: credit
-        details:
-          schema:
-            id: Detail
-            properties:
-              user_name:
-                type: string
-                description: user name associated with payment method (CARD & PAYPAL)
-                example: Jimmy Jones
-              expires:
-                type: string
-                description: credit/debit card expiration date (mm/yyyy) (CARD ONLY!)
-                example: 02/2020
-              card_number:
-                type: string
-                description: 16-digit credit/debit card number (CARD ONLY!)
-                example: 1111222233334444
-              card_type:
-                type: string
-                description: type of credit/debit card (Visa, Mastercard, etc.) (CARD ONLY!)
-                example: Visa
-              user_email:
-                type: string
-                description: user e-mail associated with account (PAYPAL ONLY!)
-                example: jj@aol.com
-              is_linked:
-                type: boolean
-                description: status of link to paypal account (PAYPAL ONLY!)
-                example: True
+  - name: ids
+    in: query
+    description: ID of Payment(s) to be retrieved
+    type: array
+    items: {
+      type: integer
+      }
+    required: false
+    collectionFormat: multi
+  - name: user_id
+    in: query
+    description: User ID of the Payment(s) to be retrieved
+    type: array
+    items: {
+      type: integer
+      }
+    required: false
+    collectionFormat: multi
+  - name: nickname
+    in: query
+    description: Nickname of the Payment(s) to be retrieved
+    type: array
+    items: {
+      type: string
+      }
+    required: false
+    collectionFormat: multi
+  - name: payment_type
+    in: query
+    description: Payment Type of the Payment(s) to be retrieved
+    type: array
+    items: {
+      type: string
+      }
+    required: false
+    collectionFormat: multi
 responses:
   200:
-    description: Payment updated
+    description: An Array of Payments
     schema:
       type: array
       items:
@@ -104,7 +92,5 @@ responses:
                   is_linked:
                     type: boolean
                     description: status of link to paypal account (PAYPAL ONLY!)
-  400:
-    description: Bad Request (the posted data was not valid)
   404:
-    description: Invalid payment - Payment ID not found
+    description: Requested resource(s) could not be found
