@@ -22,17 +22,6 @@ Now let's get started:
 ```
 git clone https://github.com/devops-s17-payments/payments
 cd payments
-```
-
-If you haven't already exported the env variables, execute the following command before vagrant up
-```
-export DB_USER=payments && export DB_PASSWORD=payments && export DB_NAME=dev &&
-export LOCAL_DB=postgresql://payments:payments@payments-database:5432/dev
-```
-
-Now execute these commands to get the vagrant up and running
-
-```
 vagrant up
 vagrant ssh
 cd /vagrant
