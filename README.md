@@ -3,99 +3,55 @@
 [![Build Status](https://travis-ci.org/devops-s17-payments/payments.svg?branch=master)](https://travis-ci.org/devops-s17-payments/payments)
 [![codecov](https://codecov.io/gh/devops-s17-payments/payments/branch/master/graph/badge.svg)](https://codecov.io/gh/devops-s17-payments/payments)
 
-**Current payment options include:**
-* Credit Card
-* Debit Card
-* Paypal
 
-**Payment Method**
-```
-{
-    "charge-history": 0.0,
-    "default": false,
-    "detail": {
-        "expires": "08/2018",
-        "name": "Jane Jenkins",
-        "number": "9876543212345678",
-        "type": "Visa"
-    },
-    "id": 2,
-    "nickname": "my-debit",
-    "type": "debit"
+Check us out on Bluemix: http://nyu-devops-sp17-payments.mybluemix.net
 
-}
-```
+and here's the containerized version: https://nyu-devops-sp17-payments-docker.mybluemix.net/
 
-**How to use this API**
+API Documentation thanks to [Flasgger](https://github.com/rochacbruno/flasgger "Flasgger")
 
-**CREATE** a payment method:
- * POST /payments
- * Accepts JSON in request body in following format:
- 
-```
- {
-    "detail":
-    {
-        "expires": "08/2018",
-        "name": "Jane Jenkins",
-        "number": "9876543212345678",
-        "type": "Visa"
-    },
-    "nickname": "my-debit",
-    "type": "debit"
-}
-```
+http://nyu-devops-sp17-payments.mybluemix.net/apidocs/index.html
 
-**RETRIEVE** a payment method:
- * GET /payments/{id}
 
-**UPDATE** a payment method:
- * PUT /payments/{id}
- * Accepts JSON in request body. Need to provide entire object as with CREATE.
+### How to use this repository ###
+
+First, you need some tools. Download [VirtualBox](https://www.virtualbox.org/ "VirtualBox") and [Vagrant](https://www.vagrantup.com/ "Vagrant")
+
+Next, export these environment variables *on your machine* so the Docker Container can use them to create the database:
 
 ```
- {
-    "detail":
-    {
-        "expires": "08/2018",
-        "name": "Jane Jenkins",
-        "number": "9876543212345678",
-        "type": "Visa"
-    },
-    "nickname": "my-new-debit",
-    "type": "debit"
-}
+export DB_USER=payments
+export DB_PASSWORD=payments
+export DB_NAME=dev
+export LOCAL_DB=postgresql://payments:payments@payments-database:5432/dev
 ```
 
-**UPDATE** a payment method:
- * PATCH /payments/{id}
- * Accepts JSON in request body. Only need to provide those attributes being changed:
+Now let's get started:
 
 ```
-{
-    "nickname": "updated-debit"
-}
+git clone https://github.com/devops-s17-payments/payments
+cd payments
+vagrant up
+vagrant ssh
+cd /vagrant
 ```
 
-**DELETE** a payment method:
- * DELETE /payments/{id}
+### And we're running ###
 
-**LIST** all payment methods:
-* GET /payments
+The database and application containers are now running. Check them out with `docker ps`
 
-**QUERY** payments:
-* GET /payments?{key}={value}
-* Example: To return all credit card payment methods: /payments?type=credit
+You can access the app at `localhost:5000`
 
-**SET** default payment:
-* PUT /payments/{id}/set-default  (this should be a PATCH, will be updated)
 
-**CHARGE** default payment:
-* PUT /payments/charge (this should be a PATCH, will be updated)
-* Accepts JSON in request body in the following format:
+### Run some tests! ###
 
-```
-{
-    "amount" : 19.99
-}
-```
+Unit Tests: `nosetests -v --rednose --nologcapture`
+
+Integration Tests: `behave`
+
+### Check out the coverage! ###
+
+`coverage run --omit "/usr/*" -m unittest discover`
+
+`coverage report -m`
+

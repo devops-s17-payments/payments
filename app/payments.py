@@ -125,6 +125,7 @@ def get_payments(id):
 # UPDATE AN EXISTING PAYMENT
 ######################################################################
 @app.route('/payments/<int:id>', methods=['PUT'])
+@swag_from('documentation/update_payment_put.yaml')
 def update_payments(id):
     try:
         if not request.is_json:
@@ -144,6 +145,7 @@ def update_payments(id):
 # UPDATE AN EXISTING PAYMENT PARTIALLY
 ######################################################################
 @app.route('/payments/<int:id>', methods=['PATCH'])
+@swag_from('documentation/update_payment_patch.yaml')
 def update_partial_payments(id):
     try:
         if not request.is_json:
