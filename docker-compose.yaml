@@ -17,6 +17,8 @@ services:
 
   payments-app:
     build: .
+    command: sh -c "python check_db.py --ip payments-database --port 5432 &&
+                    python run.py"
     restart: always
     hostname: payments-app
     ports:
