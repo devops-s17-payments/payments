@@ -24,3 +24,6 @@ ADD app /payments/app
 ADD run.py /payments
 ADD check_db.py /payments
 ADD config.py /payments
+
+# Run the service
+CMD [ "python", "run.py" ]
