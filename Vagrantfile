@@ -67,7 +67,7 @@ Vagrant.configure(2) do |config|
   ######################################################################
   # Prepare PostgreSQL provisioning - make needed directories and export LOCAL_DB env variable
   config.vm.provision "shell", path: "vagrant_db_provision.sh", 
-    env: {"DB_NAME" => ENV["DB_NAME"], "DB_USER" => ENV["DB_USER"], "DB_PASSWORD" => ENV["DB_PASSWORD"]}
+    env: {"DB_NAME" => "dev", "DB_USER" => "payments", "DB_PASSWORD" => "payments"}
 
   # Add the dev PostgreSQL docker container
   # Note: the "d" essentially refers to the "docker" CLI command
@@ -83,9 +83,9 @@ Vagrant.configure(2) do |config|
   # the vagrant VM's .profile
   config.vm.provision :docker_compose, yml: "/vagrant/docker-compose.yaml", rebuild: true, run: "always",
     env: {
-      "DB_NAME" => ENV["DB_NAME"],
-      "DB_USER" => ENV["DB_USER"],
-      "DB_PASSWORD" => ENV["DB_PASSWORD"],
-      "LOCAL_DB" => ENV["LOCAL_DB"]
+      "DB_NAME" => "dev",
+      "DB_USER" => "payments",
+      "DB_PASSWORD" => "payments",
+      "LOCAL_DB" => "postgresql://payments:payments@payments-database:5432/dev" 
     }
 end
