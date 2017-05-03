@@ -23,7 +23,7 @@ Next, export these environment variables *on your machine* so the Docker Contain
 export DB_USER=payments
 export DB_PASSWORD=payments
 export DB_NAME=dev
-export LOCAL_DB=postgresql://payments:payments@localhost:5432/dev
+export LOCAL_DB=postgresql://payments:payments@payments-database:5432/dev
 ```
 
 Now let's get started:
