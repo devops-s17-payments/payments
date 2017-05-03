@@ -17,31 +17,11 @@ http://nyu-devops-sp17-payments.mybluemix.net/apidocs/index.html
 
 First, you need some tools. Download [VirtualBox](https://www.virtualbox.org/ "VirtualBox") and [Vagrant](https://www.vagrantup.com/ "Vagrant")
 
-We need to export some environment variables *on your machine* so the Docker Container can use them to create the database:
-
-```
-export DB_USER=payments
-export DB_PASSWORD=payments
-export DB_NAME=dev
-export LOCAL_DB=postgresql://payments:payments@payments-database:5432/dev
-```
-
 Now let's get started:
 
 ```
 git clone https://github.com/devops-s17-payments/payments
 cd payments
-```
-
-If you haven't already exported the env variables, execute the following command before vagrant up
-```
-export DB_USER=payments && export DB_PASSWORD=payments && export DB_NAME=dev &&
-export LOCAL_DB=postgresql://payments:payments@payments-database:5432/dev
-```
-
-Now execute these commands to get the vagrant up and running
-
-```
 vagrant up
 vagrant ssh
 cd /vagrant
