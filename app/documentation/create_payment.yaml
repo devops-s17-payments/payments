@@ -48,7 +48,7 @@ parameters:
                 description: 16-digit credit/debit card number (CARD ONLY!)
                 example: 1111222233334444
               card_type:
-                type: integer
+                type: string
                 description: type of credit/debit card (Visa, Mastercard, etc.) (CARD ONLY!)
                 example: Visa
               user_email:
@@ -106,7 +106,7 @@ responses:
                     type: string
                     description: 16-digit credit/debit card number (CARD ONLY!)
                   card_type:
-                    type: integer
+                    type: string
                     description: type of credit/debit card (Visa, Mastercard, etc.) (CARD ONLY!)
                   user_email:
                     type: string
