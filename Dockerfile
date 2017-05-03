@@ -14,10 +14,6 @@ RUN apk add --update \
 ENV PORT 5000
 EXPOSE $PORT
 
-# Get connection string from build-args
-ARG URI
-ENV LOCAL_DB=$URI
-
 # Set up a working folder and install the pre-reqs
 WORKDIR /payments
 ADD requirements.txt /payments
@@ -26,7 +22,5 @@ RUN pip install -r requirements.txt
 # Add the code as the last Docker layer because it changes the most
 ADD app /payments/app
 ADD run.py /payments
+ADD check_db.py /payments
 ADD config.py /payments
-
-# Run the service
-CMD [ "python", "run.py" ]
